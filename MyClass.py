@@ -35,6 +35,7 @@ from wx.lib.agw.artmanager import ArtManager, RendererBase, DCSaver
 from wx.lib.agw.fmresources import ControlFocus, ControlPressed
 from wx.lib.agw.fmresources import FM_OPT_SHOW_CUSTOMIZE, FM_OPT_SHOW_TOOLBAR, FM_OPT_MINIBAR
 import datetime
+from SystemIntroductionPanel import SampleBanners
 
 dirName = os.path.dirname(os.path.abspath(__file__))
 bitmapDir = os.path.join(dirName, 'bitmaps')
@@ -402,7 +403,6 @@ class MainPanel(wx.Panel):
         panel.SetSizer(vbox)
         self._pnl.AddFoldPanelWindow(item, panel, fpb.FPB_ALIGN_WIDTH, 5, 0)
         item.Collapse()
-        fpb.EVT_CAPTIONBAR
 
     def OnPressCaption(self,event):
         for i in range(0, self._pnl.GetCount()):
@@ -436,3 +436,5 @@ class WorkZonePanel(wx.Panel):
         hbox = wx.BoxSizer()
         hbox.Add(self.notebook, 1, wx.EXPAND)
         self.SetSizer(hbox)
+        self.systemIntroductionPanel = SampleBanners(self.notebook)
+        self.notebook.AddPage(self.systemIntroductionPanel,"系统介绍")

@@ -25,6 +25,8 @@ class FlatMenuFrame(wx.Frame):
         self.pswList = []
         self.operator_ID = ''
         self.operator_name = ''
+        self.folderState = ''
+
         self.operator_role = 0
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         # Create a main panel and place some controls on it
@@ -57,6 +59,7 @@ class FlatMenuFrame(wx.Frame):
         # self.UpdateMainUI()
 
     def UpdateMainUI(self):
+        self.Freeze()
         self._mb.Destroy()
         self.mainPANEL.Destroy()
         self.CreateMenu()
@@ -70,6 +73,7 @@ class FlatMenuFrame(wx.Frame):
         mainSizer.Add(self.mainPANEL, 1, wx.EXPAND)
         self.SetSizer(mainSizer)
         self.Layout()
+        self.Thaw()
         # if not self.check_in_flag:
         #     print(self.check_in_flag)
         #     self.mainPANEL.SetBackgroundColour(wx.Colour(255,255,255))
@@ -147,6 +151,11 @@ class FlatMenuFrame(wx.Frame):
         self.Bind(FM.EVT_FLAT_MENU_SELECTED, self.OnCheckOut, id=MENU_CHECK_OUT)
 
     def OnCheckOut(self, event):
+        for i in range(0, self.mainPANEL._pnl.GetCount()):
+            item = self.mainPANEL._pnl.GetFoldPanel(i)
+            if item.GetFoldStatus():
+                self.folderState = i
+        print(self.operator_ID, self.operator_name, self.folderState)
         self.check_in_flag = False
         self.operator_name = ""
         self.statusbar.SetStatusText("当前状态：%s 未登录  " % self.operator_name, 2)
@@ -160,16 +169,20 @@ class FlatMenuFrame(wx.Frame):
             password = dlg.pswTXT.GetValue()
         dlg.Destroy()
         if password != '' and password in self.pswList:
-            self.check_in_flag = True
             _, staffInfo = GetStaffInfoWithPassword(None, 1, password)
-            self.operator_name = staffInfo[3]
-            self.statusbar.SetStatusText(
-                "当前状态： %s->%s->%s->%s 已登录  " % (staffInfo[0], staffInfo[1], staffInfo[2], self.operator_name), 2)
-        else:
-            self.check_in_flag = False
-            self.operator_name = ""
-            self.statusbar.SetStatusText("当前状态：%s 未登录  " % self.operator_name, 2)
-        self.UpdateMainUI()
+            if staffInfo[5] == "在职":
+                self.operator_name = staffInfo[3]
+                self.operator_ID = staffInfo[4]
+                self.check_in_flag = True
+                self.statusbar.SetStatusText(
+                    "当前状态： %s->%s->%s->%s 已登录  " % (staffInfo[0], staffInfo[1], staffInfo[2], self.operator_name), 2)
+                self.UpdateMainUI()
+            else:
+                dlg = wx.MessageDialog(self, '不是在职员工不能登录系统！', "提示窗口",
+                                       wx.OK | wx.ICON_INFORMATION)
+                dlg.ShowModal()
+                dlg.Destroy()
+
 
     def UpdateMenuState(self):
         self._mb.FindMenuItem(MENU_CHECK_IN).Enable(not self.check_in_flag)

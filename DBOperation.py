@@ -53,7 +53,7 @@ def GetStaffInfoWithPassword(log, whichDB, psw):
             log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
         return -1, []
     cursor = db.cursor()
-    sql = """SELECT `处`,`科`,`工位名`,`姓名` from `info_staff` WHERE `密码`='%s'"""%(psw)
+    sql = """SELECT `处`,`科`,`工位名`,`姓名`,`员工编号`,`工作状态` from `info_staff` WHERE `密码`='%s'"""%(psw)
     cursor.execute(sql)
     temp = cursor.fetchone()  # 获得压条信息
     db.close()
