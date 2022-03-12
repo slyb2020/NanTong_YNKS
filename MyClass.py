@@ -268,6 +268,7 @@ class MainPanel(wx.Panel):
         self.ReCreateFoldPanel(0)
         self.Bind(wx.adv.EVT_SASH_DRAGGED_RANGE, self.OnSashDrag, id=ID_WINDOW_LEFT,
                   id2=ID_WINDOW_BOTTOM)  # BOTTOM和LEFT顺序不能换，要想更改哪个先分，只需更改上面窗口定义的顺序
+        self._pnl.Bind(fpb.EVT_CAPTIONBAR, self.OnPressCaption)
 
     def CreateBottomWindow(self):
         self.bottomWindow = wx.adv.SashLayoutWindow(self, ID_WINDOW_BOTTOM, style=wx.NO_BORDER | wx.adv.SW_3D)
@@ -297,29 +298,117 @@ class MainPanel(wx.Panel):
         # delete earlier panel
         self._leftWindow1.DestroyChildren()
         self._pnl = fpb.FoldPanelBar(self._leftWindow1, -1, wx.DefaultPosition,
-                                     wx.Size(-1, -1), agwStyle=fpb_flags)
+                                     wx.Size(-1, -1), agwStyle=fpb_flags|fpb.FPB_COLLAPSE_TO_BOTTOM)
         Images = wx.ImageList(16, 16)
         Images.Add(GetExpandedIconBitmap())
         Images.Add(GetCollapsedIconBitmap())
 
-        item = self._pnl.AddFoldPanel("工具面板", collapsed=False,
+        item = self._pnl.AddFoldPanel("板材操作面板", collapsed=False,
                                       foldIcons=Images)
         panel = wx.Panel(item, -1, size=(300, 300))
         bitmap = wx.Bitmap("bitmaps/aquabutton.png",
                            wx.BITMAP_TYPE_PNG)
-        self.NewOrderBTN = AB.AquaButton(panel, wx.ID_ANY, bitmap, "新建订单", size=(100, 50))
-        self.NewOrderBTN.SetForegroundColour(wx.BLACK)
-        self.NewOrderBTN.Enable(True)
-        self.NewDoorBTN = AB.AquaButton(panel, wx.ID_ANY, bitmap, "排产演示", size=(100, 50))
-        self.NewDoorBTN.SetForegroundColour(wx.BLACK)
+        self.newBoardBTN = AB.AquaButton(panel, wx.ID_ANY, bitmap, "  新建板材", size=(100, 50))
+        self.newBoardBTN.SetForegroundColour(wx.BLACK)
+        self.editBoardBTN = AB.AquaButton(panel, wx.ID_ANY, bitmap, "  编辑板材", size=(100, 50))
+        self.editBoardBTN.SetForegroundColour(wx.BLACK)
         static = wx.StaticLine(panel, -1)
         vbox = wx.BoxSizer(wx.VERTICAL)
-        vbox.Add(self.NewOrderBTN, 0, wx.EXPAND | wx.TOP | wx.BOTTOM, 5)
-        vbox.Add(self.NewDoorBTN, 0, wx.EXPAND | wx.TOP | wx.BOTTOM, 5)
+        vbox.Add(self.newBoardBTN, 0, wx.EXPAND | wx.TOP | wx.BOTTOM, 5)
+        vbox.Add(self.editBoardBTN, 0, wx.EXPAND | wx.TOP | wx.BOTTOM, 5)
+        vbox.Add(static, 0, wx.EXPAND | wx.TOP | wx.BOTTOM, 5)
+        panel.SetSizer(vbox)
+        self._pnl.AddFoldPanelWindow(item, panel, fpb.FPB_ALIGN_WIDTH, 0, 0)
+        item.Collapse()
+
+        item = self._pnl.AddFoldPanel("图纸操作面板", collapsed=False,
+                                      foldIcons=Images)
+        panel = wx.Panel(item, -1, size=(300, 300))
+        bitmap = wx.Bitmap("bitmaps/aquabutton.png",
+                           wx.BITMAP_TYPE_PNG)
+        self.newSchematicBTN = AB.AquaButton(panel, wx.ID_ANY, bitmap, "  新建图纸", size=(100, 50))
+        self.newSchematicBTN.SetForegroundColour(wx.BLACK)
+        self.editSchematicBTN = AB.AquaButton(panel, wx.ID_ANY, bitmap, "  编辑图纸", size=(100, 50))
+        self.editSchematicBTN.SetForegroundColour(wx.BLACK)
+        static = wx.StaticLine(panel, -1)
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        vbox.Add(self.newSchematicBTN, 0, wx.EXPAND | wx.TOP | wx.BOTTOM, 5)
+        vbox.Add(self.editSchematicBTN, 0, wx.EXPAND | wx.TOP | wx.BOTTOM, 5)
         vbox.Add(static, 0, wx.EXPAND | wx.TOP | wx.BOTTOM, 5)
         panel.SetSizer(vbox)
         self._pnl.AddFoldPanelWindow(item, panel, fpb.FPB_ALIGN_WIDTH, 5, 0)
-        self._leftWindow1.SizeWindows()
+        item.Collapse()
+
+        item = self._pnl.AddFoldPanel("订单操作面板", collapsed=False,
+                                      foldIcons=Images)
+        panel = wx.Panel(item, -1, size=(300, 300))
+        bitmap = wx.Bitmap("bitmaps/aquabutton.png",
+                           wx.BITMAP_TYPE_PNG)
+        self.newOrderBTN = AB.AquaButton(panel, wx.ID_ANY, bitmap, "  新建订单", size=(100, 50))
+        self.newOrderBTN.SetForegroundColour(wx.BLACK)
+        self.editOrderBTN = AB.AquaButton(panel, wx.ID_ANY, bitmap, "  查询订单", size=(100, 50))
+        self.editOrderBTN.SetForegroundColour(wx.BLACK)
+        static = wx.StaticLine(panel, -1)
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        vbox.Add(self.newOrderBTN, 0, wx.EXPAND | wx.TOP | wx.BOTTOM, 5)
+        vbox.Add(self.editOrderBTN, 0, wx.EXPAND | wx.TOP | wx.BOTTOM, 5)
+        vbox.Add(static, 0, wx.EXPAND | wx.TOP | wx.BOTTOM, 5)
+        panel.SetSizer(vbox)
+        self._pnl.AddFoldPanelWindow(item, panel, fpb.FPB_ALIGN_WIDTH, 5, 0)
+        item.Collapse()
+
+        cs = fpb.CaptionBarStyle()
+        cs.SetCaptionStyle(fpb.CAPTIONBAR_GRADIENT_H)
+        cs.SetFirstColour(wx.Colour(223,223,223))
+        cs.SetSecondColour(wx.Colour(123,0,0))
+        item = self._pnl.AddFoldPanel("标签/胶水单操作面板", collapsed=False,
+                                      foldIcons=Images, cbstyle=cs)
+        panel = wx.Panel(item, -1, size=(300, 300))
+        bitmap = wx.Bitmap("bitmaps/aquabutton.png",
+                           wx.BITMAP_TYPE_PNG)
+        self.newGlueBTN = AB.AquaButton(panel, wx.ID_ANY, bitmap, " 新建标签/胶水单", size=(100, 50))
+        self.newGlueBTN.SetForegroundColour(wx.BLACK)
+        self.editGlueBTN = AB.AquaButton(panel, wx.ID_ANY, bitmap, " 查询标签/胶水单", size=(100, 50))
+        self.editGlueBTN.SetForegroundColour(wx.BLACK)
+        static = wx.StaticLine(panel, -1)
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        vbox.Add(self.newGlueBTN, 0, wx.EXPAND | wx.TOP | wx.BOTTOM, 5)
+        vbox.Add(self.editGlueBTN, 0, wx.EXPAND | wx.TOP | wx.BOTTOM, 5)
+        vbox.Add(static, 0, wx.EXPAND | wx.TOP | wx.BOTTOM, 5)
+        panel.SetSizer(vbox)
+        self._pnl.AddFoldPanelWindow(item, panel, fpb.FPB_ALIGN_WIDTH, 5, 0)
+        item.Collapse()
+
+        cs = fpb.CaptionBarStyle()
+        cs.SetCaptionStyle(fpb.CAPTIONBAR_GRADIENT_H)
+        cs.SetFirstColour(wx.Colour(123,123,123))
+        cs.SetSecondColour(wx.Colour(123,12,123))
+        # cs.SetCaptionColour(wx.Colour(123,124,235))
+        cs.SetCaptionStyle(fpb.CAPTIONBAR_RECTANGLE)
+        item = self._pnl.AddFoldPanel("货盘单操作面板", collapsed=False,
+                                      foldIcons=Images, cbstyle=cs)
+        panel = wx.Panel(item, -1, size=(300, 300))
+        bitmap = wx.Bitmap("bitmaps/aquabutton.png",
+                           wx.BITMAP_TYPE_PNG)
+        self.newDockerBTN = AB.AquaButton(panel, wx.ID_ANY, bitmap, " 新建货盘", size=(100, 50))
+        self.newDockerBTN.SetForegroundColour(wx.BLACK)
+        self.editDockerBTN = AB.AquaButton(panel, wx.ID_ANY, bitmap, " 编辑货盘", size=(100, 50))
+        self.editDockerBTN.SetForegroundColour(wx.BLACK)
+        static = wx.StaticLine(panel, -1)
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        vbox.Add(self.newDockerBTN, 0, wx.EXPAND | wx.TOP | wx.BOTTOM, 5)
+        vbox.Add(self.editDockerBTN, 0, wx.EXPAND | wx.TOP | wx.BOTTOM, 5)
+        vbox.Add(static, 0, wx.EXPAND | wx.TOP | wx.BOTTOM, 5)
+        panel.SetSizer(vbox)
+        self._pnl.AddFoldPanelWindow(item, panel, fpb.FPB_ALIGN_WIDTH, 5, 0)
+        item.Collapse()
+        fpb.EVT_CAPTIONBAR
+
+    def OnPressCaption(self,event):
+        for i in range(0, self._pnl.GetCount()):
+            item = self._pnl.GetFoldPanel(i)
+            self._pnl.Collapse(item)
+        event.Skip()
 
 
 class WorkZonePanel(wx.Panel):
