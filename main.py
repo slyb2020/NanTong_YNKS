@@ -4,8 +4,10 @@ import wx
 
 from MyClass import *
 from ID_DEFINE import *
+from BackgoundPanel import BackgroundPanel
 from PasswordDialog import PasswordDialog
-from DBOperation import GetStaffInfoWithPassword
+from DBOperation import GetStaffInfoWithPassword, GetEnterpriseInfo
+
 VERSION_STRING = "20220206A"
 
 
@@ -14,12 +16,13 @@ class FlatMenuFrame(wx.Frame):
         # 如果要初始运行时最大化可以或上wx.MAXIMIZE
         wx.Frame.__init__(self, parent, size=(1500, 900), style=wx.DEFAULT_FRAME_STYLE | wx.NO_FULL_REPAINT_ON_RESIZE)
         self.SetIcon(images.Mondrian.GetIcon())
-        self.SetTitle("伊纳克赛(南通)精致内饰材料有限公司智能生产管理系统   Version——0.%s" % VERSION_STRING)
+        _, self.enterpriseName = GetEnterpriseInfo(None, 1)
+        self.SetTitle("%s智能生产管理系统   Version——0.%s" %(self.enterpriseName, VERSION_STRING))
         self._popUpMenu = None
         self.check_in_flag = False
         self.timer_count = 0
         self.mouse_position = wx.Point()
-        self.pswList=[]
+        self.pswList = []
         self.operator_ID = ''
         self.operator_name = ''
         self.operator_role = 0
@@ -29,7 +32,8 @@ class FlatMenuFrame(wx.Frame):
         if self.check_in_flag:
             self.mainPANEL = MainPanel(self, wx.ID_ANY)
         else:
-            self.mainPANEL = wx.Panel(self, -1, style=wx.SUNKEN_BORDER)
+            # self.mainPANEL = wx.Panel(self, -1, style=wx.SUNKEN_BORDER)
+            self.mainPANEL = BackgroundPanel(self)
         from MyStatusBar import MyStatusBar
         self.statusbar = MyStatusBar(self)
         self.SetStatusBar(self.statusbar)
@@ -44,12 +48,13 @@ class FlatMenuFrame(wx.Frame):
         self._mb.Refresh()
         self.CenterOnScreen()
         self._mb.GetRendererManager().SetTheme(FM.StyleVista)
-        pswd_found = False
-        if pswd_found:
-            self.check_in_flag = True
-            self.operator_name = ""
-            self.statusbar.SetStatusText("当前状态：%s 已登录  " % self.operator_name, 2)
-            self.UpdateMainUI()
+        self.check_in_flag = False
+        # pswd_found = False
+        # if pswd_found:
+        #     self.check_in_flag = True
+        #     self.operator_name = ""
+        #     self.statusbar.SetStatusText("当前状态：%s 已登录  " % self.operator_name, 2)
+        # self.UpdateMainUI()
 
     def UpdateMainUI(self):
         self._mb.Destroy()
@@ -58,12 +63,17 @@ class FlatMenuFrame(wx.Frame):
         if self.check_in_flag:
             self.mainPANEL = MainPanel(self, wx.ID_ANY)
         else:
-            self.mainPANEL = wx.Panel(self, -1, style=wx.SUNKEN_BORDER)
+            self.mainPANEL = BackgroundPanel(self)
+            # self.mainPANEL.SetBackgroundColour(wx.Colour(255, 255, 255))
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add(self._mb, 0, wx.EXPAND)
         mainSizer.Add(self.mainPANEL, 1, wx.EXPAND)
         self.SetSizer(mainSizer)
         self.Layout()
+        # if not self.check_in_flag:
+        #     print(self.check_in_flag)
+        #     self.mainPANEL.SetBackgroundColour(wx.Colour(255,255,255))
+        #     print(self.mainPANEL.GetClientSize())
 
     def CreateMenu(self):
         # Create the menubar
@@ -143,17 +153,18 @@ class FlatMenuFrame(wx.Frame):
         self.UpdateMainUI()
 
     def OnCheckIn(self, event):
-        password=''
+        password = ''
         dlg = PasswordDialog(self)
         dlg.CenterOnScreen()
         if dlg.ShowModal() == wx.ID_OK:
             password = dlg.pswTXT.GetValue()
         dlg.Destroy()
-        if password in self.pswList:
+        if password != '' and password in self.pswList:
             self.check_in_flag = True
             _, staffInfo = GetStaffInfoWithPassword(None, 1, password)
             self.operator_name = staffInfo[3]
-            self.statusbar.SetStatusText("当前状态： %s->%s->%s->%s 已登录  " %(staffInfo[0], staffInfo[1], staffInfo[2], self.operator_name), 2)
+            self.statusbar.SetStatusText(
+                "当前状态： %s->%s->%s->%s 已登录  " % (staffInfo[0], staffInfo[1], staffInfo[2], self.operator_name), 2)
         else:
             self.check_in_flag = False
             self.operator_name = ""
@@ -172,7 +183,7 @@ class FlatMenuFrame(wx.Frame):
         self.Destroy()
 
     def OnAbout(self, event):
-        msg = "伊纳克赛有限公司智能生产管理系统\n\n" + \
+        msg = "%s智能生产管理系统\n\n"%self.enterpriseName + \
               "天津大学精仪四室 版权所有 2021——2029\n\n" + \
               "\n" + \
               "如发现问题请联系:\n\n" + \

@@ -25,7 +25,7 @@ class MyStatusBar(wx.StatusBar):
         self.sizeChanged = False
         self.Bind(wx.EVT_SIZE, self.OnSize)
         self.Bind(wx.EVT_IDLE, self.OnIdle)
-        self.SetStatusText("伊纳克赛(南通)精致内饰材料有限公司 - 智能生产管理系统正在运行......", 1)
+        self.SetStatusText("%s - 智能生产管理系统正在运行......"%self.parent.enterpriseName, 1)
         self.SetStatusText("当前状态：未登录", 2)
         # self.gauge = MyProgressGauge(self,size=(55, 15))
         self.gauge = wx.Gauge(self, 100)

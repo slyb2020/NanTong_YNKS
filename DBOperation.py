@@ -4,6 +4,23 @@ import time
 import datetime
 
 
+def GetEnterpriseInfo(log, whichDB):
+    try:
+        # db = MySQLdb.connect(host="127.0.0.1", user="root", passwd='', db="智能生产管理系统_调试",charset='utf8')
+        db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
+                             passwd='%s' % dbPassword[whichDB], db='%s' % dbName[whichDB], charset='utf8')
+    except:
+        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        if log:
+            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+        return -1, []
+    cursor = db.cursor()
+    sql = """SELECT `企业名称` from `企业基本信息表` """
+    cursor.execute(sql)
+    temp = cursor.fetchone()  # 获得压条信息
+    db.close()
+    return 0, temp[0]
+
 def GetAllPasswords(log, whichDB):
     try:
         # db = MySQLdb.connect(host="127.0.0.1", user="root", passwd='', db="智能生产管理系统_调试",charset='utf8')
