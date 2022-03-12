@@ -5,7 +5,7 @@ import wx
 from MyClass import *
 from ID_DEFINE import *
 from PasswordDialog import PasswordDialog
-from DBOperation import GetOperatorNameWithPassword
+from DBOperation import GetStaffInfoWithPassword
 VERSION_STRING = "20220206A"
 
 
@@ -151,12 +151,13 @@ class FlatMenuFrame(wx.Frame):
         dlg.Destroy()
         if password in self.pswList:
             self.check_in_flag = True
-            _, self.operator_name = GetOperatorNameWithPassword(None,1,password)
-            self.statusbar.SetStatusText("当前状态：%s 已登录  " % self.operator_name, 2)
+            _, staffInfo = GetStaffInfoWithPassword(None, 1, password)
+            self.operator_name = staffInfo[3]
+            self.statusbar.SetStatusText("当前状态： %s->%s->%s->%s 已登录  " %(staffInfo[0], staffInfo[1], staffInfo[2], self.operator_name), 2)
         else:
             self.check_in_flag = False
             self.operator_name = ""
-            self.statusbar.SetStatusText("当前状态：%s 已登录  " % self.operator_name, 2)
+            self.statusbar.SetStatusText("当前状态：%s 未登录  " % self.operator_name, 2)
         self.UpdateMainUI()
 
     def UpdateMenuState(self):

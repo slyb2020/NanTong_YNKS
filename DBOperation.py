@@ -25,7 +25,7 @@ def GetAllPasswords(log, whichDB):
     return 0, data
 
 
-def GetOperatorNameWithPassword(log, whichDB, psw):
+def GetStaffInfoWithPassword(log, whichDB, psw):
     try:
         # db = MySQLdb.connect(host="127.0.0.1", user="root", passwd='', db="智能生产管理系统_调试",charset='utf8')
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
@@ -36,8 +36,8 @@ def GetOperatorNameWithPassword(log, whichDB, psw):
             log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
         return -1, []
     cursor = db.cursor()
-    sql = """SELECT `姓名` from `info_staff` WHERE `密码`='%s'"""%(psw)
+    sql = """SELECT `处`,`科`,`工位名`,`姓名` from `info_staff` WHERE `密码`='%s'"""%(psw)
     cursor.execute(sql)
     temp = cursor.fetchone()  # 获得压条信息
     db.close()
-    return 0, temp[0]
+    return 0, temp
