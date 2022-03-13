@@ -8,7 +8,7 @@ from BackgoundPanel import BackgroundPanel
 from PasswordDialog import PasswordDialog
 from DBOperation import GetStaffInfoWithPassword, GetEnterpriseInfo
 
-VERSION_STRING = "20220206A"
+VERSION_STRING = "20220313A"
 
 
 class FlatMenuFrame(wx.Frame):
@@ -23,8 +23,8 @@ class FlatMenuFrame(wx.Frame):
         self.timer_count = 0
         self.mouse_position = wx.Point()
         self.pswList = []
-        self.operator_ID = ''
-        self.operator_name = ''
+        self.operatorID = ''
+        self.operatorName = ''
         self.folderState = ''
 
         self.operator_role = 0
@@ -151,14 +151,9 @@ class FlatMenuFrame(wx.Frame):
         self.Bind(FM.EVT_FLAT_MENU_SELECTED, self.OnCheckOut, id=MENU_CHECK_OUT)
 
     def OnCheckOut(self, event):
-        for i in range(0, self.mainPANEL._pnl.GetCount()):
-            item = self.mainPANEL._pnl.GetFoldPanel(i)
-            if item.GetFoldStatus():
-                self.folderState = i
-        print(self.operator_ID, self.operator_name, self.folderState)
         self.check_in_flag = False
-        self.operator_name = ""
-        self.statusbar.SetStatusText("当前状态：%s 未登录  " % self.operator_name, 2)
+        self.operatorName = ""
+        self.statusbar.SetStatusText("当前状态：%s 未登录  " % self.operatorName, 2)
         self.UpdateMainUI()
 
     def OnCheckIn(self, event):
@@ -171,11 +166,12 @@ class FlatMenuFrame(wx.Frame):
         if password != '' and password in self.pswList:
             _, staffInfo = GetStaffInfoWithPassword(None, 1, password)
             if staffInfo[5] == "在职":
-                self.operator_name = staffInfo[3]
-                self.operator_ID = staffInfo[4]
+                self.operatorCharacter = staffInfo[2]
+                self.operatorName = staffInfo[3]
+                self.operatorID = staffInfo[4]
                 self.check_in_flag = True
                 self.statusbar.SetStatusText(
-                    "当前状态： %s->%s->%s->%s 已登录  " % (staffInfo[0], staffInfo[1], staffInfo[2], self.operator_name), 2)
+                    "当前状态： %s->%s->%s->%s 已登录  " % (staffInfo[0], staffInfo[1], staffInfo[2], self.operatorName), 2)
                 self.UpdateMainUI()
             else:
                 dlg = wx.MessageDialog(self, '不是在职员工不能登录系统！', "提示窗口",
