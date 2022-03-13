@@ -192,7 +192,7 @@ class FlatMenuFrame(wx.Frame):
         self.Destroy()
 
     def OnAbout(self, event):
-        msg = "%s智能生产管理系统\n\n"%self.enterpriseName + \
+        msg = "%s  智能生产管理系统\n\n"%self.enterpriseName + \
               "天津大学精仪四室 版权所有 2021——2029\n\n" + \
               "\n" + \
               "如发现问题请联系:\n\n" + \

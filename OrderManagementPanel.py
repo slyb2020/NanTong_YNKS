@@ -13,7 +13,7 @@ class OrderGrid(gridlib.Grid):  ##, mixins.GridAutoEditMixin):
 
         self.Bind(wx.EVT_IDLE, self.OnIdle)
 
-        self.CreateGrid(self.master.orderArray.shape[0], 7)  # , gridlib.Grid.SelectRows)
+        self.CreateGrid(self.master.orderArray.shape[0], self.master.orderArray.shape[1])  # , gridlib.Grid.SelectRows)
         self.EnableEditing(False)
 
         self.SetColLabelAlignment(wx.ALIGN_CENTRE, wx.ALIGN_CENTRE_VERTICAL)
@@ -22,12 +22,13 @@ class OrderGrid(gridlib.Grid):  ##, mixins.GridAutoEditMixin):
         self.SetColLabelSize(25)
 
         self.SetColLabelValue(0, "订单编号")
-        self.SetColLabelValue(1, "产品名称")
-        self.SetColLabelValue(2, "产品数量")
-        self.SetColLabelValue(3, "订单交货日期")
-        self.SetColLabelValue(4, "下单时间")
-        self.SetColLabelValue(5, "下单员")
-        self.SetColLabelValue(6, "订单状态")
+        self.SetColLabelValue(1, "客户名称")
+        self.SetColLabelValue(2, "产品名称")
+        self.SetColLabelValue(3, "产品数量")
+        self.SetColLabelValue(4, "订单交货日期")
+        self.SetColLabelValue(5, "下单时间")
+        self.SetColLabelValue(6, "下单员")
+        self.SetColLabelValue(7, "订单状态")
         for i, width in enumerate(self.master.colWidthList):
             self.SetColSize(i, width)
 
@@ -115,12 +116,13 @@ class OrderGrid(gridlib.Grid):  ##, mixins.GridAutoEditMixin):
         self.SetColLabelSize(25)
 
         self.SetColLabelValue(0, "订单编号")
-        self.SetColLabelValue(1, "产品名称")
-        self.SetColLabelValue(2, "产品数量")
-        self.SetColLabelValue(3, "订单交货日期")
-        self.SetColLabelValue(4, "下单时间")
-        self.SetColLabelValue(5, "下单员")
-        self.SetColLabelValue(6, "订单状态")
+        self.SetColLabelValue(1, "客户名称")
+        self.SetColLabelValue(2, "产品名称")
+        self.SetColLabelValue(3, "产品数量")
+        self.SetColLabelValue(4, "订单交货日期")
+        self.SetColLabelValue(5, "下单时间")
+        self.SetColLabelValue(6, "下单员")
+        self.SetColLabelValue(7, "订单状态")
         for i, width in enumerate(self.master.colWidthList):
             self.SetColSize(i, width)
 
@@ -268,11 +270,13 @@ class OrderManagementPanel(wx.Panel):
         wx.Panel.__init__(self, parent, -1)
         self.master = master
         self.log = log
-        self.colWidthList = [80, 80, 70, 90, 140, 90, 80]
+        self.colWidthList = [70, 90,70, 60, 90, 100, 80, 70]
         _, orderList = GetAllOrderList(self.log, 1)
         self.orderArray = np.array(orderList)
         self.orderIDSearch=''
+        self.orderStateSearch=''
         self.productNameSearch=''
+        self.operatorSearch=''
         hbox = wx.BoxSizer()
         self.leftPanel = wx.Panel(self, size=(700, -1))
         hbox.Add(self.leftPanel, 0, wx.EXPAND)
@@ -292,19 +296,23 @@ class OrderManagementPanel(wx.Panel):
         self.orderIDSearchCtrl = wx.TextCtrl(searchPanel, size=(self.colWidthList[0], -1), style=wx.TE_PROCESS_ENTER )
         self.orderIDSearchCtrl.Bind(wx.EVT_TEXT_ENTER, self.OnOrderIDSearch)
         hhbox.Add(self.orderIDSearchCtrl, 0, wx.EXPAND)
+        self.customerNameSearchCtrl = wx.TextCtrl(searchPanel, size=(self.colWidthList[1], -1))
+        # self.customerNameSearchCtrl.Bind(wx.EVT_COMBOBOX, self.OnOrderStateSearch)
+        hhbox.Add(self.customerNameSearchCtrl, 0, wx.EXPAND)
         self.productNameSearchCtrl = wx.ComboBox(searchPanel, choices=['A1', 'B0', 'B1', 'B5', 'B7'],
-                                                 size=(self.colWidthList[1], -1))
+                                                 size=(self.colWidthList[2], -1))
         self.productNameSearchCtrl.Bind(wx.EVT_COMBOBOX, self.OnProductNameSearch)
         hhbox.Add(self.productNameSearchCtrl, 0, wx.EXPAND)
-        self.productAmountSearchCtrl = wx.TextCtrl(searchPanel, size=(self.colWidthList[2], -1))
+        self.productAmountSearchCtrl = wx.TextCtrl(searchPanel, size=(self.colWidthList[3], -1))
         hhbox.Add(self.productAmountSearchCtrl, 0, wx.EXPAND)
-        self.deliverDateSearchCtrl = wx.TextCtrl(searchPanel, size=(self.colWidthList[3], -1))
+        self.deliverDateSearchCtrl = wx.TextCtrl(searchPanel, size=(self.colWidthList[4], -1))
         hhbox.Add(self.deliverDateSearchCtrl, 0, wx.EXPAND)
-        self.orderDateSearchCtrl = wx.TextCtrl(searchPanel, size=(self.colWidthList[4], -1))
+        self.orderDateSearchCtrl = wx.TextCtrl(searchPanel, size=(self.colWidthList[5], -1))
         hhbox.Add(self.orderDateSearchCtrl, 0, wx.EXPAND)
-        self.operatorSearchCtrl = wx.ComboBox(searchPanel, choices=["180389"], size=(self.colWidthList[5], -1))
+        self.operatorSearchCtrl = wx.ComboBox(searchPanel, choices=["1803089"], size=(self.colWidthList[6], -1))
+        self.operatorSearchCtrl.Bind(wx.EVT_COMBOBOX, self.OnOperatorSearch)
         hhbox.Add(self.operatorSearchCtrl, 0, wx.EXPAND)
-        self.orderStateSearchCtrl = wx.ComboBox(searchPanel, choices=["接单","排产","下料","加工","打包","发货"], size=(self.colWidthList[6], -1))
+        self.orderStateSearchCtrl = wx.ComboBox(searchPanel, choices=["接单","排产","下料","加工","打包","发货"], size=(self.colWidthList[7], -1))
         self.orderStateSearchCtrl.Bind(wx.EVT_COMBOBOX, self.OnOrderStateSearch)
         hhbox.Add(self.orderStateSearchCtrl, 0, wx.EXPAND)
 
@@ -329,6 +337,10 @@ class OrderManagementPanel(wx.Panel):
         self.orderStateSearch = self.orderStateSearchCtrl.GetValue()
         self.ReSearch()
 
+    def OnOperatorSearch(self, event):
+        self.operatorSearch = self.operatorSearchCtrl.GetValue()
+        self.ReSearch()
+
     def OnOrderIDSearch(self, event):
         self.orderIDSearch = self.orderIDSearchCtrl.GetValue()
         self.ReSearch()
@@ -343,19 +355,26 @@ class OrderManagementPanel(wx.Panel):
         if self.productNameSearch != '':
             orderList = []
             for order in self.orderArray:
-                if order[1] == self.productNameSearch:
+                if order[2] == self.productNameSearch:
                     orderList.append(order)
             self.orderArray = np.array(orderList)
         if self.orderIDSearch != '':
+            print('here')
             orderList = []
             for order in self.orderArray:
                 if str(order[0]) == self.orderIDSearch:
                     orderList.append(order)
             self.orderArray = np.array(orderList)
+        if self.operatorSearch != '':
+            orderList = []
+            for order in self.orderArray:
+                if str(order[6]) == self.operatorSearch:
+                    orderList.append(order)
+            self.orderArray = np.array(orderList)
         if self.orderStateSearch != '':
             orderList = []
             for order in self.orderArray:
-                if str(order[6]) == self.orderStateSearch:
+                if str(order[7]) == self.orderStateSearch:
                     orderList.append(order)
             self.orderArray = np.array(orderList)
         self.orderGrid.ReCreate()
@@ -368,6 +387,7 @@ class OrderManagementPanel(wx.Panel):
         self.productAmountSearchCtrl.SetValue('')
         self.deliverDateSearchCtrl.SetValue('')
         self.orderDateSearchCtrl.SetValue('')
+        self.operatorSearch=''
         self.operatorSearchCtrl.SetValue('')
         self.orderStateSearch=''
         self.orderStateSearchCtrl.SetValue('')
