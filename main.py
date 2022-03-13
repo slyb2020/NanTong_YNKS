@@ -14,7 +14,7 @@ VERSION_STRING = "20220313A"
 class FlatMenuFrame(wx.Frame):
     def __init__(self, parent):
         # 如果要初始运行时最大化可以或上wx.MAXIMIZE
-        wx.Frame.__init__(self, parent, size=(1500, 900), style=wx.DEFAULT_FRAME_STYLE | wx.NO_FULL_REPAINT_ON_RESIZE)
+        wx.Frame.__init__(self, parent, size=(1700, 1000), style=wx.DEFAULT_FRAME_STYLE | wx.NO_FULL_REPAINT_ON_RESIZE)
         self.SetIcon(images.Mondrian.GetIcon())
         _, self.enterpriseName = GetEnterpriseInfo(None, 1)
         self.SetTitle("%s智能生产管理系统   Version——0.%s" %(self.enterpriseName, VERSION_STRING))

@@ -1,78 +1,85 @@
 import wx
 import wx.grid as gridlib
+from DBOperation import GetAllOrderList
+import numpy as np
 
 
-class OrderGrid(gridlib.Grid): ##, mixins.GridAutoEditMixin):
-    def __init__(self, parent, log):
+class OrderGrid(gridlib.Grid):  ##, mixins.GridAutoEditMixin):
+    def __init__(self, parent, master, log):
         gridlib.Grid.__init__(self, parent, -1)
-        ##mixins.GridAutoEditMixin.__init__(self)
         self.log = log
+        self.master = master
         self.moveTo = None
 
         self.Bind(wx.EVT_IDLE, self.OnIdle)
 
-        self.CreateGrid(25, 25)#, gridlib.Grid.SelectRows)
-        ##self.EnableEditing(False)
+        self.CreateGrid(self.master.orderArray.shape[0], 7)  # , gridlib.Grid.SelectRows)
+        self.EnableEditing(False)
 
-        # simple cell formatting
-        self.SetColSize(3, 200)
-        self.SetRowSize(4, 45)
-        self.SetCellValue(0, 0, "First cell")
-        self.SetCellValue(1, 1, "Another cell")
-        self.SetCellValue(2, 2, "Yet another cell")
-        self.SetCellValue(3, 3, "This cell is read-only")
-        self.SetCellFont(0, 0, wx.Font(12, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_ITALIC, wx.FONTWEIGHT_NORMAL))
-        self.SetCellTextColour(1, 1, wx.RED)
-        self.SetCellBackgroundColour(2, 2, wx.CYAN)
-        self.SetReadOnly(3, 3, True)
+        self.SetColLabelAlignment(wx.ALIGN_CENTRE, wx.ALIGN_CENTRE_VERTICAL)
 
-        self.SetCellEditor(5, 0, gridlib.GridCellNumberEditor(1,1000))
-        self.SetCellValue(5, 0, "123")
-        self.SetCellEditor(6, 0, gridlib.GridCellFloatEditor())
-        self.SetCellValue(6, 0, "123.34")
-        self.SetCellEditor(7, 0, gridlib.GridCellNumberEditor())
+        self.SetRowLabelSize(50)
+        self.SetColLabelSize(25)
 
-        self.SetCellValue(6, 3, "You can veto editing this cell")
+        self.SetColLabelValue(0, "订单编号")
+        self.SetColLabelValue(1, "产品名称")
+        self.SetColLabelValue(2, "产品数量")
+        self.SetColLabelValue(3, "订单交货日期")
+        self.SetColLabelValue(4, "下单时间")
+        self.SetColLabelValue(5, "下单员")
+        self.SetColLabelValue(6, "订单状态")
+        for i, width in enumerate(self.master.colWidthList):
+            self.SetColSize(i, width)
 
-        #self.SetRowLabelSize(0)
-        #self.SetColLabelSize(0)
+        for i, order in enumerate(self.master.orderArray):
+            self.SetRowSize(i, 25)
+            for j, item in enumerate(order):
+                self.SetCellAlignment(i, j, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE_VERTICAL)
+                self.SetCellValue(i, j, str(item))
+
+        # self.SetCellValue(2, 2, "Yet another cell")
+        # self.SetCellValue(3, 3, "This cell is read-only")
+        # self.SetCellFont(0, 0, wx.Font(12, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_ITALIC, wx.FONTWEIGHT_NORMAL))
+        # self.SetCellTextColour(1, 1, wx.RED)
+        # self.SetCellBackgroundColour(2, 2, wx.CYAN)
+        # self.SetReadOnly(3, 3, True)
+
+        # self.SetCellEditor(5, 0, gridlib.GridCellNumberEditor(1,1000))
+        # self.SetCellValue(5, 0, "123")
+        # self.SetCellEditor(6, 0, gridlib.GridCellFloatEditor())
+        # self.SetCellValue(6, 0, "123.34")
+        # self.SetCellEditor(7, 0, gridlib.GridCellNumberEditor())
+        #
+        # self.SetCellValue(6, 3, "You can veto editing this cell")
 
         # attribute objects let you keep a set of formatting values
         # in one spot, and reuse them if needed
-        attr = gridlib.GridCellAttr()
-        attr.SetTextColour(wx.BLACK)
-        attr.SetBackgroundColour(wx.RED)
-        attr.SetFont(wx.Font(10, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
+        # attr = gridlib.GridCellAttr()
+        # attr.SetTextColour(wx.BLACK)
+        # attr.SetBackgroundColour(wx.RED)
+        # attr.SetFont(wx.Font(10, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
+        #
+        # # you can set cell attributes for the whole row (or column)
+        # self.SetRowAttr(5, attr)
 
-        # you can set cell attributes for the whole row (or column)
-        self.SetRowAttr(5, attr)
-
-        self.SetColLabelValue(0, "Custom")
-        self.SetColLabelValue(1, "column")
-        self.SetColLabelValue(2, "labels")
-
-        self.SetColLabelAlignment(wx.ALIGN_LEFT, wx.ALIGN_BOTTOM)
-
-        #self.SetDefaultCellOverflow(False)
-        #r = gridlib.GridCellAutoWrapStringRenderer()
-        #self.SetCellRenderer(9, 1, r)
+        # self.SetDefaultCellOverflow(False)
+        # r = gridlib.GridCellAutoWrapStringRenderer()
+        # self.SetCellRenderer(9, 1, r)
 
         # overflow cells
-        self.SetCellValue( 9, 1, "This default cell will overflow into neighboring cells, but not if you turn overflow off.");
-        self.SetCellSize(11, 1, 3, 3);
-        self.SetCellAlignment(11, 1, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE);
-        self.SetCellValue(11, 1, "This cell is set to span 3 rows and 3 columns");
+        # self.SetCellValue( 9, 1, "This default cell will overflow into neighboring cells, but not if you turn overflow off.");
+        # self.SetCellSize(11, 1, 3, 3);
+        # self.SetCellAlignment(11, 1, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE);
+        # self.SetCellValue(11, 1, "This cell is set to span 3 rows and 3 columns");
 
-
-        editor = gridlib.GridCellTextEditor()
-        editor.SetParameters('10')
-        self.SetCellEditor(0, 4, editor)
-        self.SetCellValue(0, 4, "Limited text")
-
-        renderer = gridlib.GridCellAutoWrapStringRenderer()
-        self.SetCellRenderer(15,0, renderer)
-        self.SetCellValue(15,0, "The text in this cell will be rendered with word-wrapping")
-
+        # editor = gridlib.GridCellTextEditor()
+        # editor.SetParameters('10')
+        # self.SetCellEditor(0, 4, editor)
+        # self.SetCellValue(0, 4, "Limited text")
+        #
+        # renderer = gridlib.GridCellAutoWrapStringRenderer()
+        # self.SetCellRenderer(15,0, renderer)
+        # self.SetCellValue(15,0, "The text in this cell will be rendered with word-wrapping")
 
         # test all the events
         self.Bind(gridlib.EVT_GRID_CELL_LEFT_CLICK, self.OnCellLeftClick)
@@ -98,6 +105,30 @@ class OrderGrid(gridlib.Grid): ##, mixins.GridAutoEditMixin):
         self.Bind(gridlib.EVT_GRID_EDITOR_HIDDEN, self.OnEditorHidden)
         self.Bind(gridlib.EVT_GRID_EDITOR_CREATED, self.OnEditorCreated)
 
+    def ReCreate(self):
+        self.ClearGrid()
+        self.EnableEditing(False)
+
+        self.SetColLabelAlignment(wx.ALIGN_CENTRE, wx.ALIGN_CENTRE_VERTICAL)
+
+        self.SetRowLabelSize(50)
+        self.SetColLabelSize(25)
+
+        self.SetColLabelValue(0, "订单编号")
+        self.SetColLabelValue(1, "产品名称")
+        self.SetColLabelValue(2, "产品数量")
+        self.SetColLabelValue(3, "订单交货日期")
+        self.SetColLabelValue(4, "下单时间")
+        self.SetColLabelValue(5, "下单员")
+        self.SetColLabelValue(6, "订单状态")
+        for i, width in enumerate(self.master.colWidthList):
+            self.SetColSize(i, width)
+
+        for i, order in enumerate(self.master.orderArray):
+            self.SetRowSize(i, 25)
+            for j, item in enumerate(order):
+                self.SetCellAlignment(i, j, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE_VERTICAL)
+                self.SetCellValue(i, j, str(item))
 
     def OnCellLeftClick(self, evt):
         self.log.write("OnCellLeftClick: (%d,%d) %s\n" %
@@ -159,9 +190,8 @@ class OrderGrid(gridlib.Grid): ##, mixins.GridAutoEditMixin):
         else:
             msg = 'Deselected'
         self.log.write("OnRangeSelect: %s  top-left %s, bottom-right %s\n" %
-                           (msg, evt.GetTopLeftCoords(), evt.GetBottomRightCoords()))
+                       (msg, evt.GetTopLeftCoords(), evt.GetBottomRightCoords()))
         evt.Skip()
-
 
     def OnCellChange(self, evt):
         self.log.write("OnCellChange: (%d,%d) %s\n" %
@@ -176,14 +206,12 @@ class OrderGrid(gridlib.Grid): ##, mixins.GridAutoEditMixin):
         if value == 'no good':
             self.moveTo = evt.GetRow(), evt.GetCol()
 
-
     def OnIdle(self, evt):
         if self.moveTo is not None:
             self.SetGridCursor(self.moveTo[0], self.moveTo[1])
             self.moveTo = None
 
         evt.Skip()
-
 
     def OnSelectCell(self, evt):
         if evt.Selecting():
@@ -208,11 +236,10 @@ class OrderGrid(gridlib.Grid): ##, mixins.GridAutoEditMixin):
 
         evt.Skip()
 
-
     def OnEditorShown(self, evt):
         if evt.GetRow() == 6 and evt.GetCol() == 3 and \
-           wx.MessageBox("Are you sure you wish to edit this cell?",
-                        "Checking", wx.YES_NO) == wx.NO:
+                wx.MessageBox("Are you sure you wish to edit this cell?",
+                              "Checking", wx.YES_NO) == wx.NO:
             evt.Veto()
             return
 
@@ -220,18 +247,16 @@ class OrderGrid(gridlib.Grid): ##, mixins.GridAutoEditMixin):
                        (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
         evt.Skip()
 
-
     def OnEditorHidden(self, evt):
         if evt.GetRow() == 6 and evt.GetCol() == 3 and \
-           wx.MessageBox("Are you sure you wish to  finish editing this cell?",
-                        "Checking", wx.YES_NO) == wx.NO:
+                wx.MessageBox("Are you sure you wish to  finish editing this cell?",
+                              "Checking", wx.YES_NO) == wx.NO:
             evt.Veto()
             return
 
         self.log.write("OnEditorHidden: (%d,%d) %s\n" %
                        (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
         evt.Skip()
-
 
     def OnEditorCreated(self, evt):
         self.log.write("OnEditorCreated: (%d, %d) %s\n" %
@@ -243,14 +268,107 @@ class OrderManagementPanel(wx.Panel):
         wx.Panel.__init__(self, parent, -1)
         self.master = master
         self.log = log
-
+        self.colWidthList = [80, 80, 70, 90, 140, 90, 80]
+        _, orderList = GetAllOrderList(self.log, 1)
+        self.orderArray = np.array(orderList)
+        self.orderIDSearch=''
+        self.productNameSearch=''
         hbox = wx.BoxSizer()
-        self.leftPanel = wx.Panel(self,size=(700,-1))
-        hbox.Add(self.leftPanel,0,wx.EXPAND)
-        self.rightPanel = wx.Panel(self)
-        hbox.Add(self.rightPanel,1,wx.EXPAND)
+        self.leftPanel = wx.Panel(self, size=(700, -1))
+        hbox.Add(self.leftPanel, 0, wx.EXPAND)
+        self.rightPanel = wx.Panel(self, style=wx.BORDER_THEME)
+        hbox.Add(self.rightPanel, 1, wx.EXPAND)
         self.SetSizer(hbox)
-        vvbox = wx.BoxSizer()
-        self.orderGrid = OrderGrid(self.leftPanel, self.log)
-        vvbox.Add(self.orderGrid,0,wx.EXPAND)
+        vvbox = wx.BoxSizer(wx.VERTICAL)
+        self.orderGrid = OrderGrid(self.leftPanel, self, self.log)
+        vvbox.Add(self.orderGrid, 1, wx.EXPAND)
+        hhbox = wx.BoxSizer()
+        searchPanel = wx.Panel(self.leftPanel, size=(-1, 30), style=wx.BORDER_DOUBLE)
+        vvbox.Add(searchPanel, 0, wx.EXPAND)
+        hhbox = wx.BoxSizer()
+        self.searchResetBTN = wx.Button(searchPanel, label='Rest', size=(48, -1))
+        self.searchResetBTN.Bind(wx.EVT_BUTTON, self.OnResetSearchItem)
+        hhbox.Add(self.searchResetBTN, 0, wx.EXPAND)
+        self.orderIDSearchCtrl = wx.TextCtrl(searchPanel, size=(self.colWidthList[0], -1), style=wx.TE_PROCESS_ENTER )
+        self.orderIDSearchCtrl.Bind(wx.EVT_TEXT_ENTER, self.OnOrderIDSearch)
+        hhbox.Add(self.orderIDSearchCtrl, 0, wx.EXPAND)
+        self.productNameSearchCtrl = wx.ComboBox(searchPanel, choices=['A1', 'B0', 'B1', 'B5', 'B7'],
+                                                 size=(self.colWidthList[1], -1))
+        self.productNameSearchCtrl.Bind(wx.EVT_COMBOBOX, self.OnProductNameSearch)
+        hhbox.Add(self.productNameSearchCtrl, 0, wx.EXPAND)
+        self.productAmountSearchCtrl = wx.TextCtrl(searchPanel, size=(self.colWidthList[2], -1))
+        hhbox.Add(self.productAmountSearchCtrl, 0, wx.EXPAND)
+        self.deliverDateSearchCtrl = wx.TextCtrl(searchPanel, size=(self.colWidthList[3], -1))
+        hhbox.Add(self.deliverDateSearchCtrl, 0, wx.EXPAND)
+        self.orderDateSearchCtrl = wx.TextCtrl(searchPanel, size=(self.colWidthList[4], -1))
+        hhbox.Add(self.orderDateSearchCtrl, 0, wx.EXPAND)
+        self.operatorSearchCtrl = wx.ComboBox(searchPanel, choices=["180389"], size=(self.colWidthList[5], -1))
+        hhbox.Add(self.operatorSearchCtrl, 0, wx.EXPAND)
+        self.orderStateSearchCtrl = wx.ComboBox(searchPanel, choices=["接单","排产","下料","加工","打包","发货"], size=(self.colWidthList[6], -1))
+        self.orderStateSearchCtrl.Bind(wx.EVT_COMBOBOX, self.OnOrderStateSearch)
+        hhbox.Add(self.orderStateSearchCtrl, 0, wx.EXPAND)
+
+        # for i,width in enumerate(self.colWidthList):
+        #     if i==6:
+        #         width+=55
+        #     searchTXT = wx.TextCtrl(searchPanel, size=(width,-1))
+        #     hhbox.Add(searchTXT, 0, wx.EXPAND)
+        searchPanel.SetSizer(hhbox)
+        # self.filter = wx.SearchCtrl(self.leftPanel, size=(200,-1), style=wx.TE_PROCESS_ENTER)
+        # self.filter.ShowCancelButton(True)
+        # hhbox.Add((1,-1))
+        # hhbox.Add(self.filter,0)
+        # vvbox.Add(hhbox,0,wx.EXPAND)
         self.leftPanel.SetSizer(vvbox)
+        # self.filter.Bind(wx.EVT_TEXT, self.RecreateTree)
+        # self.filter.Bind(wx.EVT_SEARCHCTRL_CANCEL_BTN,
+        #                  lambda e: self.filter.SetValue(''))
+        # self.filter.Bind(wx.EVT_TEXT_ENTER, self.OnSearch)
+
+    def OnOrderStateSearch(self, event):
+        self.orderStateSearch = self.orderStateSearchCtrl.GetValue()
+        self.ReSearch()
+
+    def OnOrderIDSearch(self, event):
+        self.orderIDSearch = self.orderIDSearchCtrl.GetValue()
+        self.ReSearch()
+
+    def OnProductNameSearch(self, event):
+        self.productNameSearch=self.productNameSearchCtrl.GetValue()
+        self.ReSearch()
+
+    def ReSearch(self):
+        _, orderList = GetAllOrderList(self.log, 1)
+        self.orderArray = np.array(orderList)
+        if self.productNameSearch != '':
+            orderList = []
+            for order in self.orderArray:
+                if order[1] == self.productNameSearch:
+                    orderList.append(order)
+            self.orderArray = np.array(orderList)
+        if self.orderIDSearch != '':
+            orderList = []
+            for order in self.orderArray:
+                if str(order[0]) == self.orderIDSearch:
+                    orderList.append(order)
+            self.orderArray = np.array(orderList)
+        if self.orderStateSearch != '':
+            orderList = []
+            for order in self.orderArray:
+                if str(order[6]) == self.orderStateSearch:
+                    orderList.append(order)
+            self.orderArray = np.array(orderList)
+        self.orderGrid.ReCreate()
+
+    def OnResetSearchItem(self,event):
+        self.orderIDSearch=''
+        self.orderIDSearchCtrl.SetValue('')
+        self.productNameSearch= ''
+        self.productNameSearchCtrl.SetValue('')
+        self.productAmountSearchCtrl.SetValue('')
+        self.deliverDateSearchCtrl.SetValue('')
+        self.orderDateSearchCtrl.SetValue('')
+        self.operatorSearchCtrl.SetValue('')
+        self.orderStateSearch=''
+        self.orderStateSearchCtrl.SetValue('')
+        self.ReSearch()
