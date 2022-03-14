@@ -75,9 +75,7 @@ class FlatMenuFrame(wx.Frame):
         self.Layout()
         self.Thaw()
         # if not self.check_in_flag:
-        #     print(self.check_in_flag)
         #     self.mainPANEL.SetBackgroundColour(wx.Colour(255,255,255))
-        #     print(self.mainPANEL.GetClientSize())
 
     def CreateMenu(self):
         # Create the menubar

@@ -13,7 +13,7 @@ class OrderGrid(gridlib.Grid):  ##, mixins.GridAutoEditMixin):
 
         self.Bind(wx.EVT_IDLE, self.OnIdle)
 
-        self.CreateGrid(self.master.orderArray.shape[0], self.master.orderArray.shape[1])  # , gridlib.Grid.SelectRows)
+        self.CreateGrid(self.master.boardArray.shape[0], len(self.master.colLabelValueList))  # , gridlib.Grid.SelectRows)
         self.EnableEditing(False)
 
         self.SetColLabelAlignment(wx.ALIGN_CENTRE, wx.ALIGN_CENTRE_VERTICAL)
@@ -21,20 +21,15 @@ class OrderGrid(gridlib.Grid):  ##, mixins.GridAutoEditMixin):
         self.SetRowLabelSize(50)
         self.SetColLabelSize(25)
 
-        self.SetColLabelValue(0, "订单编号")
-        self.SetColLabelValue(1, "客户名称")
-        self.SetColLabelValue(2, "产品名称")
-        self.SetColLabelValue(3, "产品数量")
-        self.SetColLabelValue(4, "订单交货日期")
-        self.SetColLabelValue(5, "下单时间")
-        self.SetColLabelValue(6, "下单员")
-        self.SetColLabelValue(7, "订单状态")
+        for i, title in enumerate(self.master.colLabelValueList):
+            self.SetColLabelValue(i,title)
         for i, width in enumerate(self.master.colWidthList):
             self.SetColSize(i, width)
 
-        for i, order in enumerate(self.master.orderArray):
+        for i, order in enumerate(self.master.boardArray):
             self.SetRowSize(i, 25)
             for j, item in enumerate(order):
+                # self.SetCellBackgroundColour(i,j,wx.Colour(250, 250, 250))
                 self.SetCellAlignment(i, j, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE_VERTICAL)
                 self.SetCellValue(i, j, str(item))
 
@@ -115,18 +110,12 @@ class OrderGrid(gridlib.Grid):  ##, mixins.GridAutoEditMixin):
         self.SetRowLabelSize(50)
         self.SetColLabelSize(25)
 
-        self.SetColLabelValue(0, "订单编号")
-        self.SetColLabelValue(1, "客户名称")
-        self.SetColLabelValue(2, "产品名称")
-        self.SetColLabelValue(3, "产品数量")
-        self.SetColLabelValue(4, "订单交货日期")
-        self.SetColLabelValue(5, "下单时间")
-        self.SetColLabelValue(6, "下单员")
-        self.SetColLabelValue(7, "订单状态")
+        for i, title in enumerate(self.master.colLabelValueList):
+            self.SetColLabelValue(i,title)
         for i, width in enumerate(self.master.colWidthList):
             self.SetColSize(i, width)
 
-        for i, order in enumerate(self.master.orderArray):
+        for i, order in enumerate(self.master.boardArray):
             self.SetRowSize(i, 25)
             for j, item in enumerate(order):
                 self.SetCellAlignment(i, j, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE_VERTICAL)
@@ -264,15 +253,15 @@ class OrderGrid(gridlib.Grid):  ##, mixins.GridAutoEditMixin):
         self.log.write("OnEditorCreated: (%d, %d) %s\n" %
                        (evt.GetRow(), evt.GetCol(), evt.GetControl()))
 
-
 class OrderManagementPanel(wx.Panel):
     def __init__(self, parent, master, log):
         wx.Panel.__init__(self, parent, -1)
         self.master = master
         self.log = log
+        self.colLabelValueList = ["订单编号","客户名称","产品名称","产品数量","订单交货日期","下单时间","下单员","订单状态"]
         self.colWidthList = [70, 90,70, 60, 90, 100, 80, 70]
-        _, orderList = GetAllOrderList(self.log, 1)
-        self.orderArray = np.array(orderList)
+        _, boardList = GetAllOrderList(self.log, 1)
+        self.boardArray = np.array(boardList)
         self.orderIDSearch=''
         self.orderStateSearch=''
         self.productNameSearch=''
@@ -351,32 +340,31 @@ class OrderManagementPanel(wx.Panel):
 
     def ReSearch(self):
         _, orderList = GetAllOrderList(self.log, 1)
-        self.orderArray = np.array(orderList)
+        self.boardArray = np.array(orderList)
         if self.productNameSearch != '':
             orderList = []
-            for order in self.orderArray:
+            for order in self.boardArray:
                 if order[2] == self.productNameSearch:
                     orderList.append(order)
-            self.orderArray = np.array(orderList)
+            self.boardArray = np.array(orderList)
         if self.orderIDSearch != '':
-            print('here')
             orderList = []
-            for order in self.orderArray:
+            for order in self.boardArray:
                 if str(order[0]) == self.orderIDSearch:
                     orderList.append(order)
-            self.orderArray = np.array(orderList)
+            self.boardArray = np.array(orderList)
         if self.operatorSearch != '':
             orderList = []
-            for order in self.orderArray:
+            for order in self.boardArray:
                 if str(order[6]) == self.operatorSearch:
                     orderList.append(order)
-            self.orderArray = np.array(orderList)
+            self.boardArray = np.array(orderList)
         if self.orderStateSearch != '':
             orderList = []
-            for order in self.orderArray:
+            for order in self.boardArray:
                 if str(order[7]) == self.orderStateSearch:
                     orderList.append(order)
-            self.orderArray = np.array(orderList)
+            self.boardArray = np.array(orderList)
         self.orderGrid.ReCreate()
 
     def OnResetSearchItem(self,event):

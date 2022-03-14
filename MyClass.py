@@ -37,6 +37,7 @@ from wx.lib.agw.fmresources import FM_OPT_SHOW_CUSTOMIZE, FM_OPT_SHOW_TOOLBAR, F
 import datetime
 from SystemIntroductionPanel import SystemIntroductionPanel
 from OrderManagementPanel import OrderManagementPanel
+from BoardManagementPanel import BoardManagementPanel
 
 dirName = os.path.dirname(os.path.abspath(__file__))
 bitmapDir = os.path.join(dirName, 'bitmaps')
@@ -454,8 +455,8 @@ class WorkZonePanel(wx.Panel):
         self.systemIntroductionPanel = SystemIntroductionPanel(self.notebook)
         self.notebook.AddPage(self.systemIntroductionPanel,"系统介绍")
         if self.master.operatorCharacter in ["技术员","管理员"]:
-            self.boardManagmentPanel = wx.Panel(self.notebook)
-            self.notebook.AddPage(self.boardManagmentPanel, "板件管理")
+            self.boardManagmentPanel = BoardManagementPanel(self.notebook,self,self.log)
+            self.notebook.AddPage(self.boardManagmentPanel, "板材管理")
         if self.master.operatorCharacter in ["技术员","管理员","下单员"]:
             self.orderManagmentPanel = OrderManagementPanel(self.notebook,self.master, self.log)
             self.notebook.AddPage(self.orderManagmentPanel, "订单管理")
