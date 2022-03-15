@@ -1,10 +1,34 @@
 import wx
 import wx.grid as gridlib
-from DBOperation import GetAllBoardList, GetRGBWithRalID
+from DBOperation import GetAllBoardList, GetRGBWithRalID,GetAllColor
 from OrderManagementPanel import OrderGrid
 import numpy as np
 import images
+import wx.lib.scrolledpanel as scrolled
 
+
+text = "one two buckle my shoe three four shut the door five six pick up sticks seven eight lay them straight nine ten big fat hen"
+class ColorPalettePanel(scrolled.ScrolledPanel):
+    def __init__(self, parent, log):
+        scrolled.ScrolledPanel.__init__(self, parent, -1)
+        self.log = log
+        # self.ReCreate()
+
+    def ReCreate(self):
+        self.Freeze()
+        self.DestroyChildren()
+        _, colorList = GetAllColor(self.log, 1)
+        wsizer = wx.WrapSizer(orient=wx.VERTICAL)
+        for color in colorList:
+            btn = wx.Button(self, label=color[0], size=(70,30))
+            btn.SetBackgroundColour(wx.Colour(color[1],color[2],color[3]))
+            btn.SetForegroundColour(wx.Colour(255-color[1],255-color[2],255-color[3]))
+            btn.SetToolTip(color[4]+'('+color[5]+')')
+            wsizer.Add(btn, 0)
+        self.SetSizer(wsizer)
+        self.SetAutoLayout(1)
+        self.SetupScrolling()
+        self.Thaw()
 
 class PicShowPanel(wx.Panel):
     def __init__(self, parent,boardType,size):
@@ -33,13 +57,19 @@ class BoardGrid(OrderGrid):
 
     def Render(self):
         for i in range(self.GetNumberRows()):
-            self.SetCellBackgroundColour(i, 5, wx.Colour(255, 255, 255))
+            self.SetCellBackgroundColour(i, 6, wx.Colour(255, 255, 255))#清第6列（RAL色卡列）
+            self.SetCellBackgroundColour(i, 8, wx.Colour(255, 255, 255))#清第8列（编辑按钮列）
+
         for i, item in enumerate(self.master.boardArray):
-            RalID = item[4]
+            RalID = item[6]
             _, color = GetRGBWithRalID(self.log, 1, RalID)
-            self.SetCellBackgroundColour(i, 5, wx.Colour(color[0], color[1], color[2]))
-            self.SetCellAlignment(i, 6, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE_VERTICAL)
-            self.SetCellValue(i, 6, color[3])
+            self.SetCellBackgroundColour(i, 6, wx.Colour(color[0], color[1], color[2]))
+            self.SetCellTextColour(i, 6,wx.Colour( 255-color[0], 255-color[1], 255-color[2]))
+            self.SetCellAlignment(i, 7, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE_VERTICAL)
+            self.SetCellValue(i, 7, color[3])
+            self.SetCellBackgroundColour(i, 8, wx.Colour(240,240,240))
+            self.SetCellAlignment(i, 8, wx.ALIGN_CENTER, wx.ALIGN_CENTRE_VERTICAL)
+            self.SetCellValue(i, 8, '编辑')
 
 
 class SpecificBoardManagementPanel(wx.Panel):
@@ -48,22 +78,24 @@ class SpecificBoardManagementPanel(wx.Panel):
         self.master = master
         self.log = log
         self.boardType = boardType
-        self.colWidthList = [70, 70, 70, 70, 70, 80, 70]
-        self.colLabelValueList = ['板材', '规格', '材质', '密度', 'RAL色号', 'RAL色卡', '颜色名']
+        self.colWidthList = [50, 52, 51, 50, 110, 60, 70, 60, 40]
+        self.colLabelValueList = ['板材', '规格', '材质', '密度', '支持部件', '支持宽度', 'RAL色号', '颜色名','']
         _, orderList = GetAllBoardList(self.log, 1, self.boardType)
         self.boardArray = np.array(orderList)
         self.orderIDSearch = ''
         self.boardFormatSearch = ''
         self.boardMaterialSearch = ''
         self.boardDensitySearch = ''
+        self.boardSupportComponentSearch=''
+        self.boardSupportWidthSearch=''
         self.boardRALIDSearch = ''
         hbox = wx.BoxSizer()
-        self.leftPanel = wx.Panel(self, size=(570, -1))
+        self.leftPanel = wx.Panel(self, size=(610, -1))
         hbox.Add(self.leftPanel, 0, wx.EXPAND)
-        self.middlePanel = wx.Panel(self, size=(400,-1), style=wx.BORDER_THEME)
+        self.middlePanel = wx.Panel(self, size=(260,-1), style=wx.BORDER_THEME)
         hbox.Add(self.middlePanel, 0, wx.EXPAND)
-        self.rightPanel = wx.Panel(self)
-        hbox.Add(self.rightPanel, 1, wx.EXPAND)
+        self.colorPalettePanel = ColorPalettePanel(self, self.log)
+        hbox.Add(self.colorPalettePanel, 1, wx.EXPAND)
         self.SetSizer(hbox)
         vvbox = wx.BoxSizer(wx.VERTICAL)
         self.boardGrid = BoardGrid(self.leftPanel, self, self.log)
@@ -95,22 +127,49 @@ class SpecificBoardManagementPanel(wx.Panel):
         self.boardDensitySearchCtrl.Bind(wx.EVT_TEXT_ENTER, self.OnBoardDensitySearch)
         hhbox.Add(self.boardDensitySearchCtrl, 0, wx.EXPAND)
 
-        self.boardRALIDSearchCtrl = wx.TextCtrl(searchPanel, size=(self.colWidthList[4], -1), style=wx.TE_PROCESS_ENTER)
+        self.boardSupportComponentSearchCtrl = wx.TextCtrl(searchPanel, size=(self.colWidthList[4], -1),
+                                                 style=wx.TE_PROCESS_ENTER)
+        self.boardSupportComponentSearchCtrl.Bind(wx.EVT_TEXT_ENTER, self.OnBoardSupportComponentSearch)
+        hhbox.Add(self.boardSupportComponentSearchCtrl, 0, wx.EXPAND)
+
+        self.boardSupportWidthSearchCtrl = wx.TextCtrl(searchPanel, size=(self.colWidthList[5], -1),
+                                                 style=wx.TE_PROCESS_ENTER)
+        self.boardSupportWidthSearchCtrl.Bind(wx.EVT_TEXT_ENTER, self.OnBoardSupportWidthSearch)
+        hhbox.Add(self.boardSupportWidthSearchCtrl, 0, wx.EXPAND)
+
+        self.boardRALIDSearchCtrl = wx.TextCtrl(searchPanel, size=(self.colWidthList[6], -1), style=wx.TE_PROCESS_ENTER)
         self.boardRALIDSearchCtrl.Bind(wx.EVT_TEXT_ENTER, self.OnBoardRALIDSearch)
         hhbox.Add(self.boardRALIDSearchCtrl, 0, wx.EXPAND)
 
         self.newBoardBTN = wx.Button(searchPanel, label='新建%s板材' % self.boardType)
         self.newBoardBTN.SetBackgroundColour(wx.Colour(22, 211, 111))
+        self.newBoardBTN.Bind(wx.EVT_BUTTON, self.OnCreateNewBoard)
         hhbox.Add(self.newBoardBTN, 1, wx.EXPAND | wx.RIGHT | wx.LEFT, 1)
         searchPanel.SetSizer(hhbox)
         self.leftPanel.SetSizer(vvbox)
 
         vvbox = wx.BoxSizer(wx.VERTICAL)
         hhbox = wx.BoxSizer()
-        self.picPanel = PicShowPanel(self.middlePanel, self.boardType, size=(200,300))
-        hhbox.Add(self.picPanel,0,wx.ALL,2)
-        vvbox.Add(hhbox)
+        self.picPanel = PicShowPanel(self.middlePanel, self.boardType,size=(300,350))
+        hhbox.Add(self.picPanel,1)
+        vvbox.Add(hhbox,0,wx.EXPAND)
+        self.newBoardPanel=wx.Panel(self.middlePanel)
+        vvbox.Add(self.newBoardPanel,1,wx.EXPAND)
         self.middlePanel.SetSizer(vvbox)
+
+    def OnCreateNewBoard(self,event):
+        self.newBoardBTN.DestroyChildren()
+        hhbox = wx.BoxSizer()
+        self.finishNewBoardBTN = wx.Button(self.newBoardPanel)
+        self.finishNewBoardBTN.Bind(wx.EVT_BUTTON,self.OnFinishNewBoard)
+        hhbox.Add(self.finishNewBoardBTN,0)
+        self.newBoardPanel.SetSizer(hhbox)
+        self.newBoardPanel.Layout()
+        self.colorPalettePanel.ReCreate()
+
+    def OnFinishNewBoard(self,event):
+        self.colorPalettePanel.DestroyChildren()
+        self.newBoardPanel.DestroyChildren()
 
     def OnBoardDensitySearch(self, event):
         self.boardDensitySearch = self.boardDensitySearchCtrl.GetValue()
@@ -126,6 +185,14 @@ class SpecificBoardManagementPanel(wx.Panel):
 
     def OnBoardRALIDSearch(self, event):
         self.boardRALIDSearch = self.boardRALIDSearchCtrl.GetValue()
+        self.ReSearch()
+
+    def OnBoardSupportComponentSearch(self,event):
+        self.boardSupportComponentSearch = self.boardSupportComponentSearchCtrl.GetValue()
+        self.ReSearch()
+
+    def OnBoardSupportWidthSearch(self,event):
+        self.boardSupportWidthSearch = self.boardSupportWidthSearchCtrl.GetValue()
         self.ReSearch()
 
     def ReSearch(self):
@@ -144,17 +211,27 @@ class SpecificBoardManagementPanel(wx.Panel):
                     boardList.append(board)
             self.boardArray = np.array(boardList)
         if self.boardDensitySearch != '':
-            print(self.boardDensitySearch)
             boardList = []
             for board in self.boardArray:
                 if self.boardDensitySearch in str(board[3]):
                     boardList.append(board)
             self.boardArray = np.array(boardList)
-        if self.boardRALIDSearch != '':
-            print(self.boardRALIDSearch)
+        if self.boardSupportComponentSearch != '':
             boardList = []
             for board in self.boardArray:
-                if self.boardRALIDSearch in str(board[4]):
+                if self.boardSupportComponentSearch in str(board[4]):
+                    boardList.append(board)
+            self.boardArray = np.array(boardList)
+        if self.boardSupportWidthSearch != '':
+            boardList = []
+            for board in self.boardArray:
+                if self.boardSupportWidthSearch == str(board[5]):
+                    boardList.append(board)
+            self.boardArray = np.array(boardList)
+        if self.boardRALIDSearch != '':
+            boardList = []
+            for board in self.boardArray:
+                if self.boardRALIDSearch in str(board[6]):
                     boardList.append(board)
             self.boardArray = np.array(boardList)
         self.boardGrid.ReCreate()
@@ -168,6 +245,10 @@ class SpecificBoardManagementPanel(wx.Panel):
         self.boardDensitySearch = ''
         self.boardDensitySearchCtrl.SetValue('')
         self.boardRALIDSearch = ''
+        self.boardSupportComponentSearchCtrl.SetValue('')
+        self.boardSupportComponentSearch = ''
+        self.boardSupportWidthSearchCtrl.SetValue('')
+        self.boardSupportWidthSearch = ''
         self.boardRALIDSearchCtrl.SetValue('')
         self.ReSearch()
 

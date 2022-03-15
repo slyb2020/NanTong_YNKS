@@ -13,7 +13,7 @@ class OrderGrid(gridlib.Grid):  ##, mixins.GridAutoEditMixin):
 
         self.Bind(wx.EVT_IDLE, self.OnIdle)
 
-        self.CreateGrid(self.master.boardArray.shape[0], len(self.master.colLabelValueList))  # , gridlib.Grid.SelectRows)
+        self.CreateGrid(self.master.boardArray.shape[0]+30, len(self.master.colLabelValueList))  # , gridlib.Grid.SelectRows)
         self.EnableEditing(False)
 
         self.SetColLabelAlignment(wx.ALIGN_CENTRE, wx.ALIGN_CENTRE_VERTICAL)
