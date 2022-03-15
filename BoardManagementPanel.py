@@ -59,6 +59,7 @@ class BoardGrid(OrderGrid):
         for i in range(self.GetNumberRows()):
             self.SetCellBackgroundColour(i, 6, wx.Colour(255, 255, 255))#清第6列（RAL色卡列）
             self.SetCellBackgroundColour(i, 8, wx.Colour(255, 255, 255))#清第8列（编辑按钮列）
+            self.SetCellBackgroundColour(i, 9, wx.Colour(255, 255, 255))#清第9列（编辑按钮列）
 
         for i, item in enumerate(self.master.boardArray):
             RalID = item[6]
@@ -67,20 +68,27 @@ class BoardGrid(OrderGrid):
             self.SetCellTextColour(i, 6,wx.Colour( 255-color[0], 255-color[1], 255-color[2]))
             self.SetCellAlignment(i, 7, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE_VERTICAL)
             self.SetCellValue(i, 7, color[3])
-            self.SetCellBackgroundColour(i, 8, wx.Colour(240,240,240))
+            if item[7]=='在用':
+                self.SetCellBackgroundColour(i, 8, wx.Colour(240,240,240))
+            else:
+                self.SetCellBackgroundColour(i, 8, wx.RED)
             self.SetCellAlignment(i, 8, wx.ALIGN_CENTER, wx.ALIGN_CENTRE_VERTICAL)
-            self.SetCellValue(i, 8, '编辑')
+            self.SetCellValue(i, 8, item[7])
+            self.SetCellBackgroundColour(i, 9, wx.Colour(210,210,210))
+            self.SetCellAlignment(i, 9, wx.ALIGN_CENTER, wx.ALIGN_CENTRE_VERTICAL)
+            self.SetCellValue(i, 9, '编辑')
 
 
 class SpecificBoardManagementPanel(wx.Panel):
-    def __init__(self, parent, master, log, boardType):
+    def __init__(self, parent, master, log, boardType,state='在用'):
         wx.Panel.__init__(self, parent)
         self.master = master
         self.log = log
         self.boardType = boardType
-        self.colWidthList = [50, 52, 51, 50, 110, 60, 70, 60, 40]
-        self.colLabelValueList = ['板材', '规格', '材质', '密度', '支持部件', '支持宽度', 'RAL色号', '颜色名','']
-        _, orderList = GetAllBoardList(self.log, 1, self.boardType)
+        self.state = state
+        self.colWidthList = [50, 52, 51, 50, 110, 60, 70, 60, 40, 40]
+        self.colLabelValueList = ['板材', '规格', '材质', '密度', '支持部件', '支持宽度', 'RAL色号', '颜色名','状态','']
+        _, orderList = GetAllBoardList(self.log, 1, self.boardType,state=self.state)
         self.boardArray = np.array(orderList)
         self.orderIDSearch = ''
         self.boardFormatSearch = ''
@@ -90,7 +98,7 @@ class SpecificBoardManagementPanel(wx.Panel):
         self.boardSupportWidthSearch=''
         self.boardRALIDSearch = ''
         hbox = wx.BoxSizer()
-        self.leftPanel = wx.Panel(self, size=(610, -1))
+        self.leftPanel = wx.Panel(self, size=(650, -1))
         hbox.Add(self.leftPanel, 0, wx.EXPAND)
         self.middlePanel = wx.Panel(self, size=(260,-1), style=wx.BORDER_THEME)
         hbox.Add(self.middlePanel, 0, wx.EXPAND)
@@ -145,31 +153,148 @@ class SpecificBoardManagementPanel(wx.Panel):
         self.newBoardBTN.SetBackgroundColour(wx.Colour(22, 211, 111))
         self.newBoardBTN.Bind(wx.EVT_BUTTON, self.OnCreateNewBoard)
         hhbox.Add(self.newBoardBTN, 1, wx.EXPAND | wx.RIGHT | wx.LEFT, 1)
+
+        self.changeStateBTN = wx.Button(searchPanel, size=(15,-1))
+        self.changeStateBTN.Bind(wx.EVT_BUTTON, self.OnChangeState)
+        if self.state == '在用':
+            self.changeStateBTN.SetBackgroundColour(wx.GREEN)
+        else:
+            self.changeStateBTN.SetBackgroundColour(wx.RED)
+        hhbox.Add(self.changeStateBTN,0,wx.EXPAND)
+        # self.newBoardBTN.SetBackgroundColour(wx.Colour(22, 211, 111))
+        # self.newBoardBTN.Bind(wx.EVT_BUTTON, self.OnCreateNewBoard)
+        # hhbox.Add(self.newBoardBTN, 1, wx.EXPAND | wx.RIGHT | wx.LEFT, 1)
         searchPanel.SetSizer(hhbox)
         self.leftPanel.SetSizer(vvbox)
 
         vvbox = wx.BoxSizer(wx.VERTICAL)
-        hhbox = wx.BoxSizer()
-        self.picPanel = PicShowPanel(self.middlePanel, self.boardType,size=(300,350))
-        hhbox.Add(self.picPanel,1)
-        vvbox.Add(hhbox,0,wx.EXPAND)
-        self.newBoardPanel=wx.Panel(self.middlePanel)
-        vvbox.Add(self.newBoardPanel,1,wx.EXPAND)
+        self.picPanel = PicShowPanel(self.middlePanel, self.boardType,size=(300,200))
+        vvbox.Add(self.picPanel,1,wx.EXPAND)
+        self.editBoardPanel=wx.Panel(self.middlePanel,size=(300,290))
+        vvbox.Add(self.editBoardPanel, 0, wx.EXPAND)
         self.middlePanel.SetSizer(vvbox)
 
-    def OnCreateNewBoard(self,event):
-        self.newBoardBTN.DestroyChildren()
+    def ReCreateEditBoardPanel(self,type, state='新建'):
+        self.editBoardPanel.Freeze()
+        self.editBoardPanel.DestroyChildren()
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        frame = wx.StaticBox(self.editBoardPanel, label="%s板材"%state,size=(200,200))
+        vbox.Add(frame,1,wx.EXPAND|wx.ALL,5)
+        self.editBoardPanel.SetSizer(vbox)
+        vvbox = wx.BoxSizer(wx.VERTICAL)
+        vvbox.Add((-1,20))
         hhbox = wx.BoxSizer()
-        self.finishNewBoardBTN = wx.Button(self.newBoardPanel)
-        self.finishNewBoardBTN.Bind(wx.EVT_BUTTON,self.OnFinishNewBoard)
-        hhbox.Add(self.finishNewBoardBTN,0)
-        self.newBoardPanel.SetSizer(hhbox)
-        self.newBoardPanel.Layout()
+        label = wx.StaticText(frame, label="板材类型：", size=(70,-1))
+        self.editBoardTypeCombo = wx.ComboBox(frame,choices=["PVC",'不锈钢'],size=(130,-1))
+        hhbox.Add((20,-1))
+        hhbox.Add(label,0,wx.TOP,5)
+        hhbox.Add(self.editBoardTypeCombo,1,wx.RIGHT,5)
+        vvbox.Add(hhbox)
+
+        vvbox.Add((-1,5))
+        hhbox = wx.BoxSizer()
+        label = wx.StaticText(frame, label="板材规格：", size=(70,-1))
+        self.editBoardFormatTXT = wx.TextCtrl(frame,size=(130,-1))
+        hhbox.Add((20,-1))
+        hhbox.Add(label,0,wx.TOP,5)
+        hhbox.Add(self.editBoardFormatTXT,1,wx.RIGHT,5)
+        vvbox.Add(hhbox)
+
+        vvbox.Add((-1,5))
+        hhbox = wx.BoxSizer()
+        label = wx.StaticText(frame, label="板材材质：", size=(70,-1))
+        self.editBoardMaterialTXT = wx.TextCtrl(frame,size=(130,-1))
+        hhbox.Add((20,-1))
+        hhbox.Add(label,0,wx.TOP,5)
+        hhbox.Add(self.editBoardMaterialTXT,1,wx.RIGHT,5)
+        vvbox.Add(hhbox)
+
+        vvbox.Add((-1,5))
+        hhbox = wx.BoxSizer()
+        label = wx.StaticText(frame, label="板材密度：", size=(70,-1))
+        self.editBoardDensityTXT = wx.TextCtrl(frame,size=(130,-1))
+        hhbox.Add((20,-1))
+        hhbox.Add(label,0,wx.TOP,5)
+        hhbox.Add(self.editBoardDensityTXT,1,wx.RIGHT,5)
+        vvbox.Add(hhbox)
+
+        vvbox.Add((-1,5))
+        hhbox = wx.BoxSizer()
+        label = wx.StaticText(frame, label="支持组件：", size=(70,-1))
+        self.editBoardSupportComponentTXT = wx.ComboBox(frame,choices=["墙板",'天花板','构件'], size=(130,-1))
+        hhbox.Add((20,-1))
+        hhbox.Add(label,0,wx.TOP,5)
+        hhbox.Add(self.editBoardSupportComponentTXT,1,wx.RIGHT,5)
+        vvbox.Add(hhbox)
+
+        vvbox.Add((-1,5))
+        hhbox = wx.BoxSizer()
+        label = wx.StaticText(frame, label="支持宽度：", size=(70,-1))
+        self.editBoardSupportWidthTXT = wx.TextCtrl(frame, size=(130,-1))
+        hhbox.Add((20,-1))
+        hhbox.Add(label,0,wx.TOP,5)
+        hhbox.Add(self.editBoardSupportWidthTXT,1,wx.RIGHT,5)
+        vvbox.Add(hhbox)
+
+        vvbox.Add((-1,5))
+        hhbox = wx.BoxSizer()
+        label = wx.StaticText(frame, label="颜色：", size=(40,-1))
+        self.editBoardSelectColorBTN = wx.Button(frame, size=(80,26))
+        hhbox.Add((20,-1))
+        hhbox.Add(label,0,wx.TOP,5)
+        hhbox.Add(self.editBoardSelectColorBTN,0,wx.RIGHT,5)
+        self.editBoardStateCombo = wx.ComboBox(frame,choices=["在用","停用"],size=(75,25))
+        hhbox.Add(self.editBoardStateCombo,0,wx.RIGHT,5)
+        vvbox.Add(hhbox)
+        vvbox.Add(wx.StaticLine(frame,size=(100,-1), style=wx.HORIZONTAL), 0,wx.EXPAND|wx.TOP|wx.BOTTOM,5)
+
+        self.editBoardOkButton = wx.Button(frame, label="确定", size=(100,30))
+        self.editBoardOkButton.Bind(wx.EVT_BUTTON, self.OnEditBoardOkButton)
+        self.editBoardCancelButton = wx.Button(frame, label="取消", size=(100,30))
+        hhbox = wx.BoxSizer()
+        hhbox.Add((10,-1))
+        hhbox.Add(self.editBoardOkButton)
+        hhbox.Add((20,-1))
+        hhbox.Add(self.editBoardCancelButton)
+        vvbox.Add(hhbox,0,wx.EXPAND)
+
+        frame.SetSizer(vvbox)
+        self.editBoardPanel.Layout()
         self.colorPalettePanel.ReCreate()
+        self.editBoardPanel.Thaw()
+
+
+    def OnEditBoardOkButton(self,event):
+        self.editBoardPanel.DestroyChildren()
+
+    def OnChangeState(self,event):
+        if self.state == '在用':
+            self.state = '停用'
+            self.changeStateBTN.SetBackgroundColour(wx.RED)
+        elif self.state == '停用':
+            self.state = '全部'
+            self.changeStateBTN.SetBackgroundColour(wx.YELLOW)
+        else:
+            self.state = '在用'
+            self.changeStateBTN.SetBackgroundColour(wx.GREEN)
+        _, orderList = GetAllBoardList(self.log, 1, self.boardType,state=self.state)
+        self.boardArray = np.array(orderList)
+        self.boardGrid.ReCreate()
+        self.boardGrid.Render()
+
+    def OnCreateNewBoard(self,event):
+        self.ReCreateEditBoardPanel(self.boardType)
+        # hhbox = wx.BoxSizer()
+        # self.finishNewBoardBTN = wx.Button(self.editBoardPanel)
+        # self.finishNewBoardBTN.Bind(wx.EVT_BUTTON,self.OnFinishNewBoard)
+        # hhbox.Add(self.finishNewBoardBTN,0)
+        # self.editBoardPanel.SetSizer(hhbox)
+        # self.editBoardPanel.Layout()
+        # self.colorPalettePanel.ReCreate()
 
     def OnFinishNewBoard(self,event):
         self.colorPalettePanel.DestroyChildren()
-        self.newBoardPanel.DestroyChildren()
+        self.editBoardPanel.DestroyChildren()
 
     def OnBoardDensitySearch(self, event):
         self.boardDensitySearch = self.boardDensitySearchCtrl.GetValue()
@@ -196,7 +321,7 @@ class SpecificBoardManagementPanel(wx.Panel):
         self.ReSearch()
 
     def ReSearch(self):
-        _, boardList = GetAllBoardList(self.log, 1, self.boardType)
+        _, boardList = GetAllBoardList(self.log, 1, self.boardType, state=self.state)
         self.boardArray = np.array(boardList)
         if self.boardFormatSearch != '':
             boardList = []

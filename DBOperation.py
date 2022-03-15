@@ -75,7 +75,7 @@ def GetAllOrderList(log, whichDB):
     db.close()
     return 0, temp
 
-def GetAllBoardList(log, whichDB,whichBoard):
+def GetAllBoardList(log, whichDB,whichBoard,state='在用'):
     try:
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % dbName[whichDB], charset='utf8')
@@ -85,7 +85,12 @@ def GetAllBoardList(log, whichDB,whichBoard):
             log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
         return -1, []
     cursor = db.cursor()
-    sql = """SELECT `板材`,`规格`,`材质`,`密度`,`支持部件`,`支持宽度`,`颜色` from `板材型号表单` where `板材`='%s'"""%whichBoard
+    if state=='全部':
+        sql = """SELECT `板材`,`规格`,`材质`,`密度`,`支持部件`,`支持宽度`,`颜色`,`状态` from `板材型号表单` 
+                    where `板材`='%s'""" % (whichBoard)
+    else:
+        sql = """SELECT `板材`,`规格`,`材质`,`密度`,`支持部件`,`支持宽度`,`颜色`,`状态` from `板材型号表单` 
+                    where `板材`='%s' and `状态`='%s'"""%(whichBoard,state)
     cursor.execute(sql)
     temp = cursor.fetchall()  # 获得压条信息
     db.close()
@@ -117,7 +122,7 @@ def GetAllColor(log,whichDB):
             log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
         return -1, []
     cursor = db.cursor()
-    sql = """SELECT `RAL代码`,`R`,`G`,`B`,`颜色名`,`颜色别名`,`使用频度` from `ral标准色卡` """
+    sql = """SELECT `RAL代码`,`R`,`G`,`B`,`颜色名`,`颜色别名` from `ral标准色卡` """
     cursor.execute(sql)
     temp = cursor.fetchall()  # 获得压条信息
     db.close()
