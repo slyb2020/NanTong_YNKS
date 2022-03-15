@@ -85,7 +85,7 @@ def GetAllBoardList(log, whichDB,whichBoard):
             log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
         return -1, []
     cursor = db.cursor()
-    sql = """SELECT `板材`,`规格`,`材质`,`颜色` from `板材型号表单` where `板材`='%s'"""%whichBoard
+    sql = """SELECT `板材`,`规格`,`材质`,`密度`,`颜色` from `板材型号表单` where `板材`='%s'"""%whichBoard
     cursor.execute(sql)
     temp = cursor.fetchall()  # 获得压条信息
     db.close()
