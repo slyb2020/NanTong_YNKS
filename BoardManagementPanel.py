@@ -20,7 +20,7 @@ class ColorPalettePanel(scrolled.ScrolledPanel):
         _, colorList = GetAllColor(self.log, 1)
         wsizer = wx.WrapSizer(orient=wx.VERTICAL)
         for color in colorList:
-            btn = wx.Button(self, label=color[0], size=(70,30))
+            btn = wx.Button(self, label=color[0], size=(70,30),name=str(color[1:4]))
             btn.SetBackgroundColour(wx.Colour(color[1],color[2],color[3]))
             btn.SetForegroundColour(wx.Colour(255-color[1],255-color[2],255-color[3]))
             btn.SetToolTip(color[4]+'('+color[5]+')')
@@ -78,7 +78,6 @@ class BoardGrid(OrderGrid):
             self.SetCellAlignment(i, 9, wx.ALIGN_CENTER, wx.ALIGN_CENTRE_VERTICAL)
             self.SetCellValue(i, 9, '编辑')
 
-
 class SpecificBoardManagementPanel(wx.Panel):
     def __init__(self, parent, master, log, boardType,state='在用'):
         wx.Panel.__init__(self, parent)
@@ -97,6 +96,7 @@ class SpecificBoardManagementPanel(wx.Panel):
         self.boardSupportComponentSearch=''
         self.boardSupportWidthSearch=''
         self.boardRALIDSearch = ''
+        self.editBoardPanelOccupied = False
         hbox = wx.BoxSizer()
         self.leftPanel = wx.Panel(self, size=(650, -1))
         hbox.Add(self.leftPanel, 0, wx.EXPAND)
@@ -173,6 +173,18 @@ class SpecificBoardManagementPanel(wx.Panel):
         self.editBoardPanel=wx.Panel(self.middlePanel,size=(300,290))
         vvbox.Add(self.editBoardPanel, 0, wx.EXPAND)
         self.middlePanel.SetSizer(vvbox)
+        self.Bind(gridlib.EVT_GRID_CELL_LEFT_DCLICK, self.OnCellLeftDClick)
+
+    def OnCellLeftDClick(self, evt):
+        row = evt.GetRow()
+        col = evt.GetCol()
+        if col == 9:
+            if self.editBoardPanelOccupied == False:
+                self.editBoardPanelOccupied=True
+                self.ReCreateEditBoardPanel(self.boardType,state='编辑')
+            else:
+                wx.MessageBox("请先结束当前编辑工作后，再进行新的编辑操作！","信息提示")
+        # evt.Skip()
 
     def ReCreateEditBoardPanel(self,type, state='新建'):
         self.editBoardPanel.Freeze()
@@ -186,6 +198,8 @@ class SpecificBoardManagementPanel(wx.Panel):
         hhbox = wx.BoxSizer()
         label = wx.StaticText(frame, label="板材类型：", size=(70,-1))
         self.editBoardTypeCombo = wx.ComboBox(frame,choices=["PVC",'不锈钢'],size=(130,-1))
+        self.editBoardTypeCombo.SetValue(self.boardType)
+        self.editBoardTypeCombo.Enable(False)
         hhbox.Add((20,-1))
         hhbox.Add(label,0,wx.TOP,5)
         hhbox.Add(self.editBoardTypeCombo,1,wx.RIGHT,5)
@@ -220,11 +234,15 @@ class SpecificBoardManagementPanel(wx.Panel):
 
         vvbox.Add((-1,5))
         hhbox = wx.BoxSizer()
-        label = wx.StaticText(frame, label="支持组件：", size=(70,-1))
-        self.editBoardSupportComponentTXT = wx.ComboBox(frame,choices=["墙板",'天花板','构件'], size=(130,-1))
+        label = wx.StaticText(frame, label="支持组件：", size=(60,-1))
+        self.editBoardSupportWallCHeck = wx.CheckBox(frame,label="墙板")
+        self.editBoardSupportCeilingCHeck = wx.CheckBox(frame,label="天花板")
+        self.editBoardSupportConnecterCHeck = wx.CheckBox(frame,label="构件")
         hhbox.Add((20,-1))
         hhbox.Add(label,0,wx.TOP,5)
-        hhbox.Add(self.editBoardSupportComponentTXT,1,wx.RIGHT,5)
+        hhbox.Add(self.editBoardSupportWallCHeck, 1, wx.TOP,5)
+        hhbox.Add(self.editBoardSupportCeilingCHeck, 1, wx.TOP,5)
+        hhbox.Add(self.editBoardSupportConnecterCHeck, 1, wx.TOP,5)
         vvbox.Add(hhbox)
 
         vvbox.Add((-1,5))
@@ -240,10 +258,14 @@ class SpecificBoardManagementPanel(wx.Panel):
         hhbox = wx.BoxSizer()
         label = wx.StaticText(frame, label="颜色：", size=(40,-1))
         self.editBoardSelectColorBTN = wx.Button(frame, size=(80,26))
+        self.editBoardSelectColorBTN.Bind(wx.EVT_BUTTON, self.OnSelectColorBTN)
         hhbox.Add((20,-1))
         hhbox.Add(label,0,wx.TOP,5)
         hhbox.Add(self.editBoardSelectColorBTN,0,wx.RIGHT,5)
         self.editBoardStateCombo = wx.ComboBox(frame,choices=["在用","停用"],size=(75,25))
+        self.editBoardStateCombo.SetValue("在用")
+        if state=='新建':
+            self.editBoardStateCombo.Enable(False)
         hhbox.Add(self.editBoardStateCombo,0,wx.RIGHT,5)
         vvbox.Add(hhbox)
         vvbox.Add(wx.StaticLine(frame,size=(100,-1), style=wx.HORIZONTAL), 0,wx.EXPAND|wx.TOP|wx.BOTTOM,5)
@@ -251,21 +273,45 @@ class SpecificBoardManagementPanel(wx.Panel):
         self.editBoardOkButton = wx.Button(frame, label="确定", size=(100,30))
         self.editBoardOkButton.Bind(wx.EVT_BUTTON, self.OnEditBoardOkButton)
         self.editBoardCancelButton = wx.Button(frame, label="取消", size=(100,30))
+        self.editBoardCancelButton.Bind(wx.EVT_BUTTON, self.OnEditBoardCancelButton)
         hhbox = wx.BoxSizer()
         hhbox.Add((10,-1))
         hhbox.Add(self.editBoardOkButton)
         hhbox.Add((20,-1))
         hhbox.Add(self.editBoardCancelButton)
+        vvbox.Add((-1,3))
         vvbox.Add(hhbox,0,wx.EXPAND)
 
         frame.SetSizer(vvbox)
         self.editBoardPanel.Layout()
-        self.colorPalettePanel.ReCreate()
+        # self.colorPalettePanel.ReCreate()
         self.editBoardPanel.Thaw()
 
+    def OnSelectColorBTN(self, event):
+        self.colorPalettePanel.ReCreate()
+        self.colorPalettePanel.Bind(wx.EVT_BUTTON, self.OnColorBTN)
+
+    def OnColorBTN(self, event):
+        obj = event.GetEventObject()
+        ralCode = obj.GetLabel()
+        color = eval(obj.GetName())
+        self.editBoardSelectColorBTN.SetBackgroundColour(wx.Colour(color))
+        self.editBoardSelectColorBTN.SetForegroundColour(wx.Colour(255-color[0],255-color[1],255-color[2]))
+        self.editBoardSelectColorBTN.SetLabel(ralCode)
+
+
+    def OnEditBoardCancelButton(self,event):
+        dlg = wx.MessageDialog(self,"取消操作将导致之前的输入工作全部作废，您是否确认？",'信息提示',style=wx.YES_NO)
+        if dlg.ShowModal() == wx.ID_YES:
+            self.editBoardPanel.DestroyChildren()
+            self.colorPalettePanel.DestroyChildren()
+            self.editBoardPanelOccupied = False
+        dlg.Destroy()
 
     def OnEditBoardOkButton(self,event):
         self.editBoardPanel.DestroyChildren()
+        self.colorPalettePanel.DestroyChildren()
+        self.editBoardPanelOccupied = False
 
     def OnChangeState(self,event):
         if self.state == '在用':
@@ -283,7 +329,11 @@ class SpecificBoardManagementPanel(wx.Panel):
         self.boardGrid.Render()
 
     def OnCreateNewBoard(self,event):
-        self.ReCreateEditBoardPanel(self.boardType)
+        if self.editBoardPanelOccupied == False:
+            self.editBoardPanelOccupied = True
+            self.ReCreateEditBoardPanel(self.boardType)
+        else:
+            wx.MessageBox("请先结束当前编辑工作后，再进行新的编辑操作！", "信息提示")
         # hhbox = wx.BoxSizer()
         # self.finishNewBoardBTN = wx.Button(self.editBoardPanel)
         # self.finishNewBoardBTN.Bind(wx.EVT_BUTTON,self.OnFinishNewBoard)
@@ -292,9 +342,10 @@ class SpecificBoardManagementPanel(wx.Panel):
         # self.editBoardPanel.Layout()
         # self.colorPalettePanel.ReCreate()
 
-    def OnFinishNewBoard(self,event):
-        self.colorPalettePanel.DestroyChildren()
-        self.editBoardPanel.DestroyChildren()
+    # def OnFinishNewBoard(self,event):
+    #     self.colorPalettePanel.DestroyChildren()
+    #     self.editBoardPanel.DestroyChildren()
+    #     self.editBoardPanelOccupied = False
 
     def OnBoardDensitySearch(self, event):
         self.boardDensitySearch = self.boardDensitySearchCtrl.GetValue()
