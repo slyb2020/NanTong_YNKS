@@ -1,11 +1,259 @@
 import wx
 import wx.grid as gridlib
-from DBOperation import GetAllBoardList, GetRGBWithRalID,GetAllColor
-from OrderManagementPanel import OrderGrid
+from DBOperation import GetAllBluPrintList, GetRGBWithRalID,GetAllColor
+import wx.grid as gridlib
 import numpy as np
 import images
 import wx.lib.scrolledpanel as scrolled
 
+class BluePrintGrid(gridlib.Grid):  ##, mixins.GridAutoEditMixin):
+    def __init__(self, parent, master, log):
+        gridlib.Grid.__init__(self, parent, -1)
+        self.log = log
+        self.master = master
+        self.moveTo = None
+
+        self.Bind(wx.EVT_IDLE, self.OnIdle)
+
+        self.CreateGrid(self.master.dataArray.shape[0]+30, len(self.master.colLabelValueList))  # , gridlib.Grid.SelectRows)
+        self.EnableEditing(False)
+
+        self.SetColLabelAlignment(wx.ALIGN_CENTRE, wx.ALIGN_CENTRE_VERTICAL)
+
+        self.SetRowLabelSize(50)
+        self.SetColLabelSize(25)
+
+        for i, title in enumerate(self.master.colLabelValueList):
+            self.SetColLabelValue(i,title)
+        for i, width in enumerate(self.master.colWidthList):
+            self.SetColSize(i, width)
+        print("data=",self.master.dataArray)
+        for i, order in enumerate(self.master.dataArray):
+            self.SetRowSize(i, 25)
+            for j, item in enumerate(order):
+                # self.SetCellBackgroundColour(i,j,wx.Colour(250, 250, 250))
+                self.SetCellAlignment(i, j, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE_VERTICAL)
+                self.SetCellValue(i, j, str(item))
+
+        # self.SetCellValue(2, 2, "Yet another cell")
+        # self.SetCellValue(3, 3, "This cell is read-only")
+        # self.SetCellFont(0, 0, wx.Font(12, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_ITALIC, wx.FONTWEIGHT_NORMAL))
+        # self.SetCellTextColour(1, 1, wx.RED)
+        # self.SetCellBackgroundColour(2, 2, wx.CYAN)
+        # self.SetReadOnly(3, 3, True)
+
+        # self.SetCellEditor(5, 0, gridlib.GridCellNumberEditor(1,1000))
+        # self.SetCellValue(5, 0, "123")
+        # self.SetCellEditor(6, 0, gridlib.GridCellFloatEditor())
+        # self.SetCellValue(6, 0, "123.34")
+        # self.SetCellEditor(7, 0, gridlib.GridCellNumberEditor())
+        #
+        # self.SetCellValue(6, 3, "You can veto editing this cell")
+
+        # attribute objects let you keep a set of formatting values
+        # in one spot, and reuse them if needed
+        # attr = gridlib.GridCellAttr()
+        # attr.SetTextColour(wx.BLACK)
+        # attr.SetBackgroundColour(wx.RED)
+        # attr.SetFont(wx.Font(10, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
+        #
+        # # you can set cell attributes for the whole row (or column)
+        # self.SetRowAttr(5, attr)
+
+        # self.SetDefaultCellOverflow(False)
+        # r = gridlib.GridCellAutoWrapStringRenderer()
+        # self.SetCellRenderer(9, 1, r)
+
+        # overflow cells
+        # self.SetCellValue( 9, 1, "This default cell will overflow into neighboring cells, but not if you turn overflow off.");
+        # self.SetCellSize(11, 1, 3, 3);
+        # self.SetCellAlignment(11, 1, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE);
+        # self.SetCellValue(11, 1, "This cell is set to span 3 rows and 3 columns");
+
+        # editor = gridlib.GridCellTextEditor()
+        # editor.SetParameters('10')
+        # self.SetCellEditor(0, 4, editor)
+        # self.SetCellValue(0, 4, "Limited text")
+        #
+        # renderer = gridlib.GridCellAutoWrapStringRenderer()
+        # self.SetCellRenderer(15,0, renderer)
+        # self.SetCellValue(15,0, "The text in this cell will be rendered with word-wrapping")
+
+        # test all the events
+        self.Bind(gridlib.EVT_GRID_CELL_LEFT_CLICK, self.OnCellLeftClick)
+        self.Bind(gridlib.EVT_GRID_CELL_RIGHT_CLICK, self.OnCellRightClick)
+        self.Bind(gridlib.EVT_GRID_CELL_LEFT_DCLICK, self.OnCellLeftDClick)
+        self.Bind(gridlib.EVT_GRID_CELL_RIGHT_DCLICK, self.OnCellRightDClick)
+
+        self.Bind(gridlib.EVT_GRID_LABEL_LEFT_CLICK, self.OnLabelLeftClick)
+        self.Bind(gridlib.EVT_GRID_LABEL_RIGHT_CLICK, self.OnLabelRightClick)
+        self.Bind(gridlib.EVT_GRID_LABEL_LEFT_DCLICK, self.OnLabelLeftDClick)
+        self.Bind(gridlib.EVT_GRID_LABEL_RIGHT_DCLICK, self.OnLabelRightDClick)
+
+        self.Bind(gridlib.EVT_GRID_COL_SORT, self.OnGridColSort)
+
+        self.Bind(gridlib.EVT_GRID_ROW_SIZE, self.OnRowSize)
+        self.Bind(gridlib.EVT_GRID_COL_SIZE, self.OnColSize)
+
+        self.Bind(gridlib.EVT_GRID_RANGE_SELECT, self.OnRangeSelect)
+        self.Bind(gridlib.EVT_GRID_CELL_CHANGED, self.OnCellChange)
+        self.Bind(gridlib.EVT_GRID_SELECT_CELL, self.OnSelectCell)
+
+        self.Bind(gridlib.EVT_GRID_EDITOR_SHOWN, self.OnEditorShown)
+        self.Bind(gridlib.EVT_GRID_EDITOR_HIDDEN, self.OnEditorHidden)
+        self.Bind(gridlib.EVT_GRID_EDITOR_CREATED, self.OnEditorCreated)
+
+    def ReCreate(self):
+        self.ClearGrid()
+        self.EnableEditing(False)
+
+        self.SetColLabelAlignment(wx.ALIGN_CENTRE, wx.ALIGN_CENTRE_VERTICAL)
+
+        self.SetRowLabelSize(50)
+        self.SetColLabelSize(25)
+
+        for i, title in enumerate(self.master.colLabelValueList):
+            self.SetColLabelValue(i,title)
+        for i, width in enumerate(self.master.colWidthList):
+            self.SetColSize(i, width)
+
+        for i, order in enumerate(self.master.boardArray):
+            self.SetRowSize(i, 25)
+            for j, item in enumerate(order):
+                self.SetCellAlignment(i, j, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE_VERTICAL)
+                self.SetCellValue(i, j, str(item))
+
+    def OnCellLeftClick(self, evt):
+        self.log.write("OnCellLeftClick: (%d,%d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+        evt.Skip()
+
+    def OnCellRightClick(self, evt):
+        self.log.write("OnCellRightClick: (%d,%d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+        evt.Skip()
+
+    def OnCellLeftDClick(self, evt):
+        self.log.write("OnCellLeftDClick: (%d,%d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+        evt.Skip()
+
+    def OnCellRightDClick(self, evt):
+        self.log.write("OnCellRightDClick: (%d,%d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+        evt.Skip()
+
+    def OnLabelLeftClick(self, evt):
+        self.log.write("OnLabelLeftClick: (%d,%d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+        evt.Skip()
+
+    def OnLabelRightClick(self, evt):
+        self.log.write("OnLabelRightClick: (%d,%d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+        evt.Skip()
+
+    def OnLabelLeftDClick(self, evt):
+        self.log.write("OnLabelLeftDClick: (%d,%d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+        evt.Skip()
+
+    def OnLabelRightDClick(self, evt):
+        self.log.write("OnLabelRightDClick: (%d,%d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+        evt.Skip()
+
+    def OnGridColSort(self, evt):
+        self.log.write("OnGridColSort: %s %s" % (evt.GetCol(), self.GetSortingColumn()))
+        self.SetSortingColumn(evt.GetCol())
+
+    def OnRowSize(self, evt):
+        self.log.write("OnRowSize: row %d, %s\n" %
+                       (evt.GetRowOrCol(), evt.GetPosition()))
+        evt.Skip()
+
+    def OnColSize(self, evt):
+        self.log.write("OnColSize: col %d, %s\n" %
+                       (evt.GetRowOrCol(), evt.GetPosition()))
+        evt.Skip()
+
+    def OnRangeSelect(self, evt):
+        if evt.Selecting():
+            msg = 'Selected'
+        else:
+            msg = 'Deselected'
+        self.log.write("OnRangeSelect: %s  top-left %s, bottom-right %s\n" %
+                       (msg, evt.GetTopLeftCoords(), evt.GetBottomRightCoords()))
+        evt.Skip()
+
+    def OnCellChange(self, evt):
+        self.log.write("OnCellChange: (%d,%d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+
+        # Show how to stay in a cell that has bad data.  We can't just
+        # call SetGridCursor here since we are nested inside one so it
+        # won't have any effect.  Instead, set coordinates to move to in
+        # idle time.
+        value = self.GetCellValue(evt.GetRow(), evt.GetCol())
+
+        if value == 'no good':
+            self.moveTo = evt.GetRow(), evt.GetCol()
+
+    def OnIdle(self, evt):
+        if self.moveTo is not None:
+            self.SetGridCursor(self.moveTo[0], self.moveTo[1])
+            self.moveTo = None
+
+        evt.Skip()
+
+    def OnSelectCell(self, evt):
+        if evt.Selecting():
+            msg = 'Selected'
+        else:
+            msg = 'Deselected'
+        self.log.write("OnSelectCell: %s (%d,%d) %s\n" %
+                       (msg, evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+
+        # Another way to stay in a cell that has a bad value...
+        row = self.GetGridCursorRow()
+        col = self.GetGridCursorCol()
+
+        if self.IsCellEditControlEnabled():
+            self.HideCellEditControl()
+            self.DisableCellEditControl()
+
+        value = self.GetCellValue(row, col)
+
+        if value == 'no good 2':
+            return  # cancels the cell selection
+
+        evt.Skip()
+
+    def OnEditorShown(self, evt):
+        if evt.GetRow() == 6 and evt.GetCol() == 3 and \
+                wx.MessageBox("Are you sure you wish to edit this cell?",
+                              "Checking", wx.YES_NO) == wx.NO:
+            evt.Veto()
+            return
+
+        self.log.write("OnEditorShown: (%d,%d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+        evt.Skip()
+
+    def OnEditorHidden(self, evt):
+        if evt.GetRow() == 6 and evt.GetCol() == 3 and \
+                wx.MessageBox("Are you sure you wish to  finish editing this cell?",
+                              "Checking", wx.YES_NO) == wx.NO:
+            evt.Veto()
+            return
+
+        self.log.write("OnEditorHidden: (%d,%d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+        evt.Skip()
+
+    def OnEditorCreated(self, evt):
+        self.log.write("OnEditorCreated: (%d, %d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetControl()))
 
 class ColorPalettePanel(scrolled.ScrolledPanel):
     def __init__(self, parent, log):
@@ -49,45 +297,45 @@ class PicShowPanel(wx.Panel):
                                                   quality=wx.IMAGE_QUALITY_BOX_AVERAGE).ConvertToBitmap()
         dc.DrawBitmap(bmp, 0, 0, True)
 
-class BoardGrid(OrderGrid):
-    def __init__(self, parent, master, log):
-        super(BoardGrid, self).__init__(parent, master, log)
-        self.Render()
+# class BoardGrid(OrderGrid):
+#     def __init__(self, parent, master, log):
+#         super(BoardGrid, self).__init__(parent, master, log)
+#         self.Render()
+#
+#     def Render(self):
+#         for i in range(self.GetNumberRows()):
+#             self.SetCellBackgroundColour(i, 6, wx.Colour(255, 255, 255))#清第6列（RAL色卡列）
+#             self.SetCellBackgroundColour(i, 8, wx.Colour(255, 255, 255))#清第8列（编辑按钮列）
+#             self.SetCellBackgroundColour(i, 9, wx.Colour(255, 255, 255))#清第9列（编辑按钮列）
+#
+#         for i, item in enumerate(self.master.boardArray):
+#             RalID = item[6]
+#             _, color = GetRGBWithRalID(self.log, 1, RalID)
+#             self.SetCellBackgroundColour(i, 6, wx.Colour(color[0], color[1], color[2]))
+#             self.SetCellTextColour(i, 6,wx.Colour( 255-color[0], 255-color[1], 255-color[2]))
+#             self.SetCellAlignment(i, 7, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE_VERTICAL)
+#             self.SetCellValue(i, 7, color[3])
+#             if item[7]=='在用':
+#                 self.SetCellBackgroundColour(i, 8, wx.Colour(240,240,240))
+#             else:
+#                 self.SetCellBackgroundColour(i, 8, wx.RED)
+#             self.SetCellAlignment(i, 8, wx.ALIGN_CENTER, wx.ALIGN_CENTRE_VERTICAL)
+#             self.SetCellValue(i, 8, item[7])
+#             self.SetCellBackgroundColour(i, 9, wx.Colour(210,210,210))
+#             self.SetCellAlignment(i, 9, wx.ALIGN_CENTER, wx.ALIGN_CENTRE_VERTICAL)
+#             self.SetCellValue(i, 9, '编辑')
 
-    def Render(self):
-        for i in range(self.GetNumberRows()):
-            self.SetCellBackgroundColour(i, 6, wx.Colour(255, 255, 255))#清第6列（RAL色卡列）
-            self.SetCellBackgroundColour(i, 8, wx.Colour(255, 255, 255))#清第8列（编辑按钮列）
-            self.SetCellBackgroundColour(i, 9, wx.Colour(255, 255, 255))#清第9列（编辑按钮列）
-
-        for i, item in enumerate(self.master.boardArray):
-            RalID = item[6]
-            _, color = GetRGBWithRalID(self.log, 1, RalID)
-            self.SetCellBackgroundColour(i, 6, wx.Colour(color[0], color[1], color[2]))
-            self.SetCellTextColour(i, 6,wx.Colour( 255-color[0], 255-color[1], 255-color[2]))
-            self.SetCellAlignment(i, 7, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE_VERTICAL)
-            self.SetCellValue(i, 7, color[3])
-            if item[7]=='在用':
-                self.SetCellBackgroundColour(i, 8, wx.Colour(240,240,240))
-            else:
-                self.SetCellBackgroundColour(i, 8, wx.RED)
-            self.SetCellAlignment(i, 8, wx.ALIGN_CENTER, wx.ALIGN_CENTRE_VERTICAL)
-            self.SetCellValue(i, 8, item[7])
-            self.SetCellBackgroundColour(i, 9, wx.Colour(210,210,210))
-            self.SetCellAlignment(i, 9, wx.ALIGN_CENTER, wx.ALIGN_CENTRE_VERTICAL)
-            self.SetCellValue(i, 9, '编辑')
-
-class SpecificBoardManagementPanel(wx.Panel):
-    def __init__(self, parent, master, log, boardType,state='在用'):
+class SpecificBluePrintManagementPanel(wx.Panel):
+    def __init__(self, parent, master, log, type,state='在用'):
         wx.Panel.__init__(self, parent)
         self.master = master
         self.log = log
-        self.boardType = boardType
+        self.type = type
         self.state = state
-        self.colWidthList = [50, 52, 51, 60, 110, 55, 75, 60, 35, 35]
-        self.colLabelValueList = ['材质', '厚度', '规格', '单位重量', '支持部件', '支持宽度', 'RAL色号', '颜色名','状态','']
-        _, orderList = GetAllBoardList(self.log, 1, self.boardType,state=self.state)
-        self.boardArray = np.array(orderList)
+        self.colWidthList = [50, 102, 101, 100, 100, 170]
+        self.colLabelValueList = ['图纸号', '中板长增量', '中板宽增量', '背板长增量', '背板宽增量', '所需工序']
+        _, dataList = GetAllBluPrintList(self.log, 1, self.type,state=self.state)
+        self.dataArray = np.array(dataList)
         self.orderIDSearch = ''
         self.boardFormatSearch = ''
         self.boardMaterialSearch = ''
@@ -105,7 +353,7 @@ class SpecificBoardManagementPanel(wx.Panel):
         hbox.Add(self.colorPalettePanel, 1, wx.EXPAND)
         self.SetSizer(hbox)
         vvbox = wx.BoxSizer(wx.VERTICAL)
-        self.boardGrid = BoardGrid(self.leftPanel, self, self.log)
+        self.bluePrintGrid = BluePrintGrid(self.leftPanel, self, self.log)
         vvbox.Add(self.boardGrid, 1, wx.EXPAND)
         hhbox = wx.BoxSizer()
         searchPanel = wx.Panel(self.leftPanel, size=(-1, 30), style=wx.BORDER_DOUBLE)
@@ -322,8 +570,8 @@ class SpecificBoardManagementPanel(wx.Panel):
         else:
             self.state = '在用'
             self.changeStateBTN.SetBackgroundColour(wx.GREEN)
-        _, orderList = GetAllBoardList(self.log, 1, self.boardType,state=self.state)
-        self.boardArray = np.array(orderList)
+        _, data = GetAllBoardList(self.log, 1, self.boardType,state=self.state)
+        self.boardArray = np.array(data)
         self.boardGrid.ReCreate()
         self.boardGrid.Render()
 
@@ -428,7 +676,7 @@ class SpecificBoardManagementPanel(wx.Panel):
         self.ReSearch()
 
 
-class BoardManagementPanel(wx.Panel):
+class BluePrintManagementPanel(wx.Panel):
     def __init__(self, parent, master, log):
         wx.Panel.__init__(self, parent, -1)
         self.master = master
@@ -453,15 +701,14 @@ class BoardManagementPanel(wx.Panel):
         hbox = wx.BoxSizer()
         hbox.Add(self.notebook, 1, wx.EXPAND)
         self.SetSizer(hbox)
-        self.pvcManagementPanel = SpecificBoardManagementPanel(self.notebook, self, self.log, 'PVC')
-        self.notebook.AddPage(self.pvcManagementPanel, "PVC板管理")
-        self.galvanizedSheetManagmentPanel = SpecificBoardManagementPanel(self.notebook, self, self.log, '镀锌板')
-        self.notebook.AddPage(self.galvanizedSheetManagmentPanel, "镀锌板管理")
-        self.colorCoatManagementPanel = SpecificBoardManagementPanel(self.notebook, self, self.log, '彩涂板')
-        self.notebook.AddPage(self.colorCoatManagementPanel, "彩涂板管理")
-        self.stainlessSheetManagmentPanel = SpecificBoardManagementPanel(self.notebook, self, self.log, '不锈钢')
-        self.notebook.AddPage(self.stainlessSheetManagmentPanel, "不锈钢板管理")
-        self.sparyBoardManagementPanel = SpecificBoardManagementPanel(self.notebook, self, self.log, '喷涂板')
-        self.notebook.AddPage(self.sparyBoardManagementPanel, "喷涂板管理")
-
+        self.wallBluePrintManagementPanel = SpecificBluePrintManagementPanel(self.notebook, self, self.log, '墙板')
+        self.notebook.AddPage(self.wallBluePrintManagementPanel, "墙板图纸管理")
+        self.galvanizedSheetManagmentPanel = wx.Panel(self.notebook)
+        self.notebook.AddPage(self.galvanizedSheetManagmentPanel, "天花板图纸管理")
+        self.colorCoatManagementPanel = wx.Panel(self.notebook)
+        self.notebook.AddPage(self.colorCoatManagementPanel, "构件图纸管理")
+        self.stainlessSheetManagmentPanel = wx.Panel(self.notebook)
+        self.notebook.AddPage(self.stainlessSheetManagmentPanel, "检修门图纸管理")
+        self.sparyBoardManagementPanel = wx.Panel(self.notebook)
+        self.notebook.AddPage(self.sparyBoardManagementPanel, "检修口图纸管理")
         self.notebook.SetSelection(0)

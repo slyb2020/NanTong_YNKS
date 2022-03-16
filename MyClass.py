@@ -38,6 +38,7 @@ import datetime
 from SystemIntroductionPanel import SystemIntroductionPanel
 from OrderManagementPanel import OrderManagementPanel
 from BoardManagementPanel import BoardManagementPanel
+from BluePrintManagementPanel import BluePrintManagementPanel
 
 dirName = os.path.dirname(os.path.abspath(__file__))
 bitmapDir = os.path.join(dirName, 'bitmaps')
@@ -307,14 +308,14 @@ class MainPanel(wx.Panel):
         Images.Add(GetCollapsedIconBitmap())
 
         if self.parent.operatorCharacter in ["技术员","管理员"]:
-            item = self._pnl.AddFoldPanel("板材操作面板", collapsed=False,
+            item = self._pnl.AddFoldPanel("基材操作面板", collapsed=False,
                                           foldIcons=Images)
             panel = wx.Panel(item, -1, size=(300, 300))
             bitmap = wx.Bitmap("bitmaps/aquabutton.png",
                                wx.BITMAP_TYPE_PNG)
-            self.newBoardBTN = AB.AquaButton(panel, wx.ID_ANY, bitmap, "  新建板材", size=(100, 50))
+            self.newBoardBTN = AB.AquaButton(panel, wx.ID_ANY, bitmap, "  新建基材", size=(100, 50))
             self.newBoardBTN.SetForegroundColour(wx.BLACK)
-            self.editBoardBTN = AB.AquaButton(panel, wx.ID_ANY, bitmap, "  板材管理", size=(100, 50))
+            self.editBoardBTN = AB.AquaButton(panel, wx.ID_ANY, bitmap, "  基材管理", size=(100, 50))
             self.editBoardBTN.SetForegroundColour(wx.BLACK)
             static = wx.StaticLine(panel, -1)
             vbox = wx.BoxSizer(wx.VERTICAL)
@@ -456,7 +457,10 @@ class WorkZonePanel(wx.Panel):
         self.notebook.AddPage(self.systemIntroductionPanel,"系统介绍")
         if self.master.operatorCharacter in ["技术员","管理员"]:
             self.boardManagmentPanel = BoardManagementPanel(self.notebook,self,self.log)
-            self.notebook.AddPage(self.boardManagmentPanel, "板材管理")
+            self.notebook.AddPage(self.boardManagmentPanel, "基材管理")
+        if self.master.operatorCharacter in ["技术员","管理员"]:
+            self.bluePrintManagmentPanel = BluePrintManagementPanel(self.notebook,self,self.log)
+            self.notebook.AddPage(self.bluePrintManagmentPanel, "图纸管理")
         if self.master.operatorCharacter in ["技术员","管理员","下单员"]:
             self.orderManagmentPanel = OrderManagementPanel(self.notebook,self.master, self.log)
             self.notebook.AddPage(self.orderManagmentPanel, "订单管理")

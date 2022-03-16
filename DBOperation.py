@@ -86,10 +86,10 @@ def GetAllBoardList(log, whichDB,whichBoard,state='在用'):
         return -1, []
     cursor = db.cursor()
     if state=='全部':
-        sql = """SELECT `板材`,`规格`,`材质`,`密度`,`支持部件`,`支持宽度`,`颜色`,`状态` from `板材型号表单` 
+        sql = """SELECT `板材`,`厚度`,`材质`,`密度`,`支持部件`,`支持宽度`,`颜色`,`状态` from `基材表单` 
                     where `板材`='%s'""" % (whichBoard)
     else:
-        sql = """SELECT `板材`,`规格`,`材质`,`密度`,`支持部件`,`支持宽度`,`颜色`,`状态` from `板材型号表单` 
+        sql = """SELECT `板材`,`厚度`,`材质`,`密度`,`支持部件`,`支持宽度`,`颜色`,`状态` from `基材表单` 
                     where `板材`='%s' and `状态`='%s'"""%(whichBoard,state)
     cursor.execute(sql)
     temp = cursor.fetchall()  # 获得压条信息
@@ -123,6 +123,23 @@ def GetAllColor(log,whichDB):
         return -1, []
     cursor = db.cursor()
     sql = """SELECT `RAL代码`,`R`,`G`,`B`,`颜色名`,`颜色别名` from `ral标准色卡` """
+    cursor.execute(sql)
+    temp = cursor.fetchall()  # 获得压条信息
+    db.close()
+    return 0, temp
+
+def GetAllBluPrintList(log,whichDB, type,state='在用'):
+    try:
+        db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
+                             passwd='%s' % dbPassword[whichDB], db='%s' % dbName[whichDB], charset='utf8')
+    except:
+        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        if log:
+            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+        return -1, []
+    cursor = db.cursor()
+    sql = """SELECT `图纸号`,`中板长增量`,`中板宽增量`,`背板长增量`,`背板宽增量`,`剪板505`,`成型405`,`成型406`,`折弯652`,`热压100`,
+                `热压306`,`打包9000`,`图纸状态`,`创建人` from `图纸信息` """
     cursor.execute(sql)
     temp = cursor.fetchall()  # 获得压条信息
     db.close()
