@@ -14,7 +14,6 @@ class BluePrintGrid(gridlib.Grid):  ##, mixins.GridAutoEditMixin):
         self.moveTo = None
 
         self.Bind(wx.EVT_IDLE, self.OnIdle)
-
         self.CreateGrid(self.master.dataArray.shape[0]+30, len(self.master.colLabelValueList))  # , gridlib.Grid.SelectRows)
         self.EnableEditing(False)
 
@@ -27,10 +26,11 @@ class BluePrintGrid(gridlib.Grid):  ##, mixins.GridAutoEditMixin):
             self.SetColLabelValue(i,title)
         for i, width in enumerate(self.master.colWidthList):
             self.SetColSize(i, width)
-        print("data=",self.master.dataArray)
-        for i, order in enumerate(self.master.dataArray):
+
+        for i, temp in enumerate(self.master.dataArray):
             self.SetRowSize(i, 25)
-            for j, item in enumerate(order):
+            data = self.Translate(temp)
+            for j, item in enumerate(data):
                 # self.SetCellBackgroundColour(i,j,wx.Colour(250, 250, 250))
                 self.SetCellAlignment(i, j, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE_VERTICAL)
                 self.SetCellValue(i, j, str(item))
@@ -102,6 +102,37 @@ class BluePrintGrid(gridlib.Grid):  ##, mixins.GridAutoEditMixin):
         self.Bind(gridlib.EVT_GRID_EDITOR_SHOWN, self.OnEditorShown)
         self.Bind(gridlib.EVT_GRID_EDITOR_HIDDEN, self.OnEditorHidden)
         self.Bind(gridlib.EVT_GRID_EDITOR_CREATED, self.OnEditorCreated)
+
+    def Translate(self, data):
+        result = list(data[:5])
+        process = ''
+        if data[5]=='Y':
+            process += self.master.processList[0]
+            process += '/'
+        if data[6]=='Y':
+            process += self.master.processList[1]
+            process += '/'
+        if data[7]=='Y':
+            process += self.master.processList[2]
+            process += '/'
+        if data[8]=='Y':
+            process += self.master.processList[3]
+            process += '/'
+        if data[9]=='Y':
+            process += self.master.processList[4]
+            process += '/'
+        if data[10]=='Y':
+            process += self.master.processList[5]
+            process += '/'
+        if data[11]=='Y':
+            process += self.master.processList[6]
+            process += '/'
+        if data[12]=='Y':
+            process += self.master.processList[7]
+        result.append(process)
+        # result.append(data[12])
+        # result.append(data[13])
+        return result
 
     def ReCreate(self):
         self.ClearGrid()
@@ -277,13 +308,17 @@ class ColorPalettePanel(scrolled.ScrolledPanel):
         self.SetupScrolling()
         self.Thaw()
 
-class PicShowPanel(wx.Panel):
-    def __init__(self, parent,boardType,size):
+class BluePrintShowPanel(wx.Panel):
+    def __init__(self, parent,size,filename):
         wx.Panel.__init__(self, parent, size=size, style=wx.BORDER_THEME)
-        self.boardType = boardType
+        self.filename = filename
         self.SetAutoLayout(True)
         self.Bind(wx.EVT_PAINT, self.OnPaint)
         self.Bind(wx.EVT_SIZE, self.OnResize)
+
+    def Recreate(self,filename):
+        self.filename = filename
+        self.Refresh()
 
     def OnResize(self, evt):
         self.Refresh()
@@ -293,7 +328,7 @@ class PicShowPanel(wx.Panel):
         dc.SetBackground(wx.Brush("WHITE"))
         dc.Clear()
         x,y = self.GetClientSize()
-        bmp = wx.Image('bitmaps/%s.jpg'%self.boardType).Scale(width=x, height=y,
+        bmp = wx.Image(self.filename).Scale(width=x, height=y,
                                                   quality=wx.IMAGE_QUALITY_BOX_AVERAGE).ConvertToBitmap()
         dc.DrawBitmap(bmp, 0, 0, True)
 
@@ -332,7 +367,8 @@ class SpecificBluePrintManagementPanel(wx.Panel):
         self.log = log
         self.type = type
         self.state = state
-        self.colWidthList = [50, 102, 101, 100, 100, 170]
+        self.processList=self.master.processList
+        self.colWidthList = [70, 72, 71, 70, 70, 170]
         self.colLabelValueList = ['图纸号', '中板长增量', '中板宽增量', '背板长增量', '背板宽增量', '所需工序']
         _, dataList = GetAllBluPrintList(self.log, 1, self.type,state=self.state)
         self.dataArray = np.array(dataList)
@@ -347,18 +383,16 @@ class SpecificBluePrintManagementPanel(wx.Panel):
         hbox = wx.BoxSizer()
         self.leftPanel = wx.Panel(self, size=(650, -1))
         hbox.Add(self.leftPanel, 0, wx.EXPAND)
-        self.middlePanel = wx.Panel(self, size=(260,-1), style=wx.BORDER_THEME)
-        hbox.Add(self.middlePanel, 0, wx.EXPAND)
-        self.colorPalettePanel = ColorPalettePanel(self, self.log)
-        hbox.Add(self.colorPalettePanel, 1, wx.EXPAND)
+        self.rightPanel = wx.Panel(self, size=(260, -1))
+        hbox.Add(self.rightPanel, 1, wx.EXPAND)
         self.SetSizer(hbox)
+
         vvbox = wx.BoxSizer(wx.VERTICAL)
         self.bluePrintGrid = BluePrintGrid(self.leftPanel, self, self.log)
-        vvbox.Add(self.boardGrid, 1, wx.EXPAND)
+        vvbox.Add(self.bluePrintGrid, 1, wx.EXPAND)
         hhbox = wx.BoxSizer()
         searchPanel = wx.Panel(self.leftPanel, size=(-1, 30), style=wx.BORDER_DOUBLE)
         vvbox.Add(searchPanel, 0, wx.EXPAND)
-        hhbox = wx.BoxSizer()
         self.searchResetBTN = wx.Button(searchPanel, label='Rest', size=(48, -1))
         self.searchResetBTN.Bind(wx.EVT_BUTTON, self.OnResetSearchItem)
         hhbox.Add(self.searchResetBTN, 0, wx.EXPAND)
@@ -392,11 +426,11 @@ class SpecificBluePrintManagementPanel(wx.Panel):
         self.boardSupportWidthSearchCtrl.Bind(wx.EVT_TEXT_ENTER, self.OnBoardSupportWidthSearch)
         hhbox.Add(self.boardSupportWidthSearchCtrl, 0, wx.EXPAND)
 
-        self.boardRALIDSearchCtrl = wx.TextCtrl(searchPanel, size=(self.colWidthList[6], -1), style=wx.TE_PROCESS_ENTER)
-        self.boardRALIDSearchCtrl.Bind(wx.EVT_TEXT_ENTER, self.OnBoardRALIDSearch)
-        hhbox.Add(self.boardRALIDSearchCtrl, 0, wx.EXPAND)
+        # self.boardRALIDSearchCtrl = wx.TextCtrl(searchPanel, size=(self.colWidthList[6], -1), style=wx.TE_PROCESS_ENTER)
+        # self.boardRALIDSearchCtrl.Bind(wx.EVT_TEXT_ENTER, self.OnBoardRALIDSearch)
+        # hhbox.Add(self.boardRALIDSearchCtrl, 0, wx.EXPAND)
 
-        self.newBoardBTN = wx.Button(searchPanel, label='新建%s基材' % self.boardType)
+        self.newBoardBTN = wx.Button(searchPanel, label='新建%s图纸' % self.type)
         self.newBoardBTN.SetBackgroundColour(wx.Colour(22, 211, 111))
         self.newBoardBTN.Bind(wx.EVT_BUTTON, self.OnCreateNewBoard)
         hhbox.Add(self.newBoardBTN, 1, wx.EXPAND | wx.RIGHT | wx.LEFT, 1)
@@ -415,12 +449,30 @@ class SpecificBluePrintManagementPanel(wx.Panel):
         self.leftPanel.SetSizer(vvbox)
 
         vvbox = wx.BoxSizer(wx.VERTICAL)
-        self.picPanel = PicShowPanel(self.middlePanel, self.boardType,size=(300,200))
-        vvbox.Add(self.picPanel,1,wx.EXPAND)
-        self.editBoardPanel=wx.Panel(self.middlePanel,size=(300,290))
-        vvbox.Add(self.editBoardPanel, 0, wx.EXPAND)
-        self.middlePanel.SetSizer(vvbox)
+        self.topPanel = wx.Panel(self.rightPanel)
+        vvbox.Add(self.topPanel, 0, wx.EXPAND)
+        self.bottomPanel = wx.Panel(self.rightPanel)
+        vvbox.Add(self.bottomPanel,1, wx.EXPAND)
+        self.rightPanel.SetSizer(vvbox)
+
+        hhbox = wx.BoxSizer()
+        self.picPanel = BluePrintShowPanel(self.topPanel, size=(500, 400),filename='bitmaps/2SA.jpg')
+        hhbox.Add(self.picPanel,0)
+        self.basicInfoPanel = wx.Panel(self.topPanel,size=(300,100))
+        hhbox.Add(self.basicInfoPanel, 1, wx.EXPAND)
+        self.topPanel.SetSizer(hhbox)
+
+        # vvbox.Add(self.leftPanel,0,wx.EXPAND)
+
+
+        # vvbox = wx.BoxSizer(wx.VERTICAL)
+        # self.picPanel = PicShowPanel(self.rightPanel, size=(300, 200))
+        # vvbox.Add(self.picPanel,1,wx.EXPAND)
+        # self.editBoardPanel=wx.Panel(self.rightPanel, size=(300, 290))
+        # vvbox.Add(self.editBoardPanel, 0, wx.EXPAND)
+        # self.rightPanel.SetSizer(vvbox)
         self.Bind(gridlib.EVT_GRID_CELL_LEFT_DCLICK, self.OnCellLeftDClick)
+        self.ReCreateBasicInfoPanel("墙板")
 
     def OnCellLeftDClick(self, evt):
         row = evt.GetRow()
@@ -428,115 +480,48 @@ class SpecificBluePrintManagementPanel(wx.Panel):
         if col == 9:
             if self.editBoardPanelOccupied == False:
                 self.editBoardPanelOccupied=True
-                self.ReCreateEditBoardPanel(self.boardType,state='编辑')
+                self.ReCreateBasicInfoPanel(self.boardType, state='编辑')
             else:
                 wx.MessageBox("请先结束当前编辑工作后，再进行新的编辑操作！","信息提示")
         # evt.Skip()
 
-    def ReCreateEditBoardPanel(self,type, state='新建'):
-        self.editBoardPanel.Freeze()
-        self.editBoardPanel.DestroyChildren()
+    def ReCreateBasicInfoPanel(self, type, state='编辑'):
+        self.basicInfoPanel.Freeze()
+        self.basicInfoPanel.DestroyChildren()
         vbox = wx.BoxSizer(wx.VERTICAL)
-        frame = wx.StaticBox(self.editBoardPanel, label="%s基材"%state,size=(200,200))
-        vbox.Add(frame,1,wx.EXPAND|wx.ALL,5)
-        self.editBoardPanel.SetSizer(vbox)
-        vvbox = wx.BoxSizer(wx.VERTICAL)
-        vvbox.Add((-1,20))
-        hhbox = wx.BoxSizer()
-        label = wx.StaticText(frame, label="基材类型：", size=(70,-1))
-        self.editBoardTypeCombo = wx.ComboBox(frame,choices=["PVC",'不锈钢'],size=(130,-1))
-        self.editBoardTypeCombo.SetValue(self.boardType)
-        self.editBoardTypeCombo.Enable(False)
-        hhbox.Add((20,-1))
-        hhbox.Add(label,0,wx.TOP,5)
-        hhbox.Add(self.editBoardTypeCombo,1,wx.RIGHT,5)
-        vvbox.Add(hhbox)
-
-        vvbox.Add((-1,5))
-        hhbox = wx.BoxSizer()
-        label = wx.StaticText(frame, label="基材厚度：", size=(70,-1))
-        self.editBoardFormatTXT = wx.TextCtrl(frame,size=(130,-1))
-        hhbox.Add((20,-1))
-        hhbox.Add(label,0,wx.TOP,5)
-        hhbox.Add(self.editBoardFormatTXT,1,wx.RIGHT,5)
-        vvbox.Add(hhbox)
-
-        vvbox.Add((-1,5))
-        hhbox = wx.BoxSizer()
-        label = wx.StaticText(frame, label="基材规格：", size=(70,-1))
-        self.editBoardMaterialTXT = wx.TextCtrl(frame,size=(130,-1))
-        hhbox.Add((20,-1))
-        hhbox.Add(label,0,wx.TOP,5)
-        hhbox.Add(self.editBoardMaterialTXT,1,wx.RIGHT,5)
-        vvbox.Add(hhbox)
-
-        vvbox.Add((-1,5))
-        hhbox = wx.BoxSizer()
-        label = wx.StaticText(frame, label="单位重量：", size=(70,-1))
-        self.editBoardDensityTXT = wx.TextCtrl(frame,size=(130,-1))
-        hhbox.Add((20,-1))
-        hhbox.Add(label,0,wx.TOP,5)
-        hhbox.Add(self.editBoardDensityTXT,1,wx.RIGHT,5)
-        vvbox.Add(hhbox)
-
-        vvbox.Add((-1,5))
-        hhbox = wx.BoxSizer()
-        label = wx.StaticText(frame, label="支持组件：", size=(60,-1))
-        self.editBoardSupportWallCHeck = wx.CheckBox(frame,label="墙板")
-        self.editBoardSupportCeilingCHeck = wx.CheckBox(frame,label="天花板")
-        self.editBoardSupportConnecterCHeck = wx.CheckBox(frame,label="构件")
-        hhbox.Add((20,-1))
-        hhbox.Add(label,0,wx.TOP,5)
-        hhbox.Add(self.editBoardSupportWallCHeck, 1, wx.TOP,5)
-        hhbox.Add(self.editBoardSupportCeilingCHeck, 1, wx.TOP,5)
-        hhbox.Add(self.editBoardSupportConnecterCHeck, 1, wx.TOP,5)
-        vvbox.Add(hhbox)
-
-        vvbox.Add((-1,5))
-        hhbox = wx.BoxSizer()
-        label = wx.StaticText(frame, label="支持宽度：", size=(70,-1))
-        self.editBoardSupportWidthTXT = wx.TextCtrl(frame, size=(130,-1))
-        hhbox.Add((20,-1))
-        hhbox.Add(label,0,wx.TOP,5)
-        hhbox.Add(self.editBoardSupportWidthTXT,1,wx.RIGHT,5)
-        vvbox.Add(hhbox)
-
-        vvbox.Add((-1,5))
-        hhbox = wx.BoxSizer()
-        label = wx.StaticText(frame, label="颜色：", size=(40,-1))
-        self.editBoardSelectColorBTN = wx.Button(frame, size=(80,26))
-        self.editBoardSelectColorBTN.Bind(wx.EVT_BUTTON, self.OnSelectColorBTN)
-        hhbox.Add((20,-1))
-        hhbox.Add(label,0,wx.TOP,5)
-        hhbox.Add(self.editBoardSelectColorBTN,0,wx.RIGHT,5)
-        self.editBoardStateCombo = wx.ComboBox(frame,choices=["在用","停用"],size=(75,25))
-        self.editBoardStateCombo.SetValue("在用")
-        if state=='新建':
-            self.editBoardStateCombo.Enable(False)
-        hhbox.Add(self.editBoardStateCombo,0,wx.RIGHT,5)
-        vvbox.Add(hhbox)
-        vvbox.Add(wx.StaticLine(frame,size=(100,-1), style=wx.HORIZONTAL), 0,wx.EXPAND|wx.TOP|wx.BOTTOM,5)
-
-        self.editBoardOkButton = wx.Button(frame, label="确定", size=(100,30))
-        self.editBoardOkButton.Bind(wx.EVT_BUTTON, self.OnEditBoardOkButton)
-        self.editBoardCancelButton = wx.Button(frame, label="取消", size=(100,30))
-        self.editBoardCancelButton.Bind(wx.EVT_BUTTON, self.OnEditBoardCancelButton)
+        vbox.Add((-1,10))
         hhbox = wx.BoxSizer()
         hhbox.Add((10,-1))
-        hhbox.Add(self.editBoardOkButton)
-        hhbox.Add((20,-1))
-        hhbox.Add(self.editBoardCancelButton)
-        vvbox.Add((-1,3))
-        vvbox.Add(hhbox,0,wx.EXPAND)
+        hhbox.Add(wx.StaticText(self.basicInfoPanel,label='图纸类别：',size=(70,-1)),0,wx.TOP,5)
+        choices=[]
+        if type=="墙板":
+            choices=["25mm墙板",'50mm墙板','25mm墙角板','25mmT型墙板','50mmT型墙板','高隔音墙板','100mm墙板']
+        self.bluePrintTypeCombo = wx.ComboBox(self.basicInfoPanel,choices=choices,size=(100,30),style=wx.TE_PROCESS_ENTER)
+        self.bluePrintTypeCombo.Bind(wx.EVT_COMBOBOX, self.OnBluePrintTypeChanged)
+        hhbox.Add(self.bluePrintTypeCombo,0)
+        hhbox.Add(wx.Button(self.basicInfoPanel,size=(100,30)),0)
+        vbox.Add(hhbox,0,wx.EXPAND)
+        # self.btn = wx.Button(self.basicInfoPanel,label="change",size=(100,30))
+        # self.btn.Bind(wx.EVT_BUTTON, self.OnChangeBluePrintBTN)
+        # hbox=wx.BoxSizer()
+        # hbox.Add(self.btn)
+        self.basicInfoPanel.SetSizer(vbox)
+        self.basicInfoPanel.Layout()
 
-        frame.SetSizer(vvbox)
-        self.editBoardPanel.Layout()
-        # self.colorPalettePanel.ReCreate()
-        self.editBoardPanel.Thaw()
+    def OnBluePrintTypeChanged(self,event):
+        self.bluePrintType = self.bluePrintTypeCombo.GetValue()
+        if self.bluePrintType == '25mm墙板':
+            self.picPanel.Recreate('bitmaps/2SA.JPG')
+        elif self.bluePrintType == '25mm墙角板':
+            self.picPanel.Recreate('bitmaps/2SG.JPG')
+
+
+    # def OnChangeBluePrintBTN(self,event):
+    #     self.picPanel.Recreate('bitmaps/2SG.JPG')
 
     def OnSelectColorBTN(self, event):
-        self.colorPalettePanel.ReCreate()
-        self.colorPalettePanel.Bind(wx.EVT_BUTTON, self.OnColorBTN)
+        self.rightPanel.ReCreate()
+        self.rightPanel.Bind(wx.EVT_BUTTON, self.OnColorBTN)
 
     def OnColorBTN(self, event):
         obj = event.GetEventObject()
@@ -551,13 +536,13 @@ class SpecificBluePrintManagementPanel(wx.Panel):
         dlg = wx.MessageDialog(self,"取消操作将导致之前的输入工作全部作废，您是否确认？",'信息提示',style=wx.YES_NO)
         if dlg.ShowModal() == wx.ID_YES:
             self.editBoardPanel.DestroyChildren()
-            self.colorPalettePanel.DestroyChildren()
+            self.rightPanel.DestroyChildren()
             self.editBoardPanelOccupied = False
         dlg.Destroy()
 
     def OnEditBoardOkButton(self,event):
         self.editBoardPanel.DestroyChildren()
-        self.colorPalettePanel.DestroyChildren()
+        self.rightPanel.DestroyChildren()
         self.editBoardPanelOccupied = False
 
     def OnChangeState(self,event):
@@ -578,7 +563,7 @@ class SpecificBluePrintManagementPanel(wx.Panel):
     def OnCreateNewBoard(self,event):
         if self.editBoardPanelOccupied == False:
             self.editBoardPanelOccupied = True
-            self.ReCreateEditBoardPanel(self.boardType)
+            self.ReCreateBasicInfoPanel(self.boardType)
         else:
             wx.MessageBox("请先结束当前编辑工作后，再进行新的编辑操作！", "信息提示")
         # hhbox = wx.BoxSizer()
@@ -661,18 +646,18 @@ class SpecificBluePrintManagementPanel(wx.Panel):
         self.boardGrid.Render()
 
     def OnResetSearchItem(self, event):
-        self.boardFormatSearch = ''
-        self.boardFormatSearchCtrl.SetValue('')
-        self.boardMaterialSearch = ''
-        self.boardMaterialSearchCtrl.SetValue('')
-        self.boardDensitySearch = ''
-        self.boardDensitySearchCtrl.SetValue('')
-        self.boardRALIDSearch = ''
-        self.boardSupportComponentSearchCtrl.SetValue('')
-        self.boardSupportComponentSearch = ''
-        self.boardSupportWidthSearchCtrl.SetValue('')
-        self.boardSupportWidthSearch = ''
-        self.boardRALIDSearchCtrl.SetValue('')
+        # self.boardFormatSearch = ''
+        # self.boardFormatSearchCtrl.SetValue('')
+        # self.boardMaterialSearch = ''
+        # self.boardMaterialSearchCtrl.SetValue('')
+        # self.boardDensitySearch = ''
+        # self.boardDensitySearchCtrl.SetValue('')
+        # self.boardRALIDSearch = ''
+        # self.boardSupportComponentSearchCtrl.SetValue('')
+        # self.boardSupportComponentSearch = ''
+        # self.boardSupportWidthSearchCtrl.SetValue('')
+        # self.boardSupportWidthSearch = ''
+        # self.boardRALIDSearchCtrl.SetValue('')
         self.ReSearch()
 
 
@@ -681,6 +666,7 @@ class BluePrintManagementPanel(wx.Panel):
         wx.Panel.__init__(self, parent, -1)
         self.master = master
         self.log = log
+        self.processList=["505","405","409","406","652","100","306","9000"]
         self.notebook = wx.Notebook(self, -1, size=(21, 21), style=
         # wx.BK_DEFAULT
         # wx.BK_TOP

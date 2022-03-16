@@ -138,7 +138,7 @@ def GetAllBluPrintList(log,whichDB, type,state='在用'):
             log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
         return -1, []
     cursor = db.cursor()
-    sql = """SELECT `图纸号`,`中板长增量`,`中板宽增量`,`背板长增量`,`背板宽增量`,`剪板505`,`成型405`,`成型406`,`折弯652`,`热压100`,
+    sql = """SELECT `图纸号`,`中板长增量`,`中板宽增量`,`背板长增量`,`背板宽增量`,`剪板505`,`成型405`,`成型409`,`成型406`,`折弯652`,`热压100`,
                 `热压306`,`打包9000`,`图纸状态`,`创建人` from `图纸信息` """
     cursor.execute(sql)
     temp = cursor.fetchall()  # 获得压条信息
