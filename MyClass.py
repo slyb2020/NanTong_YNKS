@@ -465,5 +465,5 @@ class WorkZonePanel(wx.Panel):
             self.orderManagmentPanel = OrderManagementPanel(self.notebook,self.master, self.log)
             self.notebook.AddPage(self.orderManagmentPanel, "订单管理")
 
-        self.notebook.SetSelection(1)
+        self.notebook.SetSelection(2)
 

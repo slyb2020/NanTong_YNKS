@@ -35,52 +35,7 @@ class BluePrintGrid(gridlib.Grid):  ##, mixins.GridAutoEditMixin):
                 self.SetCellAlignment(i, j, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE_VERTICAL)
                 self.SetCellValue(i, j, str(item))
 
-        # self.SetCellValue(2, 2, "Yet another cell")
-        # self.SetCellValue(3, 3, "This cell is read-only")
-        # self.SetCellFont(0, 0, wx.Font(12, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_ITALIC, wx.FONTWEIGHT_NORMAL))
-        # self.SetCellTextColour(1, 1, wx.RED)
-        # self.SetCellBackgroundColour(2, 2, wx.CYAN)
-        # self.SetReadOnly(3, 3, True)
-
-        # self.SetCellEditor(5, 0, gridlib.GridCellNumberEditor(1,1000))
-        # self.SetCellValue(5, 0, "123")
-        # self.SetCellEditor(6, 0, gridlib.GridCellFloatEditor())
-        # self.SetCellValue(6, 0, "123.34")
-        # self.SetCellEditor(7, 0, gridlib.GridCellNumberEditor())
-        #
-        # self.SetCellValue(6, 3, "You can veto editing this cell")
-
-        # attribute objects let you keep a set of formatting values
-        # in one spot, and reuse them if needed
-        # attr = gridlib.GridCellAttr()
-        # attr.SetTextColour(wx.BLACK)
-        # attr.SetBackgroundColour(wx.RED)
-        # attr.SetFont(wx.Font(10, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
-        #
-        # # you can set cell attributes for the whole row (or column)
-        # self.SetRowAttr(5, attr)
-
-        # self.SetDefaultCellOverflow(False)
-        # r = gridlib.GridCellAutoWrapStringRenderer()
-        # self.SetCellRenderer(9, 1, r)
-
-        # overflow cells
-        # self.SetCellValue( 9, 1, "This default cell will overflow into neighboring cells, but not if you turn overflow off.");
-        # self.SetCellSize(11, 1, 3, 3);
-        # self.SetCellAlignment(11, 1, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE);
-        # self.SetCellValue(11, 1, "This cell is set to span 3 rows and 3 columns");
-
-        # editor = gridlib.GridCellTextEditor()
-        # editor.SetParameters('10')
-        # self.SetCellEditor(0, 4, editor)
-        # self.SetCellValue(0, 4, "Limited text")
-        #
-        # renderer = gridlib.GridCellAutoWrapStringRenderer()
-        # self.SetCellRenderer(15,0, renderer)
-        # self.SetCellValue(15,0, "The text in this cell will be rendered with word-wrapping")
-
-        # test all the events
-        self.Bind(gridlib.EVT_GRID_CELL_LEFT_CLICK, self.OnCellLeftClick)
+        # self.Bind(gridlib.EVT_GRID_CELL_LEFT_CLICK, self.OnCellLeftClick)
         self.Bind(gridlib.EVT_GRID_CELL_RIGHT_CLICK, self.OnCellRightClick)
         self.Bind(gridlib.EVT_GRID_CELL_LEFT_DCLICK, self.OnCellLeftDClick)
         self.Bind(gridlib.EVT_GRID_CELL_RIGHT_DCLICK, self.OnCellRightDClick)
@@ -130,14 +85,11 @@ class BluePrintGrid(gridlib.Grid):  ##, mixins.GridAutoEditMixin):
         if data[12]=='Y':
             process += self.master.processList[7]
         result.append(process)
-        # result.append(data[12])
-        # result.append(data[13])
         return result
 
     def ReCreate(self):
         self.ClearGrid()
         self.EnableEditing(False)
-
         self.SetColLabelAlignment(wx.ALIGN_CENTRE, wx.ALIGN_CENTRE_VERTICAL)
 
         self.SetRowLabelSize(50)
@@ -148,16 +100,18 @@ class BluePrintGrid(gridlib.Grid):  ##, mixins.GridAutoEditMixin):
         for i, width in enumerate(self.master.colWidthList):
             self.SetColSize(i, width)
 
-        for i, order in enumerate(self.master.boardArray):
+        for i, temp in enumerate(self.master.dataArray):
             self.SetRowSize(i, 25)
-            for j, item in enumerate(order):
+            data = self.Translate(temp)
+            for j, item in enumerate(data):
+                # self.SetCellBackgroundColour(i,j,wx.Colour(250, 250, 250))
                 self.SetCellAlignment(i, j, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE_VERTICAL)
                 self.SetCellValue(i, j, str(item))
 
-    def OnCellLeftClick(self, evt):
-        self.log.write("OnCellLeftClick: (%d,%d) %s\n" %
-                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
-        evt.Skip()
+    # def OnCellLeftClick(self, evt):
+    #     self.log.write("OnCellLeftClick: (%d,%d) %s\n" %
+    #                    (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+    #     evt.Skip()
 
     def OnCellRightClick(self, evt):
         self.log.write("OnCellRightClick: (%d,%d) %s\n" %
@@ -286,32 +240,10 @@ class BluePrintGrid(gridlib.Grid):  ##, mixins.GridAutoEditMixin):
         self.log.write("OnEditorCreated: (%d, %d) %s\n" %
                        (evt.GetRow(), evt.GetCol(), evt.GetControl()))
 
-class ColorPalettePanel(scrolled.ScrolledPanel):
-    def __init__(self, parent, log):
-        scrolled.ScrolledPanel.__init__(self, parent, -1)
-        self.log = log
-        # self.ReCreate()
-
-    def ReCreate(self):
-        self.Freeze()
-        self.DestroyChildren()
-        _, colorList = GetAllColor(self.log, 1)
-        wsizer = wx.WrapSizer(orient=wx.VERTICAL)
-        for color in colorList:
-            btn = wx.Button(self, label=color[0], size=(70,30),name=str(color[1:4]))
-            btn.SetBackgroundColour(wx.Colour(color[1],color[2],color[3]))
-            btn.SetForegroundColour(wx.Colour(255-color[1],255-color[2],255-color[3]))
-            btn.SetToolTip(color[4]+'('+color[5]+')')
-            wsizer.Add(btn, 0)
-        self.SetSizer(wsizer)
-        self.SetAutoLayout(1)
-        self.SetupScrolling()
-        self.Thaw()
-
 class BluePrintShowPanel(wx.Panel):
-    def __init__(self, parent,size,filename):
-        wx.Panel.__init__(self, parent, size=size, style=wx.BORDER_THEME)
-        self.filename = filename
+    def __init__(self, parent,size):
+        wx.Panel.__init__(self, parent, size=size)
+        self.filename = ''
         self.SetAutoLayout(True)
         self.Bind(wx.EVT_PAINT, self.OnPaint)
         self.Bind(wx.EVT_SIZE, self.OnResize)
@@ -324,41 +256,15 @@ class BluePrintShowPanel(wx.Panel):
         self.Refresh()
 
     def OnPaint(self, evt):
-        dc = wx.PaintDC(self)
-        dc.SetBackground(wx.Brush("WHITE"))
-        dc.Clear()
-        x,y = self.GetClientSize()
-        bmp = wx.Image(self.filename).Scale(width=x, height=y,
-                                                  quality=wx.IMAGE_QUALITY_BOX_AVERAGE).ConvertToBitmap()
-        dc.DrawBitmap(bmp, 0, 0, True)
-
-# class BoardGrid(OrderGrid):
-#     def __init__(self, parent, master, log):
-#         super(BoardGrid, self).__init__(parent, master, log)
-#         self.Render()
-#
-#     def Render(self):
-#         for i in range(self.GetNumberRows()):
-#             self.SetCellBackgroundColour(i, 6, wx.Colour(255, 255, 255))#清第6列（RAL色卡列）
-#             self.SetCellBackgroundColour(i, 8, wx.Colour(255, 255, 255))#清第8列（编辑按钮列）
-#             self.SetCellBackgroundColour(i, 9, wx.Colour(255, 255, 255))#清第9列（编辑按钮列）
-#
-#         for i, item in enumerate(self.master.boardArray):
-#             RalID = item[6]
-#             _, color = GetRGBWithRalID(self.log, 1, RalID)
-#             self.SetCellBackgroundColour(i, 6, wx.Colour(color[0], color[1], color[2]))
-#             self.SetCellTextColour(i, 6,wx.Colour( 255-color[0], 255-color[1], 255-color[2]))
-#             self.SetCellAlignment(i, 7, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE_VERTICAL)
-#             self.SetCellValue(i, 7, color[3])
-#             if item[7]=='在用':
-#                 self.SetCellBackgroundColour(i, 8, wx.Colour(240,240,240))
-#             else:
-#                 self.SetCellBackgroundColour(i, 8, wx.RED)
-#             self.SetCellAlignment(i, 8, wx.ALIGN_CENTER, wx.ALIGN_CENTRE_VERTICAL)
-#             self.SetCellValue(i, 8, item[7])
-#             self.SetCellBackgroundColour(i, 9, wx.Colour(210,210,210))
-#             self.SetCellAlignment(i, 9, wx.ALIGN_CENTER, wx.ALIGN_CENTRE_VERTICAL)
-#             self.SetCellValue(i, 9, '编辑')
+        if self.filename:
+            dc = wx.PaintDC(self)
+            dc.SetBackground(wx.Brush("WHITE"))
+            dc.Clear()
+            x,y = self.GetClientSize()
+            bmp = wx.Image(self.filename).Scale(width=x, height=y,
+                                                      quality=wx.IMAGE_QUALITY_BOX_AVERAGE).ConvertToBitmap()
+            dc.DrawBitmap(bmp, 0, 0, True)
+        evt.Skip()
 
 class SpecificBluePrintManagementPanel(wx.Panel):
     def __init__(self, parent, master, log, type,state='在用'):
@@ -368,25 +274,36 @@ class SpecificBluePrintManagementPanel(wx.Panel):
         self.type = type
         self.state = state
         self.processList=self.master.processList
-        self.colWidthList = [70, 72, 71, 70, 70, 170]
+        self.colWidthList = [80, 72, 71, 70, 70, 170]
         self.colLabelValueList = ['图纸号', '中板长增量', '中板宽增量', '背板长增量', '背板宽增量', '所需工序']
         _, dataList = GetAllBluPrintList(self.log, 1, self.type,state=self.state)
         self.dataArray = np.array(dataList)
-        self.orderIDSearch = ''
-        self.boardFormatSearch = ''
-        self.boardMaterialSearch = ''
-        self.boardDensitySearch = ''
-        self.boardSupportComponentSearch=''
-        self.boardSupportWidthSearch=''
-        self.boardRALIDSearch = ''
-        self.editBoardPanelOccupied = False
+        self.bluePrintIDSearch = ''
+        self.middleLengthDeltaSearch = ''
+        self.middleWidthDeltaSearch = ''
+        self.rearLengthSearch = ''
+        self.rearWidthSearch=''
+        self.workProcessSearch=''
+        self.editBluePrintOccupied = False
         hbox = wx.BoxSizer()
         self.leftPanel = wx.Panel(self, size=(650, -1))
         hbox.Add(self.leftPanel, 0, wx.EXPAND)
-        self.rightPanel = wx.Panel(self, size=(260, -1))
+        self.rightPanel = wx.Panel(self, size=(360, -1))
         hbox.Add(self.rightPanel, 1, wx.EXPAND)
         self.SetSizer(hbox)
+        self.CreateLeftPanel()
+        self.CreateRightPanel()
+        self.Bind(gridlib.EVT_GRID_CELL_LEFT_CLICK, self.OnCellLeftClick)
 
+    def OnCellLeftClick(self, evt):
+        row = evt.GetRow()
+        data = self.dataArray[row]
+        filename = './bitmaps/' + data[0].split('.')[1]+'.jpg'
+        self.picPanel.Recreate(filename)
+        self.ReCreateBasicInfoPanel(self.type,data)
+        evt.Skip()
+
+    def CreateLeftPanel(self):
         vvbox = wx.BoxSizer(wx.VERTICAL)
         self.bluePrintGrid = BluePrintGrid(self.leftPanel, self, self.log)
         vvbox.Add(self.bluePrintGrid, 1, wx.EXPAND)
@@ -397,43 +314,34 @@ class SpecificBluePrintManagementPanel(wx.Panel):
         self.searchResetBTN.Bind(wx.EVT_BUTTON, self.OnResetSearchItem)
         hhbox.Add(self.searchResetBTN, 0, wx.EXPAND)
 
-        self.boardSearchCtrl = wx.TextCtrl(searchPanel, size=(self.colWidthList[0], -1), style=wx.TE_PROCESS_ENTER)
-        self.boardSearchCtrl.Enable(False)
-        hhbox.Add(self.boardSearchCtrl, 0, wx.EXPAND)
+        self.bluePrintIDSearchCtrl = wx.TextCtrl(searchPanel, size=(self.colWidthList[0], -1), style=wx.TE_PROCESS_ENTER)
+        self.bluePrintIDSearchCtrl.Bind(wx.EVT_TEXT_ENTER, self.OnBluePrintIDSearch)
+        hhbox.Add(self.bluePrintIDSearchCtrl, 0, wx.EXPAND)
 
-        self.boardFormatSearchCtrl = wx.TextCtrl(searchPanel, size=(self.colWidthList[1], -1),
-                                                 style=wx.TE_PROCESS_ENTER)
-        self.boardFormatSearchCtrl.Bind(wx.EVT_TEXT_ENTER, self.OnBoardFormatSearch)
-        hhbox.Add(self.boardFormatSearchCtrl, 0, wx.EXPAND)
+        self.middleLengthDeltaSearchCtrl = wx.TextCtrl(searchPanel, size=(self.colWidthList[1], -1),
+                                                       style=wx.TE_PROCESS_ENTER)
+        self.middleLengthDeltaSearchCtrl.Bind(wx.EVT_TEXT_ENTER, self.OnMiddleLengthDeltaSearch)
+        hhbox.Add(self.middleLengthDeltaSearchCtrl, 0, wx.EXPAND)
 
-        self.boardMaterialSearchCtrl = wx.ComboBox(searchPanel, choices=['A1', 'B0', 'B1', 'B5', 'B7'],
-                                                   size=(self.colWidthList[2], -1))
-        self.boardMaterialSearchCtrl.Bind(wx.EVT_COMBOBOX, self.OnBoardMaterailSearch)
-        hhbox.Add(self.boardMaterialSearchCtrl, 0, wx.EXPAND)
+        self.middleWidthDeltaSearchCtrl = wx.TextCtrl(searchPanel, size=(self.colWidthList[2], -1),
+                                                       style=wx.TE_PROCESS_ENTER)
+        self.middleWidthDeltaSearchCtrl.Bind(wx.EVT_TEXT_ENTER, self.OnMiddleWidthDeltaSearch)
+        hhbox.Add(self.middleWidthDeltaSearchCtrl, 0, wx.EXPAND)
 
-        self.boardDensitySearchCtrl = wx.TextCtrl(searchPanel, size=(self.colWidthList[3], -1),
-                                                 style=wx.TE_PROCESS_ENTER)
-        self.boardDensitySearchCtrl.Bind(wx.EVT_TEXT_ENTER, self.OnBoardDensitySearch)
-        hhbox.Add(self.boardDensitySearchCtrl, 0, wx.EXPAND)
+        self.rearLengthDeltaSearchCtrl = wx.TextCtrl(searchPanel, size=(self.colWidthList[3], -1),
+                                                       style=wx.TE_PROCESS_ENTER)
+        self.rearLengthDeltaSearchCtrl.Bind(wx.EVT_COMBOBOX, self.OnRearLengthDeltaSearch)
+        hhbox.Add(self.rearLengthDeltaSearchCtrl, 0, wx.EXPAND)
 
-        self.boardSupportComponentSearchCtrl = wx.TextCtrl(searchPanel, size=(self.colWidthList[4], -1),
-                                                 style=wx.TE_PROCESS_ENTER)
-        self.boardSupportComponentSearchCtrl.Bind(wx.EVT_TEXT_ENTER, self.OnBoardSupportComponentSearch)
-        hhbox.Add(self.boardSupportComponentSearchCtrl, 0, wx.EXPAND)
+        self.rearWidthDeltaSearchCtrl = wx.TextCtrl(searchPanel, size=(self.colWidthList[4], -1),
+                                                       style=wx.TE_PROCESS_ENTER)
+        self.rearWidthDeltaSearchCtrl.Bind(wx.EVT_COMBOBOX, self.OnRearWidthDeltaSearch)
+        hhbox.Add(self.rearWidthDeltaSearchCtrl, 0, wx.EXPAND)
 
-        self.boardSupportWidthSearchCtrl = wx.TextCtrl(searchPanel, size=(self.colWidthList[5], -1),
-                                                 style=wx.TE_PROCESS_ENTER)
-        self.boardSupportWidthSearchCtrl.Bind(wx.EVT_TEXT_ENTER, self.OnBoardSupportWidthSearch)
-        hhbox.Add(self.boardSupportWidthSearchCtrl, 0, wx.EXPAND)
-
-        # self.boardRALIDSearchCtrl = wx.TextCtrl(searchPanel, size=(self.colWidthList[6], -1), style=wx.TE_PROCESS_ENTER)
-        # self.boardRALIDSearchCtrl.Bind(wx.EVT_TEXT_ENTER, self.OnBoardRALIDSearch)
-        # hhbox.Add(self.boardRALIDSearchCtrl, 0, wx.EXPAND)
-
-        self.newBoardBTN = wx.Button(searchPanel, label='新建%s图纸' % self.type)
-        self.newBoardBTN.SetBackgroundColour(wx.Colour(22, 211, 111))
-        self.newBoardBTN.Bind(wx.EVT_BUTTON, self.OnCreateNewBoard)
-        hhbox.Add(self.newBoardBTN, 1, wx.EXPAND | wx.RIGHT | wx.LEFT, 1)
+        self.createNewBluPrintBTN = wx.Button(searchPanel, label='新建%s图纸' % self.type)
+        self.createNewBluPrintBTN.SetBackgroundColour(wx.Colour(22, 211, 111))
+        self.createNewBluPrintBTN.Bind(wx.EVT_BUTTON, self.OnCreateNewBluePrint)
+        hhbox.Add(self.createNewBluPrintBTN, 1, wx.EXPAND | wx.RIGHT | wx.LEFT, 1)
 
         self.changeStateBTN = wx.Button(searchPanel, size=(15,-1))
         self.changeStateBTN.Bind(wx.EVT_BUTTON, self.OnChangeState)
@@ -442,9 +350,6 @@ class SpecificBluePrintManagementPanel(wx.Panel):
         else:
             self.changeStateBTN.SetBackgroundColour(wx.RED)
         hhbox.Add(self.changeStateBTN,0,wx.EXPAND)
-        # self.newBoardBTN.SetBackgroundColour(wx.Colour(22, 211, 111))
-        # self.newBoardBTN.Bind(wx.EVT_BUTTON, self.OnCreateNewBoard)
-        # hhbox.Add(self.newBoardBTN, 1, wx.EXPAND | wx.RIGHT | wx.LEFT, 1)
         searchPanel.SetSizer(hhbox)
         self.leftPanel.SetSizer(vvbox)
 
@@ -455,58 +360,55 @@ class SpecificBluePrintManagementPanel(wx.Panel):
         vvbox.Add(self.bottomPanel,1, wx.EXPAND)
         self.rightPanel.SetSizer(vvbox)
 
+    def CreateRightPanel(self):
         hhbox = wx.BoxSizer()
-        self.picPanel = BluePrintShowPanel(self.topPanel, size=(500, 400),filename='bitmaps/2SA.jpg')
+        self.picPanel = BluePrintShowPanel(self.topPanel, size=(550, 400))
         hhbox.Add(self.picPanel,0)
         self.basicInfoPanel = wx.Panel(self.topPanel,size=(300,100))
         hhbox.Add(self.basicInfoPanel, 1, wx.EXPAND)
         self.topPanel.SetSizer(hhbox)
+        # self.Bind(gridlib.EVT_GRID_CELL_LEFT_DCLICK, self.OnCellLeftDClick)
 
-        # vvbox.Add(self.leftPanel,0,wx.EXPAND)
+    # def OnCellLeftDClick(self, evt):
+    #     row = evt.GetRow()
+    #     col = evt.GetCol()
+    #     if col == 9:
+    #         if self.editBoardPanelOccupied == False:
+    #             self.editBoardPanelOccupied=True
+    #             self.ReCreateBasicInfoPanel(self.boardType, state='编辑')
+    #         else:
+    #             wx.MessageBox("请先结束当前编辑工作后，再进行新的编辑操作！","信息提示")
+    #     # evt.Skip()
 
-
-        # vvbox = wx.BoxSizer(wx.VERTICAL)
-        # self.picPanel = PicShowPanel(self.rightPanel, size=(300, 200))
-        # vvbox.Add(self.picPanel,1,wx.EXPAND)
-        # self.editBoardPanel=wx.Panel(self.rightPanel, size=(300, 290))
-        # vvbox.Add(self.editBoardPanel, 0, wx.EXPAND)
-        # self.rightPanel.SetSizer(vvbox)
-        self.Bind(gridlib.EVT_GRID_CELL_LEFT_DCLICK, self.OnCellLeftDClick)
-        self.ReCreateBasicInfoPanel("墙板")
-
-    def OnCellLeftDClick(self, evt):
-        row = evt.GetRow()
-        col = evt.GetCol()
-        if col == 9:
-            if self.editBoardPanelOccupied == False:
-                self.editBoardPanelOccupied=True
-                self.ReCreateBasicInfoPanel(self.boardType, state='编辑')
-            else:
-                wx.MessageBox("请先结束当前编辑工作后，再进行新的编辑操作！","信息提示")
-        # evt.Skip()
-
-    def ReCreateBasicInfoPanel(self, type, state='编辑'):
+    def ReCreateBasicInfoPanel(self, type, data=[], state='编辑'):
         self.basicInfoPanel.Freeze()
         self.basicInfoPanel.DestroyChildren()
         vbox = wx.BoxSizer(wx.VERTICAL)
         vbox.Add((-1,10))
         hhbox = wx.BoxSizer()
-        hhbox.Add((10,-1))
+        hhbox.Add((20,-1))
         hhbox.Add(wx.StaticText(self.basicInfoPanel,label='图纸类别：',size=(70,-1)),0,wx.TOP,5)
+        bluePrintTypeDict = {'2SF':"25mm墙板","2SA":'50mm墙板','2SG':'25mm墙角板','2SD':'50mm墙角板','2SH':'25mmT型墙板','2SE':'50mmT型墙板','2SM':'高隔音墙板','2SL':'100mm墙板'}
         choices=[]
         if type=="墙板":
             choices=["25mm墙板",'50mm墙板','25mm墙角板','25mmT型墙板','50mmT型墙板','高隔音墙板','100mm墙板']
-        self.bluePrintTypeCombo = wx.ComboBox(self.basicInfoPanel,choices=choices,size=(100,30),style=wx.TE_PROCESS_ENTER)
+        self.bluePrintTypeCombo = wx.ComboBox(self.basicInfoPanel,choices=choices,size=(120,30),style=wx.TE_PROCESS_ENTER)
+        if len(data)!=0:
+            key = data[0].split('.')[1]
+            self.bluePrintTypeCombo.SetValue(bluePrintTypeDict[key])
+        if state == '编辑':
+            self.bluePrintTypeCombo.Enable(False)
         self.bluePrintTypeCombo.Bind(wx.EVT_COMBOBOX, self.OnBluePrintTypeChanged)
         hhbox.Add(self.bluePrintTypeCombo,0)
-        hhbox.Add(wx.Button(self.basicInfoPanel,size=(100,30)),0)
         vbox.Add(hhbox,0,wx.EXPAND)
         # self.btn = wx.Button(self.basicInfoPanel,label="change",size=(100,30))
         # self.btn.Bind(wx.EVT_BUTTON, self.OnChangeBluePrintBTN)
         # hbox=wx.BoxSizer()
         # hbox.Add(self.btn)
         self.basicInfoPanel.SetSizer(vbox)
+        self.basicInfoPanel.Refresh()
         self.basicInfoPanel.Layout()
+        self.basicInfoPanel.Thaw()
 
     def OnBluePrintTypeChanged(self,event):
         self.bluePrintType = self.bluePrintTypeCombo.GetValue()
@@ -519,32 +421,6 @@ class SpecificBluePrintManagementPanel(wx.Panel):
     # def OnChangeBluePrintBTN(self,event):
     #     self.picPanel.Recreate('bitmaps/2SG.JPG')
 
-    def OnSelectColorBTN(self, event):
-        self.rightPanel.ReCreate()
-        self.rightPanel.Bind(wx.EVT_BUTTON, self.OnColorBTN)
-
-    def OnColorBTN(self, event):
-        obj = event.GetEventObject()
-        ralCode = obj.GetLabel()
-        color = eval(obj.GetName())
-        self.editBoardSelectColorBTN.SetBackgroundColour(wx.Colour(color))
-        self.editBoardSelectColorBTN.SetForegroundColour(wx.Colour(255-color[0],255-color[1],255-color[2]))
-        self.editBoardSelectColorBTN.SetLabel(ralCode)
-
-
-    def OnEditBoardCancelButton(self,event):
-        dlg = wx.MessageDialog(self,"取消操作将导致之前的输入工作全部作废，您是否确认？",'信息提示',style=wx.YES_NO)
-        if dlg.ShowModal() == wx.ID_YES:
-            self.editBoardPanel.DestroyChildren()
-            self.rightPanel.DestroyChildren()
-            self.editBoardPanelOccupied = False
-        dlg.Destroy()
-
-    def OnEditBoardOkButton(self,event):
-        self.editBoardPanel.DestroyChildren()
-        self.rightPanel.DestroyChildren()
-        self.editBoardPanelOccupied = False
-
     def OnChangeState(self,event):
         if self.state == '在用':
             self.state = '停用'
@@ -555,15 +431,15 @@ class SpecificBluePrintManagementPanel(wx.Panel):
         else:
             self.state = '在用'
             self.changeStateBTN.SetBackgroundColour(wx.GREEN)
-        _, data = GetAllBoardList(self.log, 1, self.boardType,state=self.state)
-        self.boardArray = np.array(data)
-        self.boardGrid.ReCreate()
-        self.boardGrid.Render()
+        _, dataList = GetAllBluPrintList(self.log, 1, self.type,state=self.state)
+        self.dataArray = np.array(dataList)
+        self.bluePrintGrid.ReCreate()
+        # self.bluePrintGrid.Render()
 
-    def OnCreateNewBoard(self,event):
-        if self.editBoardPanelOccupied == False:
-            self.editBoardPanelOccupied = True
-            self.ReCreateBasicInfoPanel(self.boardType)
+    def OnCreateNewBluePrint(self, event):
+        if self.editBluePrintOccupied == False:
+            self.editBluePrintOccupied = True
+            self.ReCreateBasicInfoPanel(self.type,)
         else:
             wx.MessageBox("请先结束当前编辑工作后，再进行新的编辑操作！", "信息提示")
         # hhbox = wx.BoxSizer()
@@ -579,20 +455,24 @@ class SpecificBluePrintManagementPanel(wx.Panel):
     #     self.editBoardPanel.DestroyChildren()
     #     self.editBoardPanelOccupied = False
 
-    def OnBoardDensitySearch(self, event):
-        self.boardDensitySearch = self.boardDensitySearchCtrl.GetValue()
+    def OnBluePrintIDSearch(self, event):
+        self.bluePrintIDSearch = self.bluePrintIDSearchCtrl.GetValue()
         self.ReSearch()
 
-    def OnBoardFormatSearch(self, event):
-        self.boardFormatSearch = self.boardFormatSearchCtrl.GetValue()
+    def OnMiddleLengthDeltaSearch(self, event):
+        self.middleLengthDeltaSearch = self.middleLengthDeltaSearchCtrl.GetValue()
         self.ReSearch()
 
-    def OnBoardMaterailSearch(self, event):
-        self.boardMaterialSearch = self.boardMaterialSearchCtrl.GetValue()
+    def OnMiddleWidthDeltaSearch(self, event):
+        self.middleWidthDeltaSearch = self.middleWidthDeltaSearchCtrl.GetValue()
         self.ReSearch()
 
-    def OnBoardRALIDSearch(self, event):
-        self.boardRALIDSearch = self.boardRALIDSearchCtrl.GetValue()
+    def OnRearLengthDeltaSearch(self, event):
+        self.rearLengthDeltaSearch = self.rearLengthDeltaSearchCtrl.GetValue()
+        self.ReSearch()
+
+    def OnRearWidthDeltaSearch(self, event):
+        self.rearWidthDeltaSearch = self.rearWidthDeltaSearchCtrl.GetValue()
         self.ReSearch()
 
     def OnBoardSupportComponentSearch(self,event):
@@ -604,62 +484,59 @@ class SpecificBluePrintManagementPanel(wx.Panel):
         self.ReSearch()
 
     def ReSearch(self):
-        _, boardList = GetAllBoardList(self.log, 1, self.boardType, state=self.state)
-        self.boardArray = np.array(boardList)
-        if self.boardFormatSearch != '':
-            boardList = []
-            for board in self.boardArray:
-                if self.boardFormatSearch in str(board[1]):
-                    boardList.append(board)
-            self.boardArray = np.array(boardList)
-        if self.boardMaterialSearch != '':
-            boardList = []
-            for board in self.boardArray:
-                if self.boardMaterialSearch in board[2]:
-                    boardList.append(board)
-            self.boardArray = np.array(boardList)
-        if self.boardDensitySearch != '':
-            boardList = []
-            for board in self.boardArray:
-                if self.boardDensitySearch in str(board[3]):
-                    boardList.append(board)
-            self.boardArray = np.array(boardList)
-        if self.boardSupportComponentSearch != '':
-            boardList = []
-            for board in self.boardArray:
-                if self.boardSupportComponentSearch in str(board[4]):
-                    boardList.append(board)
-            self.boardArray = np.array(boardList)
-        if self.boardSupportWidthSearch != '':
-            boardList = []
-            for board in self.boardArray:
-                if self.boardSupportWidthSearch == str(board[5]):
-                    boardList.append(board)
-            self.boardArray = np.array(boardList)
-        if self.boardRALIDSearch != '':
-            boardList = []
-            for board in self.boardArray:
-                if self.boardRALIDSearch in str(board[6]):
-                    boardList.append(board)
-            self.boardArray = np.array(boardList)
-        self.boardGrid.ReCreate()
-        self.boardGrid.Render()
+        _, dataList = GetAllBluPrintList(self.log, 1, self.type,state=self.state)
+        self.dataArray = np.array(dataList)
+        if self.bluePrintIDSearch != '':
+            bluePrintList = []
+            for item in self.dataArray:
+                if self.bluePrintIDSearch in str(item[0]):
+                    bluePrintList.append(board)
+            self.dataArray = np.array(bluePrintList)
+        # if self.boardMaterialSearch != '':
+        #     bluePrintList = []
+        #     for board in self.boardArray:
+        #         if self.boardMaterialSearch in board[2]:
+        #             bluePrintList.append(board)
+        #     self.boardArray = np.array(bluePrintList)
+        # if self.boardDensitySearch != '':
+        #     bluePrintList = []
+        #     for board in self.boardArray:
+        #         if self.boardDensitySearch in str(board[3]):
+        #             bluePrintList.append(board)
+        #     self.boardArray = np.array(bluePrintList)
+        # if self.boardSupportComponentSearch != '':
+        #     bluePrintList = []
+        #     for board in self.boardArray:
+        #         if self.boardSupportComponentSearch in str(board[4]):
+        #             bluePrintList.append(board)
+        #     self.boardArray = np.array(bluePrintList)
+        # if self.boardSupportWidthSearch != '':
+        #     bluePrintList = []
+        #     for board in self.boardArray:
+        #         if self.boardSupportWidthSearch == str(board[5]):
+        #             bluePrintList.append(board)
+        #     self.boardArray = np.array(bluePrintList)
+        # if self.boardRALIDSearch != '':
+        #     bluePrintList = []
+        #     for board in self.boardArray:
+        #         if self.boardRALIDSearch in str(board[6]):
+        #             bluePrintList.append(board)
+        #     self.boardArray = np.array(bluePrintList)
+        self.bluePrintGrid.ReCreate()
+        # self.bluePrintGrid.Render()
 
     def OnResetSearchItem(self, event):
-        # self.boardFormatSearch = ''
-        # self.boardFormatSearchCtrl.SetValue('')
-        # self.boardMaterialSearch = ''
-        # self.boardMaterialSearchCtrl.SetValue('')
-        # self.boardDensitySearch = ''
-        # self.boardDensitySearchCtrl.SetValue('')
-        # self.boardRALIDSearch = ''
-        # self.boardSupportComponentSearchCtrl.SetValue('')
-        # self.boardSupportComponentSearch = ''
-        # self.boardSupportWidthSearchCtrl.SetValue('')
-        # self.boardSupportWidthSearch = ''
-        # self.boardRALIDSearchCtrl.SetValue('')
+        self.bluePrintIDSearch = ''
+        self.bluePrintIDSearchCtrl.SetValue('')
+        self.middleLengthDeltaSearch = ''
+        self.middleLengthDeltaSearchCtrl.SetValue('')
+        self.middleWidthDeltaSearch = ''
+        self.middleWidthDeltaSearchCtrl.SetValue('')
+        self.rearLengthSearch = ''
+        self.rearLengthDeltaSearchCtrl.SetValue('')
+        self.rearWidthSearch = ''
+        self.rearWidthDeltaSearchCtrl.SetValue('')
         self.ReSearch()
-
 
 class BluePrintManagementPanel(wx.Panel):
     def __init__(self, parent, master, log):
@@ -668,9 +545,9 @@ class BluePrintManagementPanel(wx.Panel):
         self.log = log
         self.processList=["505","405","409","406","652","100","306","9000"]
         self.notebook = wx.Notebook(self, -1, size=(21, 21), style=
-        # wx.BK_DEFAULT
-        # wx.BK_TOP
-        wx.BK_BOTTOM
+                                    # wx.BK_DEFAULT
+                                    # wx.BK_TOP
+                                    wx.BK_BOTTOM
                                     # wx.BK_LEFT
                                     # wx.BK_RIGHT
                                     # | wx.NB_MULTILINE
