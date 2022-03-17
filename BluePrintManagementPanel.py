@@ -28,11 +28,12 @@ class BluePrintGrid(gridlib.Grid):  ##, mixins.GridAutoEditMixin):
             self.SetColSize(i, width)
 
         for i, temp in enumerate(self.master.dataArray):
-            self.SetRowSize(i, 25)
+            self.SetRowSize(i, 50)
             data = self.Translate(temp)
+            print(data)
             for j, item in enumerate(data):
                 # self.SetCellBackgroundColour(i,j,wx.Colour(250, 250, 250))
-                self.SetCellAlignment(i, j, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE_VERTICAL)
+                self.SetCellAlignment(i, j, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
                 self.SetCellValue(i, j, str(item))
 
         # self.Bind(gridlib.EVT_GRID_CELL_LEFT_CLICK, self.OnCellLeftClick)
@@ -59,32 +60,35 @@ class BluePrintGrid(gridlib.Grid):  ##, mixins.GridAutoEditMixin):
         self.Bind(gridlib.EVT_GRID_EDITOR_CREATED, self.OnEditorCreated)
 
     def Translate(self, data):
-        result = list(data[:5])
+        print("input data",data)
+        result = list(data[:4])
         process = ''
-        if data[5]=='Y':
+        if data[4]=='Y':
             process += self.master.processList[0]
             process += '/'
-        if data[6]=='Y':
+        if data[5]=='Y':
             process += self.master.processList[1]
             process += '/'
-        if data[7]=='Y':
+        if data[6]=='Y':
             process += self.master.processList[2]
             process += '/'
-        if data[8]=='Y':
+        if data[7]=='Y':
             process += self.master.processList[3]
             process += '/'
-        if data[9]=='Y':
+        if data[8]=='Y':
             process += self.master.processList[4]
             process += '/'
-        if data[10]=='Y':
+        if data[9]=='Y':
             process += self.master.processList[5]
             process += '/'
-        if data[11]=='Y':
+        if data[10]=='Y':
             process += self.master.processList[6]
             process += '/'
-        if data[12]=='Y':
+        if data[11]=='Y':
             process += self.master.processList[7]
+        process=process+'\r\n'+process
         result.append(process)
+        result.append(data[12])
         return result
 
     def ReCreate(self):
@@ -274,8 +278,8 @@ class SpecificBluePrintManagementPanel(wx.Panel):
         self.type = type
         self.state = state
         self.processList=self.master.processList
-        self.colWidthList = [80, 72, 71, 70, 70, 170]
-        self.colLabelValueList = ['图纸号', '中板长增量', '中板宽增量', '背板长增量', '背板宽增量', '所需工序']
+        self.colWidthList = [80, 65, 65, 65, 150, 90,]
+        self.colLabelValueList = ['图纸号', '面板增量', '中板增量', '背板增量', '所需工序','状态']
         _, dataList = GetAllBluPrintList(self.log, 1, self.type,state=self.state)
         self.dataArray = np.array(dataList)
         self.bluePrintIDSearch = ''
@@ -286,7 +290,7 @@ class SpecificBluePrintManagementPanel(wx.Panel):
         self.workProcessSearch=''
         self.editBluePrintOccupied = False
         hbox = wx.BoxSizer()
-        self.leftPanel = wx.Panel(self, size=(650, -1))
+        self.leftPanel = wx.Panel(self, size=(583, -1))
         hbox.Add(self.leftPanel, 0, wx.EXPAND)
         self.rightPanel = wx.Panel(self, size=(360, -1))
         hbox.Add(self.rightPanel, 1, wx.EXPAND)
@@ -301,6 +305,7 @@ class SpecificBluePrintManagementPanel(wx.Panel):
         filename = './bitmaps/' + data[0].split('.')[1]+'.jpg'
         self.picPanel.Recreate(filename)
         self.ReCreateBasicInfoPanel(self.type,data)
+        self.ReCreateBottomPanel(self.type,data)
         evt.Skip()
 
     def CreateLeftPanel(self):
@@ -353,19 +358,20 @@ class SpecificBluePrintManagementPanel(wx.Panel):
         searchPanel.SetSizer(hhbox)
         self.leftPanel.SetSizer(vvbox)
 
-        vvbox = wx.BoxSizer(wx.VERTICAL)
-        self.topPanel = wx.Panel(self.rightPanel)
-        vvbox.Add(self.topPanel, 0, wx.EXPAND)
-        self.bottomPanel = wx.Panel(self.rightPanel)
-        vvbox.Add(self.bottomPanel,1, wx.EXPAND)
-        self.rightPanel.SetSizer(vvbox)
 
     def CreateRightPanel(self):
+        vvbox = wx.BoxSizer(wx.VERTICAL)
+        self.topPanel = wx.Panel(self.rightPanel,size=(-1,450))
+        vvbox.Add(self.topPanel, 1, wx.EXPAND)
+        self.bottomPanel = wx.Panel(self.rightPanel,size=(-1,100))
+        vvbox.Add(self.bottomPanel,0, wx.EXPAND)
+        self.rightPanel.SetSizer(vvbox)
+
         hhbox = wx.BoxSizer()
-        self.picPanel = BluePrintShowPanel(self.topPanel, size=(550, 400))
-        hhbox.Add(self.picPanel,0)
-        self.basicInfoPanel = wx.Panel(self.topPanel,size=(300,100))
-        hhbox.Add(self.basicInfoPanel, 1, wx.EXPAND)
+        self.picPanel = BluePrintShowPanel(self.topPanel, size=(550, 450))
+        hhbox.Add(self.picPanel,1)
+        self.basicInfoPanel = wx.Panel(self.topPanel,size=(230,100))
+        hhbox.Add(self.basicInfoPanel, 0, wx.EXPAND)
         self.topPanel.SetSizer(hhbox)
         # self.Bind(gridlib.EVT_GRID_CELL_LEFT_DCLICK, self.OnCellLeftDClick)
 
@@ -379,6 +385,20 @@ class SpecificBluePrintManagementPanel(wx.Panel):
     #         else:
     #             wx.MessageBox("请先结束当前编辑工作后，再进行新的编辑操作！","信息提示")
     #     # evt.Skip()
+    def ReCreateBottomPanel(self,type,data=[], state='编辑'):
+        vbox=wx.BoxSizer(wx.VERTICAL)
+        vbox.Add((-1,10))
+        hbox = wx.BoxSizer()
+        hbox.Add((20,-1))
+        hbox.Add(wx.StaticText(self.bottomPanel, label='面板工序：',size=(70,-1)),0,wx.TOP,5)
+        hbox.Add((20,-1))
+        vvbox = wx.BoxSizer(wx.VERTICAL)
+        self.process505Check = wx.CheckBox(self.bottomPanel,label='剪板505')
+        vvbox.Add(self.process505Check,0)
+        hbox.Add(vvbox,0,wx.EXPAND)
+        vbox.Add(hbox,0,wx.EXPAND)
+        self.bottomPanel.SetSizer(vbox)
+
 
     def ReCreateBasicInfoPanel(self, type, data=[], state='编辑'):
         self.basicInfoPanel.Freeze()
@@ -387,7 +407,7 @@ class SpecificBluePrintManagementPanel(wx.Panel):
         vbox.Add((-1,10))
         hhbox = wx.BoxSizer()
         hhbox.Add((20,-1))
-        hhbox.Add(wx.StaticText(self.basicInfoPanel,label='图纸类别：',size=(70,-1)),0,wx.TOP,5)
+        hhbox.Add(wx.StaticText(self.basicInfoPanel,label='图纸类别：',size=(90,-1)),0,wx.TOP,5)
         bluePrintTypeDict = {'2SF':"25mm墙板","2SA":'50mm墙板','2SG':'25mm墙角板','2SD':'50mm墙角板','2SH':'25mmT型墙板','2SE':'50mmT型墙板','2SM':'高隔音墙板','2SL':'100mm墙板'}
         choices=[]
         if type=="墙板":
@@ -396,11 +416,87 @@ class SpecificBluePrintManagementPanel(wx.Panel):
         if len(data)!=0:
             key = data[0].split('.')[1]
             self.bluePrintTypeCombo.SetValue(bluePrintTypeDict[key])
+        self.bluePrintTypeCombo.Bind(wx.EVT_COMBOBOX, self.OnBluePrintTypeChanged)
+        hhbox.Add(self.bluePrintTypeCombo,1,wx.RIGHT,20)
+        vbox.Add(hhbox,0,wx.EXPAND)
+
+        # hhbox = wx.BoxSizer()
+        # hhbox.Add((70,-1))
+        # hhbox.Add(wx.StaticText(self.basicInfoPanel,label="   长度方向",size=(70,-1)),1)
+        # hhbox.Add((5,-1))
+        # hhbox.Add(wx.StaticText(self.basicInfoPanel,label="   宽度方向",size=(70,-1)),1)
+        # vbox.Add(hhbox,0)
+        #
+        hhbox = wx.BoxSizer()
+        hhbox.Add((20,-1))
+        hhbox.Add(wx.StaticText(self.basicInfoPanel,label='面板长度增量:',size=(90,-1)),0,wx.TOP,5)
+        self.frontLengthDeltaCtrl=wx.TextCtrl(self.basicInfoPanel,size=(60,-1))
+        hhbox.Add(self.frontLengthDeltaCtrl,1,wx.RIGHT,20)
+        vbox.Add(hhbox,0,wx.EXPAND)
+        vbox.Add((-1,5))
+
+        hhbox = wx.BoxSizer()
+        hhbox.Add((20,-1))
+        hhbox.Add(wx.StaticText(self.basicInfoPanel,label='面板宽度增量:',size=(90,-1)),0,wx.TOP,5)
+        self.frontWidthDeltaCtrl=wx.TextCtrl(self.basicInfoPanel,size=(60,-1))
+        hhbox.Add(self.frontWidthDeltaCtrl,1,wx.RIGHT,20)
+        vbox.Add(hhbox,0,wx.EXPAND)
+        vbox.Add((-1,5))
+
+        if self.bluePrintTypeCombo.GetValue() in ["50mm墙板"]:
+            hhbox = wx.BoxSizer()
+            hhbox.Add((20,-1))
+            hhbox.Add(wx.StaticText(self.basicInfoPanel,label='中板长度增量:',size=(90,-1)),0,wx.TOP,5)
+            self.middleLengthDeltaCtrl=wx.TextCtrl(self.basicInfoPanel,size=(60,-1))
+            hhbox.Add(self.middleLengthDeltaCtrl,1,wx.RIGHT,20)
+            vbox.Add(hhbox,0,wx.EXPAND)
+
+            hhbox = wx.BoxSizer()
+            hhbox.Add((20,-1))
+            hhbox.Add(wx.StaticText(self.basicInfoPanel,label='中板宽度增量:',size=(90,-1)),0,wx.TOP,5)
+            self.middleWidthDeltaCtrl=wx.TextCtrl(self.basicInfoPanel,size=(60,-1))
+            hhbox.Add(self.middleWidthDeltaCtrl,1,wx.RIGHT,20)
+            vbox.Add(hhbox,0,wx.EXPAND|wx.TOP,5)
+            vbox.Add((-1,5))
+
+        hhbox = wx.BoxSizer()
+        hhbox.Add((20,-1))
+        hhbox.Add(wx.StaticText(self.basicInfoPanel,label='背板长度增量:',size=(90,-1)),0,wx.TOP,5)
+        self.rearLengthDeltaCtrl=wx.TextCtrl(self.basicInfoPanel,size=(60,-1))
+        hhbox.Add(self.rearLengthDeltaCtrl,1,wx.RIGHT,20)
+        vbox.Add(hhbox,0,wx.EXPAND)
+        vbox.Add((-1,5))
+
+        hhbox = wx.BoxSizer()
+        hhbox.Add((20,-1))
+        hhbox.Add(wx.StaticText(self.basicInfoPanel,label='背板宽度增量:',size=(90,-1)),0,wx.TOP,5)
+        self.rearWidthDeltaCtrl=wx.TextCtrl(self.basicInfoPanel,size=(60,-1))
+        hhbox.Add(self.rearWidthDeltaCtrl,1,wx.RIGHT,20)
+        vbox.Add(hhbox,0,wx.EXPAND)
+        vbox.Add((-1,5))
+
         if state == '编辑':
             self.bluePrintTypeCombo.Enable(False)
-        self.bluePrintTypeCombo.Bind(wx.EVT_COMBOBOX, self.OnBluePrintTypeChanged)
-        hhbox.Add(self.bluePrintTypeCombo,0)
-        vbox.Add(hhbox,0,wx.EXPAND)
+            temp = data[1].split(',')
+            self.frontLengthDelta = temp[0]
+            self.frontWidthDelta = temp[1]
+            self.frontLengthDeltaCtrl.SetValue(self.frontLengthDelta)
+            self.frontWidthDeltaCtrl.SetValue(self.frontWidthDelta)
+            if self.bluePrintTypeCombo.GetValue() in ["50mm墙板"]:
+                temp = data[2].split(',')
+                self.middleLengthDelta = temp[0]
+                self.middleWidthDelta = temp[1]
+                self.middleLengthDeltaCtrl.SetValue(self.middleLengthDelta)
+                self.middleWidthDeltaCtrl.SetValue(self.middleWidthDelta)
+            temp = data[3].split(',')
+            self.rearLengthDelta = temp[0]
+            self.rearWidthDelta = temp[1]
+            self.rearLengthDeltaCtrl.SetValue(self.rearLengthDelta)
+            self.rearWidthDeltaCtrl.SetValue(self.rearWidthDelta)
+
+        # self.frontWidthDeltaCtrl=wx.TextCtrl(self.basicInfoPanel,size=(50,-1))
+        # hhbox.Add((5,-1))
+        # hhbox.Add(self.frontWidthDeltaCtrl,1)
         # self.btn = wx.Button(self.basicInfoPanel,label="change",size=(100,30))
         # self.btn.Bind(wx.EVT_BUTTON, self.OnChangeBluePrintBTN)
         # hbox=wx.BoxSizer()
