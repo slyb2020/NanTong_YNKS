@@ -140,12 +140,45 @@ def GetAllBluPrintList(log,whichDB, type,state='在用'):
     cursor = db.cursor()
     if state == '全部':
         sql = """SELECT `图纸号`,`面板增量`,`中板增量`,`背板增量`,`剪板505`,`成型405`,`成型409`,`成型406`,`折弯652`,`热压100`,
-                    `热压306`,`打包9000`,`图纸状态`,`创建人`,`中板` from `图纸信息` """
+                    `热压306`,`冲铣`,`图纸状态`,`创建人`,`中板`,'打包9000',`创建时间` from `图纸信息` """
     else:
         sql = """SELECT `图纸号`,`面板增量`,`中板增量`,`背板增量`,`剪板505`,`成型405`,`成型409`,`成型406`,`折弯652`,`热压100`,
-                    `热压306`,`打包9000`,`图纸状态`,`创建人`,`中板` from `图纸信息` where `图纸状态`='%s'"""%state
+                    `热压306`,`冲铣`,`图纸状态`,`创建人`,`中板`,'打包9000',`创建时间` from `图纸信息` where `图纸状态`='%s'"""%state
     cursor.execute(sql)
     temp = cursor.fetchall()  # 获得压条信息
     db.close()
     return 0, temp
+
+def SaveBluePrintInDB(log,whichDB,data):
+    try:
+        db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
+                             passwd='%s' % dbPassword[whichDB], db='%s' % dbName[whichDB], charset='utf8')
+    except:
+        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        if log:
+            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+        return -1, []
+    cursor = db.cursor()
+    print(data)
+    # sql = "INSERT INTO 图纸信息(`图纸号`,`面板增量`,`中板增量`,`背板增量`,`剪板505`,`成型405`,`成型409`,`成型406`,`折弯652`," \
+    #       "`热压100`,`热压306`,`冲铣`,`图纸状态`,`创建人`,`中板`)" \
+    #       "VALUES ('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')"\
+    #       % (data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],data[12],data[13],data[14])
+    sql = "INSERT INTO 图纸信息(`图纸号`,`面板增量`,`中板增量`,`背板增量`,`剪板505`,`成型405`,`成型409`,`成型406`,`折弯652`," \
+          "`热压100`,`热压306`,`冲铣`,`图纸状态`,`创建人`,`中板`,`打包9000`,`图纸大类`,`创建时间`)" \
+          "VALUES ('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')"\
+          % (data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],data[12],data[13],data[14],data[15],data[16],datetime.date.today())
+    # sql = "INSERT INTO 图纸信息 (`图纸号`)VALUES ('%s')"%(data[0])
+    try:
+        # 执行sql语句
+        cursor.execute(sql)
+        # 提交到数据库执行
+        db.commit()  # 必须有，没有的话插入语句不会执行
+    except:
+        # Rollback in case there is any error
+        print("error")
+        db.rollback()
+
+    # 关闭数据库连接
+    db.close()
 

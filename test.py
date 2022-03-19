@@ -1,5 +1,6 @@
 from reportlab.platypus import SimpleDocTemplate, Table
 from reportlab.lib.styles import getSampleStyleSheet
+import datetime
 
 # 调用模板，创建指定名称的PDF文档
 doc = SimpleDocTemplate("Hello.pdf")
@@ -22,3 +23,5 @@ t = Table(data)
 story.append(t)
 # 将内容输出到PDF中
 doc.build(story)
+
+print(datetime.date.today())

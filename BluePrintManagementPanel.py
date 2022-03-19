@@ -1,6 +1,6 @@
 import wx
 import wx.grid as gridlib
-from DBOperation import GetAllBluPrintList, GetRGBWithRalID,GetAllColor
+from DBOperation import GetAllBluPrintList, GetRGBWithRalID,GetAllColor,SaveBluePrintInDB
 import wx.grid as gridlib
 import numpy as np
 import images
@@ -437,9 +437,17 @@ class SpecificBluePrintManagementPanel(wx.Panel):
             self.bluePrintTypeCombo.SetValue(self.bluePrintTypeDict[key])
         self.bluePrintTypeCombo.Bind(wx.EVT_COMBOBOX, self.OnBluePrintTypeChanged)
         hhbox.Add(self.bluePrintTypeCombo,1,wx.RIGHT,10)
-        self.bluePrintIndexCtrl=wx.TextCtrl(self.middlePanel,size=(70,-1),style=wx.TE_READONLY)
+        self.bluePrintIndexCtrl=wx.TextCtrl(self.middlePanel,size=(40,-1),style=wx.TE_READONLY)
         self.bluePrintIndexCtrl.SetValue(key)
-        hhbox.Add(self.bluePrintIndexCtrl,1,wx.RIGHT,20)
+        if state=='新建':
+            self.bluePrintNoSpin = wx.SpinCtrl(self.middlePanel,size=(70,-1))
+            self.bluePrintNoSpin.SetMin(1)
+            self.bluePrintNoSpin.SetMax(9999)
+            self.bluePrintNoSpin.SetValue(2)
+            hhbox.Add(self.bluePrintIndexCtrl, 1)
+            hhbox.Add(self.bluePrintNoSpin,0,wx.RIGHT,20)
+        else:
+            hhbox.Add(self.bluePrintIndexCtrl, 1, wx.RIGHT,20)
         vbox.Add(hhbox,0,wx.EXPAND)
 
         vbox.Add((-1,5))
@@ -764,7 +772,92 @@ class SpecificBluePrintManagementPanel(wx.Panel):
         event.Skip()
 
     def OnEditOkBTN(self,event):
-        dlg = wx.MessageBox("")
+        dlg = wx.TextEntryDialog(
+                self, '请输入图纸编号,目前显示的是系统为您建议的图纸号：',
+                '信息提示', '')
+        string = "N.%s.%04d"%(self.bluePrintIndexCtrl.GetValue(),self.bluePrintNoSpin.GetValue())
+        dlg.SetValue(string)
+        if dlg.ShowModal() == wx.ID_OK:
+            self.CombineData(dlg.GetValue())
+            SaveBluePrintInDB(self.log,1,self.data)
+        dlg.Destroy()
+
+    def CombineData(self,bluePrintNo):
+        self.data[0] = bluePrintNo
+        self.data[1] = '%s,%s'%(self.frontLengthDeltaCtrl.GetValue(),self.frontWidthDeltaCtrl.GetValue())
+        if self.data[14]=='Y':
+            self.data[2] = '%s,%s'%(self.middleLengthDeltaCtrl.GetValue(),self.middleWidthDeltaCtrl.GetValue())
+        else:
+            self.data[2] = '0,0'
+        self.data[3] = '%s,%s'%(self.rearLengthDeltaCtrl.GetValue(),self.rearWidthDeltaCtrl.GetValue())
+        self.data[4] = 'FR' if self.data[14]=='N' else 'FMR'
+        self.data[5] = ''#成型405工序
+        if self.shapeprocess405FrontCheck.GetValue():
+            self.data[5] += 'F'
+        if self.data[14] == 'Y':
+            if self.shapeprocess405MiddleCheck.GetValue():
+                self.data[5] += 'M'
+        if self.shapeprocess405RearCheck.GetValue():
+            self.data[5] += 'R'
+
+        self.data[6] = ''#成型409工序
+        if self.shapeprocess409FrontCheck.GetValue():
+            self.data[6] += 'F'
+        if self.data[14] == 'Y':
+            if self.shapeprocess409MiddleCheck.GetValue():
+                self.data[6] += 'M'
+        if self.shapeprocess409RearCheck.GetValue():
+            self.data[6] += 'R'
+
+        self.data[7] = ''#成型406工序
+        if self.shapeprocess406FrontCheck.GetValue():
+            self.data[7] += 'F'
+        if self.data[14] == 'Y':
+            if self.shapeprocess406MiddleCheck.GetValue():
+                self.data[7] += 'M'
+        if self.shapeprocess406RearCheck.GetValue():
+            self.data[7] += 'R'
+
+        self.data[8] = ''#折弯652工序
+        if self.bowprocess652FrontCheck.GetValue():
+            self.data[8] += 'F'
+        if self.data[14] == 'Y':
+            if self.bowprocess652MiddleCheck.GetValue():
+                self.data[8] += 'M'
+        if self.bowprocess652RearCheck.GetValue():
+            self.data[8] += 'R'
+
+        self.data[9] = ''#热压100工序
+        if self.hotpressprocess100FrontCheck.GetValue():
+            self.data[9] += 'F'
+        if self.data[14] == 'Y':
+            if self.hotpressprocess100MiddleCheck.GetValue():
+                self.data[9] += 'M'
+        if self.hotpressprocess100RearCheck.GetValue():
+            self.data[9] += 'R'
+
+        self.data[10] = ''#热压306工序
+        if self.hotpressprocess306FrontCheck.GetValue():
+            self.data[10] += 'F'
+        if self.data[14] == 'Y':
+            if self.hotpressprocess306MiddleCheck.GetValue():
+                self.data[10] += 'M'
+        if self.hotpressprocess306RearCheck.GetValue():
+            self.data[10] += 'R'
+
+        self.data[11] = ''#冲洗xxx工序
+        if self.holeprocess9000FrontCheck.GetValue():
+            self.data[11] += 'F'
+        if self.data[14] == 'Y':
+            if self.holeprocess9000MiddleCheck.GetValue():
+                self.data[11] += 'M'
+        if self.holeprocess9000RearCheck.GetValue():
+            self.data[11] += 'R'
+
+        self.data[12]='在用'
+        self.data[13]='%s'%self.master.master.master.operatorID
+        self.data[15] = 'FR' if self.data[14]=='N' else 'FMR'
+        self.data[16] = '%s'%self.type
 
     def OnCancel(self,event):
         self.busy = False
