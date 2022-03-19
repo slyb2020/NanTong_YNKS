@@ -355,6 +355,7 @@ class MainPanel(wx.Panel):
             bitmap = wx.Bitmap("bitmaps/aquabutton.png",
                                wx.BITMAP_TYPE_PNG)
             self.newOrderBTN = AB.AquaButton(panel, wx.ID_ANY, bitmap, "  新建订单", size=(100, 50))
+            self.newOrderBTN.Bind(wx.EVT_BUTTON,self.OnNewOrderBTN)
             self.newOrderBTN.SetForegroundColour(wx.BLACK)
             self.editOrderBTN = AB.AquaButton(panel, wx.ID_ANY, bitmap, "  订单管理", size=(100, 50))
             self.editOrderBTN.SetForegroundColour(wx.BLACK)
@@ -420,6 +421,17 @@ class MainPanel(wx.Panel):
                 item.Expand()
             else:
                 item.Collapse()
+    def OnNewOrderBTN(self,event):
+        dlg = wx.SingleChoiceDialog(
+                self, '手动输入订单', '请您选择：',
+                [ '从Excel表格导入订单', '手动输入订单'],
+                wx.CHOICEDLG_STYLE
+                )
+
+        if dlg.ShowModal() == wx.ID_OK:
+            self.log.WriteText('You selected: %s\n' % dlg.GetStringSelection())
+
+        dlg.Destroy()
 
     def OnPressCaption(self,event):
         for i in range(0, self._pnl.GetCount()):

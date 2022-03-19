@@ -86,6 +86,8 @@ class BluePrintGrid(gridlib.Grid):  ##, mixins.GridAutoEditMixin):
         return result
 
     def ReCreate(self):
+        if self.GetNumberRows()<self.master.dataArray.shape[0]:
+            self.InsertRows(numRows=self.master.dataArray.shape[0]-self.GetNumberRows())
         self.ClearGrid()
         self.EnableEditing(False)
         self.SetColLabelAlignment(wx.ALIGN_CENTRE, wx.ALIGN_CENTRE_VERTICAL)
@@ -431,22 +433,23 @@ class SpecificBluePrintManagementPanel(wx.Panel):
         choices=[]
         if type=="墙板":
             choices=["25mm墙板",'50mm墙板','25mm墙角板','25mmT型墙板','50mmT型墙板','高隔音墙板','100mm墙板']
-        self.bluePrintTypeCombo = wx.ComboBox(self.middlePanel, choices=choices, size=(70, 30), style=wx.TE_PROCESS_ENTER)
+        self.bluePrintTypeCombo = wx.ComboBox(self.middlePanel, choices=choices, size=(90, 30), style=wx.TE_PROCESS_ENTER)
         if len(self.data)!=0:
             key = self.data[0].split('.')[1]
             self.bluePrintTypeCombo.SetValue(self.bluePrintTypeDict[key])
         self.bluePrintTypeCombo.Bind(wx.EVT_COMBOBOX, self.OnBluePrintTypeChanged)
-        hhbox.Add(self.bluePrintTypeCombo,1,wx.RIGHT,10)
         self.bluePrintIndexCtrl=wx.TextCtrl(self.middlePanel,size=(40,-1),style=wx.TE_READONLY)
         self.bluePrintIndexCtrl.SetValue(key)
         if state=='新建':
-            self.bluePrintNoSpin = wx.SpinCtrl(self.middlePanel,size=(70,-1))
+            hhbox.Add(self.bluePrintTypeCombo, 1)
+            self.bluePrintNoSpin = wx.SpinCtrl(self.middlePanel,size=(55,-1))
             self.bluePrintNoSpin.SetMin(1)
             self.bluePrintNoSpin.SetMax(9999)
             self.bluePrintNoSpin.SetValue(2)
-            hhbox.Add(self.bluePrintIndexCtrl, 1)
+            hhbox.Add(self.bluePrintIndexCtrl, 0)
             hhbox.Add(self.bluePrintNoSpin,0,wx.RIGHT,20)
         else:
+            hhbox.Add(self.bluePrintTypeCombo, 1, wx.RIGHT, 10)
             hhbox.Add(self.bluePrintIndexCtrl, 1, wx.RIGHT,20)
         vbox.Add(hhbox,0,wx.EXPAND)
 
@@ -513,13 +516,7 @@ class SpecificBluePrintManagementPanel(wx.Panel):
         bsizer.AddSpacer(topBorder+5)
         hhbox = wx.BoxSizer()
         hhbox.AddSpacer(otherBorder+2)
-        # vvbox = wx.BoxSizer(wx.VERTICAL)
-        # self.cutProcess505FrontCheck = wx.CheckBox(frontFrame,label='剪板505')
-        # self.cutProcess505FrontCheck.Enable(False)
-        # if '505' in processFront:
-        #     self.cutProcess505FrontCheck.SetValue(True)
-        # vvbox.Add(self.cutProcess505FrontCheck,0)
-        #
+
         vvbox = wx.BoxSizer(wx.VERTICAL)
         self.shapeprocess405FrontCheck = wx.CheckBox(frontFrame,label='成型405')
         if '405' in processFront:
@@ -572,12 +569,6 @@ class SpecificBluePrintManagementPanel(wx.Panel):
             bsizer.AddSpacer(topBorder+5)
             hhbox = wx.BoxSizer()
             hhbox.AddSpacer(otherBorder+2)
-            # vvbox = wx.BoxSizer(wx.VERTICAL)
-            # self.cutProcess505MiddleCheck = wx.CheckBox(middleFrame,label='剪板505')
-            # self.cutProcess505MiddleCheck.Enable(False)
-            # if '505' in processMiddle:
-            #     self.cutProcess505MiddleCheck.SetValue(True)
-            # vvbox.Add(self.cutProcess505MiddleCheck,0)
 
             vvbox = wx.BoxSizer(wx.VERTICAL)
             self.shapeprocess405MiddleCheck = wx.CheckBox(middleFrame,label='成型405')
@@ -780,6 +771,12 @@ class SpecificBluePrintManagementPanel(wx.Panel):
         if dlg.ShowModal() == wx.ID_OK:
             self.CombineData(dlg.GetValue())
             SaveBluePrintInDB(self.log,1,self.data)
+            self.busy = False
+            self.middlePanel.DestroyChildren()
+            self.rightPanel.DestroyChildren()
+            _, dataList = GetAllBluPrintList(self.log, 1, self.type, state=self.state)
+            self.dataArray = np.array(dataList)
+            self.bluePrintGrid.ReCreate()
         dlg.Destroy()
 
     def CombineData(self,bluePrintNo):

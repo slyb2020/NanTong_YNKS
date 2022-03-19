@@ -159,7 +159,6 @@ def SaveBluePrintInDB(log,whichDB,data):
             log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
         return -1, []
     cursor = db.cursor()
-    print(data)
     # sql = "INSERT INTO 图纸信息(`图纸号`,`面板增量`,`中板增量`,`背板增量`,`剪板505`,`成型405`,`成型409`,`成型406`,`折弯652`," \
     #       "`热压100`,`热压306`,`冲铣`,`图纸状态`,`创建人`,`中板`)" \
     #       "VALUES ('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')"\
@@ -176,7 +175,6 @@ def SaveBluePrintInDB(log,whichDB,data):
         db.commit()  # 必须有，没有的话插入语句不会执行
     except:
         # Rollback in case there is any error
-        print("error")
         db.rollback()
 
     # 关闭数据库连接
