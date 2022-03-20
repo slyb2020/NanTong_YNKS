@@ -2,6 +2,7 @@ import wx
 import wx.grid as gridlib
 from DBOperation import GetAllOrderList
 import numpy as np
+import images
 
 
 class OrderGrid(gridlib.Grid):  ##, mixins.GridAutoEditMixin):
@@ -321,6 +322,34 @@ class OrderManagementPanel(wx.Panel):
         # self.filter.Bind(wx.EVT_SEARCHCTRL_CANCEL_BTN,
         #                  lambda e: self.filter.SetValue(''))
         # self.filter.Bind(wx.EVT_TEXT_ENTER, self.OnSearch)
+        self.ReCreateRightPanel()
+
+    def ReCreateRightPanel(self):
+        self.rightPanel.DestroyChildren()
+        self.notebook = wx.Notebook(self.rightPanel, -1, size=(21, 21), style=
+                                    # wx.BK_DEFAULT
+                                    # wx.BK_TOP
+                                    wx.BK_BOTTOM
+                                    # wx.BK_LEFT
+                                    # wx.BK_RIGHT
+                                    # | wx.NB_MULTILINE
+                                    )
+        il = wx.ImageList(16, 16)
+        idx1 = il.Add(images._rt_smiley.GetBitmap())
+        self.total_page_num = 0
+        self.notebook.AssignImageList(il)
+        idx2 = il.Add(images.GridBG.GetBitmap())
+        idx3 = il.Add(images.Smiles.GetBitmap())
+        idx4 = il.Add(images._rt_undo.GetBitmap())
+        idx5 = il.Add(images._rt_save.GetBitmap())
+        idx6 = il.Add(images._rt_redo.GetBitmap())
+        hbox = wx.BoxSizer()
+        hbox.Add(self.notebook, 1, wx.EXPAND)
+        self.rightPanel.SetSizer(hbox)
+        self.orderDetailPanel = wx.Panel(self.notebook)
+        self.notebook.AddPage(self.orderDetailPanel,"订单详情")
+        self.orderExcelPanel = wx.Panel(self.notebook)
+        self.notebook.AddPage(self.orderExcelPanel,"订单原始Excel")
 
     def OnOrderStateSearch(self, event):
         self.orderStateSearch = self.orderStateSearchCtrl.GetValue()

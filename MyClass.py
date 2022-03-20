@@ -495,7 +495,7 @@ class WorkZonePanel(wx.Panel):
             self.orderManagmentPanel = OrderManagementPanel(self.notebook,self.master, self.log)
             self.notebook.AddPage(self.orderManagmentPanel, "订单管理")
         if self.master.operatorCharacter == '下单员':
-            self.notebook.SetSelection(0)
+            self.notebook.SetSelection(1)
         elif self.master.operatorCharacter in ["技术员","管理员"]:
-            self.notebook.SetSelection(2)
+            self.notebook.SetSelection(3)
 
