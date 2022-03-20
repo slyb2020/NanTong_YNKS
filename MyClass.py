@@ -39,6 +39,7 @@ from SystemIntroductionPanel import SystemIntroductionPanel
 from OrderManagementPanel import OrderManagementPanel
 from BoardManagementPanel import BoardManagementPanel
 from BluePrintManagementPanel import BluePrintManagementPanel
+from ExcelImport import XLSGridFrame
 
 dirName = os.path.dirname(os.path.abspath(__file__))
 bitmapDir = os.path.join(dirName, 'bitmaps')
@@ -423,15 +424,32 @@ class MainPanel(wx.Panel):
                 item.Collapse()
     def OnNewOrderBTN(self,event):
         dlg = wx.SingleChoiceDialog(
-                self, '手动输入订单', '请您选择：',
-                [ '从Excel表格导入订单', '手动输入订单'],
+                self, '请您选择：', '信息提示：',
+                [ '从 Excel 表格导入订单', '通过手动方式输入订单'],
                 wx.CHOICEDLG_STYLE
                 )
 
         if dlg.ShowModal() == wx.ID_OK:
-            self.log.WriteText('You selected: %s\n' % dlg.GetStringSelection())
+            dlg.Destroy()
+            if dlg.GetStringSelection()=='从 Excel 表格导入订单':
+                wildcard = "Excel文件 (*.xls)|*.xls|" \
+                           "Compiled Python (*.pyc)|*.pyc|" \
+                           "All files (*.*)|*.*"
 
-        dlg.Destroy()
+                dlg = wx.FileDialog(
+                    self, message="请选择Excel文件",
+                    defaultDir=os.getcwd(),
+                    defaultFile="",
+                    wildcard=wildcard,
+                    style=wx.FD_OPEN | wx.FD_MULTIPLE |
+                          wx.FD_CHANGE_DIR | wx.FD_FILE_MUST_EXIST |
+                          wx.FD_PREVIEW
+                )
+                if dlg.ShowModal() == wx.ID_OK:
+                    paths = dlg.GetPaths()
+                    XLSGridFrame(None,paths[0])
+        else:
+            dlg.Destroy()
 
     def OnPressCaption(self,event):
         for i in range(0, self._pnl.GetCount()):
@@ -476,6 +494,8 @@ class WorkZonePanel(wx.Panel):
         if self.master.operatorCharacter in ["技术员","管理员","下单员"]:
             self.orderManagmentPanel = OrderManagementPanel(self.notebook,self.master, self.log)
             self.notebook.AddPage(self.orderManagmentPanel, "订单管理")
-
-        self.notebook.SetSelection(2)
+        if self.master.operatorCharacter == '下单员':
+            self.notebook.SetSelection(0)
+        elif self.master.operatorCharacter in ["技术员","管理员"]:
+            self.notebook.SetSelection(2)
 

@@ -1,6 +1,8 @@
+import os
+
 import wx
 import wx.grid as gridlib
-from DBOperation import GetAllBluPrintList, GetRGBWithRalID,GetAllColor,SaveBluePrintInDB
+from DBOperation import GetAllBluPrintList, GetRGBWithRalID,GetAllColor,SaveBluePrintInDB,UpdateBluePrintInDB
 import wx.grid as gridlib
 import numpy as np
 import images
@@ -282,6 +284,9 @@ class SpecificBluePrintManagementPanel(wx.Panel):
         self.type = type
         self.state = state
         self.busy = False
+        self.pageNo = 1
+        self.editState = '查看'
+        self.editState = '查看'
         self.data = []
         self.processList=self.master.processList
         self.colWidthList = [80, 65, 65, 65, 170, 70,47]
@@ -312,7 +317,16 @@ class SpecificBluePrintManagementPanel(wx.Panel):
     def OnButton(self,event):
         obj = event.GetEventObject()
         if obj.GetName()=='pageUp':
-            print("there")
+            self.pageNo=int(self.data[17])
+            if self.pageNo>1:
+                self.pageNo -=1
+            else:
+                self.pageNo = len(os.listdir('图纸/%s/'%self.bluePrintIndexCtrl.GetValue()))
+            self.data[17]=str(self.pageNo)
+            print("page=",self.data[17])
+            filename = '图纸/%s/%s.jpg' % (self.bluePrintIndexCtrl.GetValue(), self.data[17])
+            print(filename)
+            self.picPanel.Recreate(filename, self.editState)
         event.Skip()
 
     def OnCellLeftDClick(self, evt):
@@ -322,10 +336,13 @@ class SpecificBluePrintManagementPanel(wx.Panel):
                     self.busy = True
                     row = evt.GetRow()
                     self.data = self.dataArray[row]
-                    filename = './bitmaps/' + self.data[0].split('.')[1]+'.jpg'
-                    self.ReCreateMiddlePanel(self.type, '编辑')
+                    self.pageNo = self.data[17]
+                    index = self.data[0].split('.')[1]
+                    filename = '图纸/%s/%s.jpg'%(index,self.pageNo)
+                    self.editState = '编辑'
+                    self.ReCreateMiddlePanel(self.type, self.editState)
                     # self.ReCreateRightPanel()
-                    self.picPanel.Recreate(filename, '编辑')
+                    self.picPanel.Recreate(filename, self.editState)
         evt.Skip()
 
     def OnCellLeftClick(self, evt):
@@ -334,8 +351,11 @@ class SpecificBluePrintManagementPanel(wx.Panel):
             self.bluePrintGrid.SetSelectionMode(wx.grid.Grid.GridSelectRows)
             self.bluePrintGrid.SelectRow(row)
             self.data = self.dataArray[row]
-            filename = './bitmaps/' + self.data[0].split('.')[1]+'.jpg'
-            self.ReCreateMiddlePanel(self.type, '查看')
+            self.pageNo = self.data[17]
+            index = self.data[0].split('.')[1]
+            filename = '图纸/%s/%s.jpg' % (index, self.pageNo)
+            self.editState = '查看'
+            self.ReCreateMiddlePanel(self.type, self.editState)
             self.ReCreateRightPanel()
             self.picPanel.Recreate(filename)
         evt.Skip()
@@ -685,26 +705,6 @@ class SpecificBluePrintManagementPanel(wx.Panel):
         self.rearWidthDelta = temp[1]
         self.rearLengthDeltaCtrl.SetValue(self.rearLengthDelta)
         self.rearWidthDeltaCtrl.SetValue(self.rearWidthDelta)
-        # self.rearWidthDeltaCtrl.SetEditable(False)
-
-        # else:
-        #     temp = self.data[1].split(',')
-        #     self.frontLengthDelta = temp[0]
-        #     self.frontWidthDelta = temp[1]
-        #     self.frontLengthDeltaCtrl.SetValue(self.frontLengthDelta)
-        #     self.frontWidthDeltaCtrl.SetValue(self.frontWidthDelta)
-        #     if state=='编辑' and self.data[14]=='Y':
-        #         temp = self.data[2].split(',')
-        #         self.middleLengthDelta = temp[0]
-        #         self.middleWidthDelta = temp[1]
-        #         self.middleLengthDeltaCtrl.SetValue(self.middleLengthDelta)
-        #         self.middleWidthDeltaCtrl.SetValue(self.middleWidthDelta)
-        #     temp = self.data[3].split(',')
-        #     self.rearLengthDelta = temp[0]
-        #     self.rearWidthDelta = temp[1]
-        #     self.rearLengthDeltaCtrl.SetValue(self.rearLengthDelta)
-        #     self.rearWidthDeltaCtrl.SetValue(self.rearWidthDelta)
-
 
         if state != '查看':
             vbox.Add(wx.Panel(self.middlePanel, size=(10, 10)), 1, wx.EXPAND)
@@ -763,21 +763,31 @@ class SpecificBluePrintManagementPanel(wx.Panel):
         event.Skip()
 
     def OnEditOkBTN(self,event):
-        dlg = wx.TextEntryDialog(
-                self, '请输入图纸编号,目前显示的是系统为您建议的图纸号：',
-                '信息提示', '')
-        string = "N.%s.%04d"%(self.bluePrintIndexCtrl.GetValue(),self.bluePrintNoSpin.GetValue())
-        dlg.SetValue(string)
-        if dlg.ShowModal() == wx.ID_OK:
-            self.CombineData(dlg.GetValue())
-            SaveBluePrintInDB(self.log,1,self.data)
+        if self.editState == '新建':
+            dlg = wx.TextEntryDialog(
+                    self, '请输入图纸编号,目前显示的是系统为您建议的图纸号：',
+                    '信息提示', '')
+            string = "N.%s.%04d"%(self.bluePrintIndexCtrl.GetValue(),self.bluePrintNoSpin.GetValue())
+            dlg.SetValue(string)
+            if dlg.ShowModal() == wx.ID_OK:
+                self.CombineData(dlg.GetValue())
+                SaveBluePrintInDB(self.log, 1, self.data)
+                self.busy = False
+                self.middlePanel.DestroyChildren()
+                self.rightPanel.DestroyChildren()
+                _, dataList = GetAllBluPrintList(self.log, 1, self.type, state=self.state)
+                self.dataArray = np.array(dataList)
+                self.bluePrintGrid.ReCreate()
+            dlg.Destroy()
+        else:
+            self.CombineData(self.data[0])
+            UpdateBluePrintInDB(self.log, 1, self.data)
             self.busy = False
             self.middlePanel.DestroyChildren()
             self.rightPanel.DestroyChildren()
             _, dataList = GetAllBluPrintList(self.log, 1, self.type, state=self.state)
             self.dataArray = np.array(dataList)
             self.bluePrintGrid.ReCreate()
-        dlg.Destroy()
 
     def CombineData(self,bluePrintNo):
         self.data[0] = bluePrintNo
@@ -855,6 +865,7 @@ class SpecificBluePrintManagementPanel(wx.Panel):
         self.data[13]='%s'%self.master.master.master.operatorID
         self.data[15] = 'FR' if self.data[14]=='N' else 'FMR'
         self.data[16] = '%s'%self.type
+        # self.data[17] = str(self.pageNo)
 
     def OnCancel(self,event):
         self.busy = False
@@ -895,28 +906,17 @@ class SpecificBluePrintManagementPanel(wx.Panel):
             self.busy = True
             if len(self.data)==0:
                 if len(self.dataArray)==0:
-                    self.data = ['']*15
+                    self.data = ['']*18
                 else:
                     self.data = self.dataArray[0]
             self.data[14]='N'
-            self.ReCreateMiddlePanel(self.type,state='新建')
+            self.editState = '新建'
+            self.ReCreateMiddlePanel(self.type,state=self.editState)
             self.ReCreateRightPanel()
-            filename = './bitmaps/' + self.data[0].split('.')[1]+'.jpg'
+            filename = '图纸/%s/%s.jpg' % (self.bluePrintIndexCtrl.GetValue(), self.pageNo)
             self.picPanel.Recreate(filename)
         else:
             wx.MessageBox("请先结束当前编辑工作后，再进行新的编辑操作！", "信息提示")
-        # hhbox = wx.BoxSizer()
-        # self.finishNewBoardBTN = wx.Button(self.editBoardPanel)
-        # self.finishNewBoardBTN.Bind(wx.EVT_BUTTON,self.OnFinishNewBoard)
-        # hhbox.Add(self.finishNewBoardBTN,0)
-        # self.editBoardPanel.SetSizer(hhbox)
-        # self.editBoardPanel.Layout()
-        # self.colorPalettePanel.ReCreate()
-
-    # def OnFinishNewBoard(self,event):
-    #     self.colorPalettePanel.DestroyChildren()
-    #     self.editBoardPanel.DestroyChildren()
-    #     self.editBoardPanelOccupied = False
 
     def OnBluePrintIDSearch(self, event):
         self.bluePrintIDSearch = self.bluePrintIDSearchCtrl.GetValue()

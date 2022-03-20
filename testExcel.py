@@ -3,7 +3,7 @@ import openpyxl
 # pd.read_excel(open('Excel/test.xlsx', 'rb'),
 #               sheet_name='Sheet1')
 
-wb=openpyxl.load_workbook('Excel/220308-NT202203002-CPP03-EPCI6 MTO-panel & ceiling.xlsx')
+wb=openpyxl.load_workbook('Excel/220308-NT202203002-CPP03-EPCI6 MTO-panel & ceiling.xls')
 ws = wb.active
 # sheet = wb.worksheets[0]
 # print(sheet.title)
