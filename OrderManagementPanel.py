@@ -1,9 +1,9 @@
 import wx
 import wx.grid as gridlib
-from DBOperation import GetAllOrderList
+from DBOperation import GetAllOrderList,GetOrderDetailRecord
+from OrderDetailTree import OrderDetailTree
 import numpy as np
 import images
-
 
 class OrderGrid(gridlib.Grid):  ##, mixins.GridAutoEditMixin):
     def __init__(self, parent, master, log):
@@ -262,6 +262,7 @@ class OrderManagementPanel(wx.Panel):
         self.busy = False
         self.colLabelValueList = ["订单编号","客户名称","产品名称","产品数量","订单交货日期","下单时间","下单员","订单状态"]
         self.colWidthList = [70, 90,70, 60, 90, 100, 80, 70]
+        self.orderDetailData = []
         _, orderList = GetAllOrderList(self.log, 1)
         self.dataArray = np.array(orderList)
         self.data = []
@@ -327,6 +328,14 @@ class OrderManagementPanel(wx.Panel):
         # self.ReCreateRightPanel()
         self.Bind(gridlib.EVT_GRID_CELL_LEFT_CLICK, self.OnCellLeftClick)
 
+    def ReCreateOrderDetailTree(self):
+        self.orderDetailTreePanel.DestroyChildren()
+        self.orderDetailTree = OrderDetailTree(self.orderDetailTreePanel,self.log,self.orderDetailTreeStructureList)
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        vbox.Add(self.orderDetailTree,1,wx.EXPAND)
+        self.orderDetailTreePanel.SetSizer(vbox)
+        self.orderDetailTreePanel.Layout()
+
     def OnCellLeftClick(self,event):
         if self.busy == False:
             row = event.GetRow()
@@ -336,7 +345,27 @@ class OrderManagementPanel(wx.Panel):
             print(self.data)
             # self.ReCreateMiddlePanel(self.type, self.editState)
             self.ReCreateRightPanel()
-            # self.picPanel.Recreate(filename)
+            _,self.orderDetailData = GetOrderDetailRecord(self.log,1,self.data[0])
+            print(self.orderDetailData)
+            if len(self.orderDetailData)==0:
+                self.orderDetailTreeStructureList = [
+                    self.data[0],[
+                    ["ImageNet", [["2017", []], ["2018", []]]],
+                    ["FasionMNIST", [["2007", []], ["2012", []]]],
+                    ["MNIST", [["2007", []], ["2012", []]]],
+                    ["猫狗大战", []],
+                    ]
+                ]
+            else:
+                self.orderDetailTreeStructureList = [
+                        self.data[0],[
+                        ["ImageNet", [["2017", []], ["2018", []]]],
+                        ["FasionMNIST", [["2007", []], ["2012", []]]],
+                        ["MNIST", [["2007", []], ["2012", []]]],
+                        ["猫狗大战", []],
+                        ]
+                    ]
+            self.ReCreateOrderDetailTree()
         event.Skip()
 
     def ReCreateRightPanel(self):
@@ -366,7 +395,7 @@ class OrderManagementPanel(wx.Panel):
         self.orderExcelPanel = wx.Panel(self.notebook)
         self.notebook.AddPage(self.orderExcelPanel,"订单原始Excel")
         self.rightPanel.Layout()
-        self.orderDetailTreePanel=wx.Panel(self.orderDetailPanel,size=(230,-1),style=wx.BORDER_THEME)
+        self.orderDetailTreePanel=wx.Panel(self.orderDetailPanel,size=(200,-1))
         self.orderDetailGridPanel=wx.Panel(self.orderDetailPanel,size=(100,-1),style=wx.BORDER_THEME)
         hbox = wx.BoxSizer()
         hbox.Add(self.orderDetailTreePanel,0,wx.EXPAND)

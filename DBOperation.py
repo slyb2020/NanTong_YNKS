@@ -281,3 +281,19 @@ def InsertNewOrderRecord(log,whichDB,newOrderID):
     except:
         db.rollback()
     db.close()
+
+def GetOrderDetailRecord(log, whichDB, orderDetailID):
+    try:
+        db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
+                             passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
+    except:
+        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        if log:
+            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+        return -1, []
+    cursor = db.cursor()
+    sql = """SELECT `订单号`,`子订单号`,`甲板`,`区域`,`房间` from `%s` """%(str(orderDetailID))
+    cursor.execute(sql)
+    temp = cursor.fetchall()  # 获得压条信息
+    db.close()
+    return 0, temp
