@@ -60,7 +60,7 @@ class BoardGrid(OrderGrid):
             self.SetCellBackgroundColour(i, 8, wx.Colour(255, 255, 255))#清第8列（编辑按钮列）
             self.SetCellBackgroundColour(i, 9, wx.Colour(255, 255, 255))#清第9列（编辑按钮列）
 
-        for i, item in enumerate(self.master.boardArray):
+        for i, item in enumerate(self.master.dataArray):
             RalID = item[6]
             _, color = GetRGBWithRalID(self.log, 1, RalID)
             self.SetCellBackgroundColour(i, 6, wx.Colour(color[0], color[1], color[2]))
@@ -86,8 +86,8 @@ class SpecificBoardManagementPanel(wx.Panel):
         self.state = state
         self.colWidthList = [50, 52, 51, 60, 110, 55, 75, 60, 35, 35]
         self.colLabelValueList = ['材质', '厚度', '规格', '单位重量', '支持部件', '支持宽度', 'RAL色号', '颜色名','状态','']
-        _, orderList = GetAllBoardList(self.log, 1, self.boardType,state=self.state)
-        self.boardArray = np.array(orderList)
+        _, boardList = GetAllBoardList(self.log, 1, self.boardType,state=self.state)
+        self.dataArray = np.array(boardList)
         self.orderIDSearch = ''
         self.boardFormatSearch = ''
         self.boardMaterialSearch = ''
@@ -323,7 +323,7 @@ class SpecificBoardManagementPanel(wx.Panel):
             self.state = '在用'
             self.changeStateBTN.SetBackgroundColour(wx.GREEN)
         _, orderList = GetAllBoardList(self.log, 1, self.boardType,state=self.state)
-        self.boardArray = np.array(orderList)
+        self.dataArray = np.array(orderList)
         self.boardGrid.ReCreate()
         self.boardGrid.Render()
 
@@ -372,43 +372,43 @@ class SpecificBoardManagementPanel(wx.Panel):
 
     def ReSearch(self):
         _, boardList = GetAllBoardList(self.log, 1, self.boardType, state=self.state)
-        self.boardArray = np.array(boardList)
+        self.dataArray = np.array(boardList)
         if self.boardFormatSearch != '':
             boardList = []
-            for board in self.boardArray:
+            for board in self.dataArray:
                 if self.boardFormatSearch in str(board[1]):
                     boardList.append(board)
-            self.boardArray = np.array(boardList)
+            self.dataArray = np.array(boardList)
         if self.boardMaterialSearch != '':
             boardList = []
-            for board in self.boardArray:
+            for board in self.dataArray:
                 if self.boardMaterialSearch in board[2]:
                     boardList.append(board)
-            self.boardArray = np.array(boardList)
+            self.dataArray = np.array(boardList)
         if self.boardDensitySearch != '':
             boardList = []
-            for board in self.boardArray:
+            for board in self.dataArray:
                 if self.boardDensitySearch in str(board[3]):
                     boardList.append(board)
-            self.boardArray = np.array(boardList)
+            self.dataArray = np.array(boardList)
         if self.boardSupportComponentSearch != '':
             boardList = []
-            for board in self.boardArray:
+            for board in self.dataArray:
                 if self.boardSupportComponentSearch in str(board[4]):
                     boardList.append(board)
-            self.boardArray = np.array(boardList)
+            self.dataArray = np.array(boardList)
         if self.boardSupportWidthSearch != '':
             boardList = []
-            for board in self.boardArray:
+            for board in self.dataArray:
                 if self.boardSupportWidthSearch == str(board[5]):
                     boardList.append(board)
-            self.boardArray = np.array(boardList)
+            self.dataArray = np.array(boardList)
         if self.boardRALIDSearch != '':
             boardList = []
-            for board in self.boardArray:
+            for board in self.dataArray:
                 if self.boardRALIDSearch in str(board[6]):
                     boardList.append(board)
-            self.boardArray = np.array(boardList)
+            self.dataArray = np.array(boardList)
         self.boardGrid.ReCreate()
         self.boardGrid.Render()
 

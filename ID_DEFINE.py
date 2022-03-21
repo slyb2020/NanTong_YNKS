@@ -13,6 +13,7 @@ dbHostName = ["127.0.0.1",'127.0.0.1']
 dbUserName = ['root','root']
 dbPassword = ['','']
 dbName = ['智能生产管理系统','智能生产管理系统_调试']
+orderDBName = ['订单数据库','订单数据库_调试']
 
 import wx
 

@@ -196,3 +196,88 @@ def UpdateBluePrintInDB(log,whichDB,data):
         db.rollback()
     db.close()
 
+def GetTableListFromDB(log,whichDB):
+    try:
+        db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
+                             passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
+    except:
+        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        if log:
+            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+        return -1, []
+    cursor = db.cursor()
+    sql = "select table_name from information_schema.tables where table_schema='%s'"%orderDBName[whichDB]
+    cursor.execute(sql)
+    temp = cursor.fetchall()  # 获得压条信息
+    db.close()
+    result=[]
+    for i in temp:
+        result.append(i[0])
+    return 0, result
+
+def InsertNewOrderRecord(log,whichDB):
+    return
+
+def CreateNewOrderSheet(log,whichDB,newOrderID):
+    try:
+        db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
+                             passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
+    except:
+        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        if log:
+            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+        return -1, []
+    cursor = db.cursor()
+    sql = """CREATE TABLE `%d` (
+            `Index` INT(11) NOT NULL,
+            `订单号` INT(11) NOT NULL,
+            `子订单号` INT(11) NULL DEFAULT NULL,
+            `甲板` VARCHAR(50) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+            `区域` VARCHAR(50) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+            `房间` VARCHAR(50) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+            `图纸` VARCHAR(50) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+            `数量` INT(11) NULL DEFAULT NULL,
+            `宽度` INT(11) NULL DEFAULT NULL,
+            `高度` INT(11) NULL DEFAULT NULL,
+            `厚度` INT(11) NULL DEFAULT NULL,
+            `X面材质` VARCHAR(50) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+            `X面颜色` VARCHAR(50) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+            `Y面材质` VARCHAR(50) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+            `Y面颜色` VARCHAR(50) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+            `备注` TEXT NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+            `重量` VARCHAR(50) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+            `所处工位` VARCHAR(50) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+            `状态` VARCHAR(50) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+            PRIMARY KEY (`Index`) USING BTREE
+        )
+        COLLATE='utf8_general_ci'
+        ENGINE=InnoDB
+        """%newOrderID
+    try:
+        cursor.execute(sql)
+        db.commit()  # 必须有，没有的话插入语句不会执行
+    except:
+        db.rollback()
+    db.close()
+
+def InsertNewOrderRecord(log,whichDB,newOrderID):
+    try:
+        db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
+                             passwd='%s' % dbPassword[whichDB], db='%s' % dbName[whichDB], charset='utf8')
+    except:
+        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        if log:
+            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+        return -1, []
+    cursor = db.cursor()
+    # sql = "INSERT INTO 订单信息(`订单编号`,`面板增量`,`中板增量`,`背板增量`,`剪板505`,`成型405`,`成型409`,`成型406`,`折弯652`," \
+    #       "`热压100`,`热压306`,`冲铣`,`图纸状态`,`创建人`,`中板`,`打包9000`,`图纸大类`,`创建时间`,`备注`)" \
+    #       "VALUES ('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')"\
+    #       % (data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],data[12],data[13],data[14],data[15],data[16],datetime.date.today(),data[17])
+    sql = "INSERT INTO 订单信息(`订单编号`) VALUES (%s)" % (newOrderID)
+    try:
+        cursor.execute(sql)
+        db.commit()  # 必须有，没有的话插入语句不会执行
+    except:
+        db.rollback()
+    db.close()

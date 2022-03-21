@@ -29,6 +29,7 @@ import sys
 import images
 import wx.lib.agw.hypertreelist as HTL
 import random
+import numpy as np
 
 import wx.lib.agw.flatmenu as FM
 from wx.lib.agw.artmanager import ArtManager, RendererBase, DCSaver
@@ -40,6 +41,7 @@ from OrderManagementPanel import OrderManagementPanel
 from BoardManagementPanel import BoardManagementPanel
 from BluePrintManagementPanel import BluePrintManagementPanel
 from ExcelImport import XLSGridFrame
+from DBOperation import CreateNewOrderSheet,InsertNewOrderRecord,GetAllOrderList
 
 dirName = os.path.dirname(os.path.abspath(__file__))
 bitmapDir = os.path.join(dirName, 'bitmaps')
@@ -423,32 +425,46 @@ class MainPanel(wx.Panel):
             else:
                 item.Collapse()
     def OnNewOrderBTN(self,event):
-        dlg = wx.SingleChoiceDialog(
-                self, '请您选择：', '信息提示：',
-                [ '从 Excel 表格导入订单', '通过手动方式输入订单'],
-                wx.CHOICEDLG_STYLE
-                )
-
-        if dlg.ShowModal() == wx.ID_OK:
-            dlg.Destroy()
-            if dlg.GetStringSelection()=='从 Excel 表格导入订单':
-                wildcard = "Excel文件 (*.xls)|*.xls|" \
-                           "Compiled Python (*.pyc)|*.pyc|" \
-                           "All files (*.*)|*.*"
-
-                dlg = wx.FileDialog(
-                    self, message="请选择Excel文件",
-                    defaultDir=os.getcwd(),
-                    defaultFile="",
-                    wildcard=wildcard,
-                    style=wx.FD_OPEN | wx.FD_MULTIPLE |
-                          wx.FD_CHANGE_DIR | wx.FD_FILE_MUST_EXIST |
-                          wx.FD_PREVIEW
-                )
-                if dlg.ShowModal() == wx.ID_OK:
-                    paths = dlg.GetPaths()
-                    XLSGridFrame(None,paths[0])
+        from DBOperation import GetTableListFromDB
+        _,dbNameList = GetTableListFromDB(None,1)
+        if len(dbNameList)>0:
+            nameList=[]
+            for name in dbNameList:
+                nameList.append(int(name))
+            self.newOrderID = max(nameList) + 1
         else:
+            self.newOrderID = 1
+        from NewOrderInquireDialog import NewOrderInquiredDialog
+        dlg = NewOrderInquiredDialog(self, self.newOrderID)
+        dlg.CenterOnScreen()
+        value = dlg.ShowModal()
+        dlg.Destroy()
+        if value == wx.ID_OK:
+            wildcard = "Excel文件 (*.xls)|*.xls|" \
+                       "Compiled Python (*.pyc)|*.pyc|" \
+                       "All files (*.*)|*.*"
+            dlg = wx.FileDialog(
+                self, message="请选择Excel文件",
+                defaultDir=os.getcwd(),
+                defaultFile="",
+                wildcard=wildcard,
+                style=wx.FD_OPEN | wx.FD_MULTIPLE |
+                      wx.FD_CHANGE_DIR | wx.FD_FILE_MUST_EXIST |
+                      wx.FD_PREVIEW
+            )
+            if dlg.ShowModal() == wx.ID_OK:
+                paths = dlg.GetPaths()
+                XLSGridFrame(None,paths[0])
+        else:
+            from NewOrderInquireDialog import NewOrderMainDialog
+            dlg = NewOrderMainDialog(self, self.newOrderID)
+            dlg.CenterOnScreen()
+            if dlg.ShowModal() == wx.ID_OK:
+                InsertNewOrderRecord(self.log,1,self.newOrderID)
+                CreateNewOrderSheet(self.log,1,self.newOrderID)
+                _, boardList = GetAllOrderList(self.log, 1)
+                self.work_zone_Panel.orderManagmentPanel.dataArray = np.array(boardList)
+                self.work_zone_Panel.orderManagmentPanel.orderGrid.ReCreate()
             dlg.Destroy()
 
     def OnPressCaption(self,event):
