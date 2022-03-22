@@ -2,6 +2,7 @@ import pandas as pd
 import openpyxl
 import wx
 import wx.grid as gridlib
+import numpy as np
 
 def GetSheetNameListFromExcelFileName(fileName):
     wb = openpyxl.load_workbook(fileName)
@@ -11,77 +12,91 @@ def GetSheetNameListFromExcelFileName(fileName):
         result.append(sheet.title)
     return result
 
-
+def GetSheetDataFromExcelFileName(fileName,sheetName):
+    wb = openpyxl.load_workbook(fileName)
+    ws = wb.get_sheet_by_name(sheetName)
+    data = []
+    for row in ws.values:
+        temp = []
+        for value in row:
+            temp.append(value)
+            # print(value)
+        data.append(temp)
+    data = np.array(data)
+    return data
 
 class ExcelGridShowPanel(gridlib.Grid):  ##, mixins.GridAutoEditMixin):
     def __init__(self, parent, fileName,sheetName):
         gridlib.Grid.__init__(self, parent, -1)
         ##mixins.GridAutoEditMixin.__init__(self)
         self.moveTo = None
-
         self.Bind(wx.EVT_IDLE, self.OnIdle)
-
-        self.CreateGrid(25, 25)#, gridlib.Grid.SelectRows)
-        ##self.EnableEditing(False)
-
+        self.data = GetSheetDataFromExcelFileName(fileName,sheetName)
+        self.CreateGrid(self.data.shape[0], self.data.shape[1])#, gridlib.Grid.SelectRows)
+        self.EnableEditing(False)
         # simple cell formatting
-        self.SetColSize(3, 200)
-        self.SetRowSize(4, 45)
-        self.SetCellValue(0, 0, "First cell")
-        self.SetCellValue(1, 1, "Another cell")
-        self.SetCellValue(2, 2, "Yet another cell")
-        self.SetCellValue(3, 3, "This cell is read-only")
-        self.SetCellFont(0, 0, wx.Font(12, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_ITALIC, wx.FONTWEIGHT_NORMAL))
-        self.SetCellTextColour(1, 1, wx.RED)
-        self.SetCellBackgroundColour(2, 2, wx.CYAN)
-        self.SetReadOnly(3, 3, True)
-
-        self.SetCellEditor(5, 0, gridlib.GridCellNumberEditor(1,1000))
-        self.SetCellValue(5, 0, "123")
-        self.SetCellEditor(6, 0, gridlib.GridCellFloatEditor())
-        self.SetCellValue(6, 0, "123.34")
-        self.SetCellEditor(7, 0, gridlib.GridCellNumberEditor())
-
-        self.SetCellValue(6, 3, "You can veto editing this cell")
-
-        #self.SetRowLabelSize(0)
-        #self.SetColLabelSize(0)
-
-        # attribute objects let you keep a set of formatting values
-        # in one spot, and reuse them if needed
-        attr = gridlib.GridCellAttr()
-        attr.SetTextColour(wx.BLACK)
-        attr.SetBackgroundColour(wx.RED)
-        attr.SetFont(wx.Font(10, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
-
-        # you can set cell attributes for the whole row (or column)
-        self.SetRowAttr(5, attr)
-
-        self.SetColLabelValue(0, "Custom")
-        self.SetColLabelValue(1, "column")
-        self.SetColLabelValue(2, "labels")
-
-        self.SetColLabelAlignment(wx.ALIGN_LEFT, wx.ALIGN_BOTTOM)
-
-        #self.SetDefaultCellOverflow(False)
-        #r = gridlib.GridCellAutoWrapStringRenderer()
-        #self.SetCellRenderer(9, 1, r)
-
-        # overflow cells
-        self.SetCellValue( 9, 1, "This default cell will overflow into neighboring cells, but not if you turn overflow off.");
-        self.SetCellSize(11, 1, 3, 3);
-        self.SetCellAlignment(11, 1, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE);
-        self.SetCellValue(11, 1, "This cell is set to span 3 rows and 3 columns");
+        for row, rowData in enumerate(self.data):
+            for col, colData in enumerate(rowData):
+                if colData:
+                    print("row,col,colData=", row, col, colData)
+                    self.SetCellValue(row,col,str(colData))
 
 
-        editor = gridlib.GridCellTextEditor()
-        editor.SetParameters('10')
-        self.SetCellEditor(0, 4, editor)
-        self.SetCellValue(0, 4, "Limited text")
-
-        renderer = gridlib.GridCellAutoWrapStringRenderer()
-        self.SetCellRenderer(15,0, renderer)
-        self.SetCellValue(15,0, "The text in this cell will be rendered with word-wrapping")
+        # self.SetCellValue(0, 0, "First cell")
+        # self.SetCellValue(1, 1, "Another cell")
+        # self.SetCellValue(2, 2, "Yet another cell")
+        # self.SetCellValue(3, 3, "This cell is read-only")
+        # self.SetCellFont(0, 0, wx.Font(12, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_ITALIC, wx.FONTWEIGHT_NORMAL))
+        # self.SetCellTextColour(1, 1, wx.RED)
+        # self.SetCellBackgroundColour(2, 2, wx.CYAN)
+        # self.SetReadOnly(3, 3, True)
+        #
+        # self.SetCellEditor(5, 0, gridlib.GridCellNumberEditor(1,1000))
+        # self.SetCellValue(5, 0, "123")
+        # self.SetCellEditor(6, 0, gridlib.GridCellFloatEditor())
+        # self.SetCellValue(6, 0, "123.34")
+        # self.SetCellEditor(7, 0, gridlib.GridCellNumberEditor())
+        #
+        # self.SetCellValue(6, 3, "You can veto editing this cell")
+        #
+        # #self.SetRowLabelSize(0)
+        # #self.SetColLabelSize(0)
+        #
+        # # attribute objects let you keep a set of formatting values
+        # # in one spot, and reuse them if needed
+        # attr = gridlib.GridCellAttr()
+        # attr.SetTextColour(wx.BLACK)
+        # attr.SetBackgroundColour(wx.RED)
+        # attr.SetFont(wx.Font(10, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
+        #
+        # # you can set cell attributes for the whole row (or column)
+        # self.SetRowAttr(5, attr)
+        #
+        # self.SetColLabelValue(0, "Custom")
+        # self.SetColLabelValue(1, "column")
+        # self.SetColLabelValue(2, "labels")
+        #
+        # self.SetColLabelAlignment(wx.ALIGN_LEFT, wx.ALIGN_BOTTOM)
+        #
+        # #self.SetDefaultCellOverflow(False)
+        # #r = gridlib.GridCellAutoWrapStringRenderer()
+        # #self.SetCellRenderer(9, 1, r)
+        #
+        # # overflow cells
+        # self.SetCellValue( 9, 1, "This default cell will overflow into neighboring cells, but not if you turn overflow off.");
+        # self.SetCellSize(11, 1, 3, 3);
+        # self.SetCellAlignment(11, 1, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE);
+        # self.SetCellValue(11, 1, "This cell is set to span 3 rows and 3 columns");
+        #
+        #
+        # editor = gridlib.GridCellTextEditor()
+        # editor.SetParameters('10')
+        # self.SetCellEditor(0, 4, editor)
+        # self.SetCellValue(0, 4, "Limited text")
+        #
+        # renderer = gridlib.GridCellAutoWrapStringRenderer()
+        # self.SetCellRenderer(15,0, renderer)
+        # self.SetCellValue(15,0, "The text in this cell will be rendered with word-wrapping")
 
 
         # test all the events
