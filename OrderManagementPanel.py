@@ -342,31 +342,88 @@ class OrderManagementPanel(wx.Panel):
             self.orderGrid.SetSelectionMode(wx.grid.Grid.GridSelectRows)
             self.orderGrid.SelectRow(row)
             self.data=self.dataArray[row]
-            print(self.data)
             # self.ReCreateMiddlePanel(self.type, self.editState)
             self.ReCreateRightPanel()
             _,self.orderDetailData = GetOrderDetailRecord(self.log,1,self.data[0])
-            print(self.orderDetailData)
             if len(self.orderDetailData)==0:
                 self.orderDetailTreeStructureList = [
                     self.data[0],[
-                    ["ImageNet", [["2017", []], ["2018", []]]],
-                    ["FasionMNIST", [["2007", []], ["2012", []]]],
-                    ["MNIST", [["2007", []], ["2012", []]]],
-                    ["猫狗大战", []],
                     ]
                 ]
             else:
-                self.orderDetailTreeStructureList = [
-                        self.data[0],[
-                        ["ImageNet", [["2017", []], ["2018", []]]],
-                        ["FasionMNIST", [["2007", []], ["2012", []]]],
-                        ["MNIST", [["2007", []], ["2012", []]]],
-                        ["猫狗大战", []],
-                        ]
-                    ]
+                orderTreeData = self.TreeDataTransform()
+                # self.orderDetailTreeStructureList = [
+                #         self.data[0],[
+                #         ["ImageNet", [["2017", []], ["2018", []]]],
+                #         ["FasionMNIST", [["2007", []], ["2012", []]]],
+                #         ["MNIST", [["2007", []], ["2012", []]]],
+                #         ["猫狗大战", []],
+                #         ]
+                #     ]
+                self.orderDetailTreeStructureList=[self.data[0],orderTreeData]
             self.ReCreateOrderDetailTree()
         event.Skip()
+
+    def TreeDataTransform(self):
+        orderTreeData = np.array(self.orderDetailData)
+        subOrderIDList = list(orderTreeData[:,2])#提出所有子订单号组成列表
+        subOrderIDList = set(subOrderIDList)#得到所有不重复的子订单号
+        result=[]
+        for keyword in subOrderIDList:
+            temp = []
+            for subOrder in self.orderDetailData:
+                if str(subOrder[2])==str(keyword):
+                    temp.append(subOrder)
+            result.append([keyword,temp])#把订单按子订单分好
+        for subOrderIndex,subOrder in enumerate(result):
+            # subOrderKeyword = subOrder[0]
+            deckOrderInThisSubOrderList = subOrder[1]
+            deckOrderArray = np.array(deckOrderInThisSubOrderList)
+            deckIDList = list(deckOrderArray[:,3])
+            deckIDList = set(deckIDList)
+            deckOrderList = []
+            for keyword in deckIDList:
+                temp = []
+                for deckOrderIndex,deckOrder in enumerate(deckOrderInThisSubOrderList):
+                    if str(deckOrder[3]) == str(keyword):
+                        temp.append(deckOrder)
+                deckOrderList.append([keyword,temp])
+            result[subOrderIndex][1]=deckOrderList
+
+        for subOrderIndex,subOrder in enumerate(result):
+            deckOrderInThisSubList = subOrder[1]
+            for zoneOrderIndex,zoneOrderInThisDeck in enumerate(deckOrderInThisSubList):
+                zoneOrderInThisDeckList=zoneOrderInThisDeck[1]
+                zoneOrderArray = np.array(zoneOrderInThisDeckList)
+                zoneIDList = list(zoneOrderArray[:,4])
+                zoneIDList = set(zoneIDList)
+                zoneOrderList = []
+                for keyword in zoneIDList:
+                    temp = []
+                    for zoneOrder in zoneOrderInThisDeckList:
+                        if str(zoneOrder[4]) == str(keyword):
+                            temp.append(zoneOrder)
+                    zoneOrderList.append([keyword,temp])
+                result[subOrderIndex][1][zoneOrderIndex][1]=zoneOrderList
+
+        for subOrderIndex,subOrder in enumerate(result):
+            deckOrderInThisSubList = subOrder[1]
+            for zoneOrderIndex,zoneOrderInThisDeck in enumerate(deckOrderInThisSubList):
+                zoneOrderInThisDeckList=zoneOrderInThisDeck[1]
+                for roomOrderIndex,roomOrderInThisZone in enumerate(zoneOrderInThisDeckList):
+                    roomOrderInThisZoneList = roomOrderInThisZone[1]
+                    roomOrderArray = np.array(roomOrderInThisZoneList)
+                    roomIDList = list(roomOrderArray[:,5])
+                    roomIDList = set(roomIDList)
+                    roomOrderList = []
+                    for keyword in roomIDList:
+                        temp = []
+                        for roomOrder in roomOrderInThisZoneList:
+                            if str(roomOrder[5]) == str(keyword):
+                                temp.append(roomOrder)
+                        roomOrderList.append([keyword,temp])
+                result[subOrderIndex][1][zoneOrderIndex][1][roomOrderIndex][1]=roomOrderList
+        return result
 
     def ReCreateRightPanel(self):
         self.rightPanel.DestroyChildren()

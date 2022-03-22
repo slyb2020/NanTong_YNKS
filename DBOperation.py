@@ -292,7 +292,7 @@ def GetOrderDetailRecord(log, whichDB, orderDetailID):
             log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
         return -1, []
     cursor = db.cursor()
-    sql = """SELECT `订单号`,`子订单号`,`甲板`,`区域`,`房间` from `%s` """%(str(orderDetailID))
+    sql = """SELECT `Index`,`订单号`,`子订单号`,`甲板`,`区域`,`房间`,`图纸` from `%s` """%(str(orderDetailID))
     cursor.execute(sql)
     temp = cursor.fetchall()  # 获得压条信息
     db.close()
