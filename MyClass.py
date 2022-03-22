@@ -42,6 +42,7 @@ from BoardManagementPanel import BoardManagementPanel
 from BluePrintManagementPanel import BluePrintManagementPanel
 from ExcelImport import XLSGridFrame
 from DBOperation import CreateNewOrderSheet,InsertNewOrderRecord,GetAllOrderList
+from ImportOrderFromExcelDialog import ImportOrderFromExcelDialog
 
 dirName = os.path.dirname(os.path.abspath(__file__))
 bitmapDir = os.path.join(dirName, 'bitmaps')
@@ -440,7 +441,7 @@ class MainPanel(wx.Panel):
         value = dlg.ShowModal()
         dlg.Destroy()
         if value == wx.ID_OK:
-            wildcard = "Excel文件 (*.xls)|*.xls|" \
+            wildcard = "Excel文件 (*.xls)|*.xlsx|" \
                        "Compiled Python (*.pyc)|*.pyc|" \
                        "All files (*.*)|*.*"
             dlg = wx.FileDialog(
@@ -453,8 +454,23 @@ class MainPanel(wx.Panel):
                       wx.FD_PREVIEW
             )
             if dlg.ShowModal() == wx.ID_OK:
-                paths = dlg.GetPaths()
-                XLSGridFrame(None,paths[0])
+                self.excelFileName = dlg.GetPaths()[0]
+                dlg.Destroy()
+                dlg = ImportOrderFromExcelDialog(self, self.newOrderID)
+                dlg.CenterOnScreen()
+                if dlg.ShowModal() == wx.ID_OK:
+                    pass
+                    # InsertNewOrderRecord(self.log, 1, self.newOrderID)
+                    # CreateNewOrderSheet(self.log, 1, self.newOrderID)
+                    # _, boardList = GetAllOrderList(self.log, 1)
+                    # self.work_zone_Panel.orderManagmentPanel.dataArray = np.array(boardList)
+                    # self.work_zone_Panel.orderManagmentPanel.orderGrid.ReCreate()
+                dlg.Destroy()
+
+                # _, boardList = GetAllOrderList(self.log, 1)
+                # self.work_zone_Panel.orderManagmentPanel.dataArray = np.array(boardList)
+                # self.work_zone_Panel.orderManagmentPanel.orderGrid.ReCreate()
+                # # XLSGridFrame(None,paths[0])
         else:
             from NewOrderInquireDialog import NewOrderMainDialog
             dlg = NewOrderMainDialog(self, self.newOrderID)
