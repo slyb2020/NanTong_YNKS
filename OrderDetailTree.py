@@ -6,7 +6,7 @@ import images
 import xml.etree.ElementTree as ET
 import os
 import cv2
-from InputOrdeDialog import InputNewOrderDialog
+from ImportOrderDialog import InputNewOrderDialog
 from DBOperation import GetOrderDetailRecord,InsertOrderDetailRecord
 import numpy as np
 

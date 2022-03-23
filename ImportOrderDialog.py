@@ -138,7 +138,7 @@ class ImportOrderFromExcelDialog(wx.Dialog):
             self.newOrderID = self.GetMainOrderID()
             self.newOrderName = self.GetMainOrderName()
             self.subOrderIDList = self.GetSubOrderIDList()
-            print(self.GetKeyDataColPosition())
+            self.keyDataColPostion = self.GetKeyDataColPosition()
             self.ReCreateMainInformationPanel()
             # btn_ok.Bind(wx.EVT_BUTTON, self.OnOk)
         # btn_cancel.Bind(wx.EVT_BUTTON, self.OnCancel)
@@ -166,17 +166,46 @@ class ImportOrderFromExcelDialog(wx.Dialog):
         self.newOrderNameTXT.SetValue(self.newOrderName)
         hbox.Add(self.newOrderNameTXT, 0, wx.RIGHT, 20)
 
-
-
         hbox.Add(wx.StaticText(self.mainInformationPanel, label='子订单：', size=(50,-1)), 0, wx.TOP, 5)
         self.subOrderIDCombo = wx.ComboBox(self.mainInformationPanel, size=(80,25),
                                            choices=self.subOrderIDList, style=wx.TE_READONLY|wx.ALIGN_RIGHT)
         self.subOrderIDCombo.SetBackgroundColour(wx.GREEN)
         self.subOrderIDCombo.SetValue(self.subOrderIDList[0])
         hbox.Add(self.subOrderIDCombo, 0, wx.RIGHT, 20)
+
+        hbox.Add(wx.StaticText(self.mainInformationPanel, label='甲板：', size=(50,-1)), 0, wx.TOP, 5)
+        self.deckIDCombo = wx.ComboBox(self.mainInformationPanel, size=(80,25),
+                                           choices=self.subOrderIDList, style=wx.TE_READONLY|wx.ALIGN_RIGHT)
+        self.deckIDCombo.SetBackgroundColour(wx.GREEN)
+        hbox.Add(self.deckIDCombo, 0, wx.RIGHT, 20)
+
+        hbox.Add(wx.StaticText(self.mainInformationPanel, label='区域：', size=(50,-1)), 0, wx.TOP, 5)
+        self.zoneIDCombo = wx.ComboBox(self.mainInformationPanel, size=(80,25),
+                                           choices=self.subOrderIDList, style=wx.TE_READONLY|wx.ALIGN_RIGHT)
+        self.zoneIDCombo.SetBackgroundColour(wx.GREEN)
+        # self.deckIDCombo.SetValue(self.deckIDList[0])
+        hbox.Add(self.zoneIDCombo, 0, wx.RIGHT, 20)
+
+        hbox.Add(wx.StaticText(self.mainInformationPanel, label='房间：', size=(50,-1)), 0, wx.TOP, 5)
+        self.roomIDCombo = wx.ComboBox(self.mainInformationPanel, size=(80,25),
+                                           choices=self.subOrderIDList, style=wx.TE_READONLY|wx.ALIGN_RIGHT)
+        self.roomIDCombo.SetBackgroundColour(wx.GREEN)
+        # self.deckIDCombo.SetValue(self.deckIDList[0])
+        hbox.Add(self.roomIDCombo, 0, wx.RIGHT, 20)
+
         self.mainInformationPanel.SetSizer(hbox)
         self.mainInformationPanel.Layout()
-    #     event.Skip()
+        deckList = self.GetDeckItemList(0, self.subOrderIDList[0])
+        self.deckIDCombo.SetItems(deckList)
+        self.deckIDCombo.SetValue(deckList[0])
+        zoneList = self.GetZoneItemList(0, self.subOrderIDList[0],deckList[0])
+        self.zoneIDCombo.SetItems(zoneList)
+        self.zoneIDCombo.SetValue(zoneList[0])
+        roomList = self.GetRoomItemList(0, self.subOrderIDList[0],deckList[0],zoneList[0])
+        self.roomIDCombo.SetItems(roomList)
+        self.roomIDCombo.SetValue(roomList[0])
+
+
     def GetMainOrderID(self):
         for i, row in enumerate(self.sheetPage[0].data):
             if "Project" in row:
@@ -235,10 +264,51 @@ class ImportOrderFromExcelDialog(wx.Dialog):
                     rowNumStart = i+rowNum+1
                     break
             for i, row in enumerate(page.data[rowNumStart+1:]):
-                print(row[suborderColNum], row[deckColNum], row[areaColNum], row[roomColNum])
                 if  row[suborderColNum]==None and row[deckColNum]==None and row[areaColNum]==None and row[roomColNum]==None:
-                    print("here")
                     rowNumEnd = i+rowNumStart
                     break
             result.append([[rowNumStart,rowNumEnd],[suborderColNum,deckColNum,areaColNum,roomColNum]])
         return result
+
+    def GetDeckItemList(self,pageNum,subOrderID):
+        subOrderCol = self.keyDataColPostion[pageNum][1][0]
+        deckCol = self.keyDataColPostion[pageNum][1][1]
+        dataRowStart = self.keyDataColPostion[pageNum][0][0]
+        dataRowEnd = self.keyDataColPostion[pageNum][0][1]
+        result= []
+        for data in self.sheetPage[pageNum].data[dataRowStart:dataRowEnd+1,:]:
+            if str(data[subOrderCol]) == subOrderID:
+                result.append(str(data[deckCol]))
+        result = list(set(result))
+        result.sort()
+        return result
+
+    def GetZoneItemList(self,pageNum,subOrderID,deckID):
+        subOrderCol = self.keyDataColPostion[pageNum][1][0]
+        deckCol = self.keyDataColPostion[pageNum][1][1]
+        zoneCol = self.keyDataColPostion[pageNum][1][2]
+        dataRowStart = self.keyDataColPostion[pageNum][0][0]
+        dataRowEnd = self.keyDataColPostion[pageNum][0][1]
+        result= []
+        for data in self.sheetPage[pageNum].data[dataRowStart:dataRowEnd+1,:]:
+            if str(data[subOrderCol]) == subOrderID and str(data[deckCol])==deckID:
+                result.append(str(data[zoneCol]))
+        result = list(set(result))
+        result.sort()
+        return result
+
+    def GetRoomItemList(self,pageNum,subOrderID,deckID,zoneID):
+        subOrderCol = self.keyDataColPostion[pageNum][1][0]
+        deckCol = self.keyDataColPostion[pageNum][1][1]
+        zoneCol = self.keyDataColPostion[pageNum][1][2]
+        roomCol = self.keyDataColPostion[pageNum][1][3]
+        dataRowStart = self.keyDataColPostion[pageNum][0][0]
+        dataRowEnd = self.keyDataColPostion[pageNum][0][1]
+        result= []
+        for data in self.sheetPage[pageNum].data[dataRowStart:dataRowEnd+1,:]:
+            if str(data[subOrderCol]) == subOrderID and str(data[deckCol])==deckID and str(data[zoneCol])==zoneID:
+                result.append(str(data[roomCol]))
+        result = list(set(result))
+        result.sort()
+        return result
+
