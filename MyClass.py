@@ -42,7 +42,7 @@ from BoardManagementPanel import BoardManagementPanel
 from BluePrintManagementPanel import BluePrintManagementPanel
 from ExcelImport import XLSGridFrame
 from DBOperation import CreateNewOrderSheet,InsertNewOrderRecord,GetAllOrderList
-from ImportOrderFromExcelDialog import ImportOrderFromExcelDialog
+from InputOrdeDialog import ImportOrderFromExcelDialog
 
 dirName = os.path.dirname(os.path.abspath(__file__))
 bitmapDir = os.path.join(dirName, 'bitmaps')
