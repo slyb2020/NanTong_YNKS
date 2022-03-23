@@ -20,7 +20,6 @@ def GetSheetDataFromExcelFileName(fileName,sheetName):
         temp = []
         for value in row:
             temp.append(value)
-            # print(value)
         data.append(temp)
     data = np.array(data)
     return data
@@ -38,7 +37,6 @@ class ExcelGridShowPanel(gridlib.Grid):  ##, mixins.GridAutoEditMixin):
         for row, rowData in enumerate(self.data):
             for col, colData in enumerate(rowData):
                 if colData:
-                    print("row,col,colData=", row, col, colData)
                     self.SetCellValue(row,col,str(colData))
 
 
