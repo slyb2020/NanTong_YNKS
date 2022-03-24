@@ -125,9 +125,11 @@ class OrderDetailTree(wx.Panel):
         item, flags = self.tree.HitTest(pt)
         itemData = self.tree.GetItemData(item)
         if itemData == "根":
+            self.master.showRange=[]
             self.master.ReCreteOrderDetailGridPanel()
         else:
-            dataList= itemData.split("_")[1:]
+            self.master.showRange = itemData.split("_")
+            self.master.ReCreteOrderDetailGridPanel()
             # if dataList[0]=='子订单':
             #     subOrderID=dataList[1]
             # elif dataList[0]=='甲板订单':
@@ -142,7 +144,6 @@ class OrderDetailTree(wx.Panel):
             #     deckOrderID=dataList[2]
             #     zoneOrderID=dataList[3]
             #     roomOrderID=dataList[4]
-            print(dataList)
         event.Skip()
 
     def OnRightDown(self, event):
@@ -272,7 +273,7 @@ class OrderDetailTree(wx.Panel):
             InsertOrderDetailRecord(self.log,1,1)
             dlg.Destroy()
             _, orderDetailData = GetOrderDetailRecord(self.log, 1, self.orderID)
-            self.dataList = self.TreeDataTransform(orderDetailData)
+            self.dataList = TreeDataTransform(self.orderDetailData)
             self.ReCreateTree()
 
     def OnPopupTwo(self, event):

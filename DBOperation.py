@@ -303,7 +303,7 @@ def GetOrderDetailRecord(log, whichDB, orderDetailID):
             log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
         return -1, []
     cursor = db.cursor()
-    sql = """SELECT `Index`,`订单号`,`子订单号`,`甲板`,`区域`,`房间`,`图纸` from `%s` """%(str(orderDetailID))
+    sql = """SELECT `Index`,`订单号`,`子订单号`,`甲板`,`区域`,`房间`,`图纸`,`面板代码`,`X面颜色`,`Y面颜色`,`高度`,`宽度`,`厚度`,`数量`,`Z面颜色`,`V面颜色` from `%s` """%(str(orderDetailID))
     cursor.execute(sql)
     temp = cursor.fetchall()  # 获得压条信息
     db.close()
@@ -354,6 +354,4 @@ def InsertBatchOrderDataIntoDB(log, whichDB, orderTabelName, orderDataList):
             db.commit()  # 必须有，没有的话插入语句不会执行
         except:
             db.rollback()
-    # temp = cursor.fetchall()  # 获得压条信息
-    # print("temp=",temp)
     db.close()

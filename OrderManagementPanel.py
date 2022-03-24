@@ -2,83 +2,131 @@ import wx
 import wx.grid as gridlib
 from DBOperation import GetAllOrderList,GetOrderDetailRecord
 from OrderDetailTree import OrderDetailTree
+from ID_DEFINE import *
 import numpy as np
 import images
 import copy
 
 class OrderDetailGrid(gridlib.Grid): ##, mixins.GridAutoEditMixin):
-    def __init__(self, parent, log):
+    def __init__(self, parent, master, log):
         gridlib.Grid.__init__(self, parent, -1)
         ##mixins.GridAutoEditMixin.__init__(self)
         self.log = log
+        self.master = master
         self.moveTo = None
+        if self.master.showRange==[]:
+            self.data = np.array(self.master.orderDetailData)[:,2:]
+            self.titleList = orderDetailLabelList[2:]
+            self.colSizeList = orderDetailColSizeList[2:]
+        elif self.master.showRange[0]=="子订单":
+            self.data=[]
+            for data in self.master.orderDetailData:
+                if str(data[2])==str(self.master.showRange[1]):
+                    self.data.append(data)
+            self.data = np.array(self.data)[:,3:]
+            self.titleList = orderDetailLabelList[3:]
+            self.colSizeList = orderDetailColSizeList[3:]
+        elif self.master.showRange[0]=="甲板订单":
+            self.data=[]
+            for data in self.master.orderDetailData:
+                if str(data[2])==str(self.master.showRange[1]) and str(data[3])==str(self.master.showRange[2]):
+                    self.data.append(data)
+            self.data = np.array(self.data)[:,4:]
+            self.titleList = orderDetailLabelList[4:]
+            self.colSizeList = orderDetailColSizeList[4:]
+        elif self.master.showRange[0]=="区域订单":
+            self.data=[]
+            for data in self.master.orderDetailData:
+                if str(data[2])==str(self.master.showRange[1]) and str(data[3])==str(self.master.showRange[2]) and str(data[4])==str(self.master.showRange[3]):
+                    self.data.append(data)
+            self.data = np.array(self.data)[:,5:]
+            self.titleList = orderDetailLabelList[5:]
+            self.colSizeList = orderDetailColSizeList[5:]
+        elif self.master.showRange[0]=="房间订单":
+            self.data=[]
+            for data in self.master.orderDetailData:
+                if str(data[2])==str(self.master.showRange[1]) and str(data[3])==str(self.master.showRange[2]) and str(data[4])==str(self.master.showRange[3]) and str(data[5])==str(self.master.showRange[4]):
+                    self.data.append(data)
+            self.data = np.array(self.data)[:,6:]
+            self.titleList = orderDetailLabelList[6:]
+            self.colSizeList = orderDetailColSizeList[6:]
 
         self.Bind(wx.EVT_IDLE, self.OnIdle)
 
-        self.CreateGrid(25, 25)#, gridlib.Grid.SelectRows)
+        self.CreateGrid(self.data.shape[0], self.data.shape[1])#, gridlib.Grid.SelectRows)
+        for i in range(self.data.shape[1]):
+            self.SetColLabelSize(25)
+            self.SetColSize(i, self.colSizeList[i])
+            self.SetColLabelValue(i,self.titleList[i])
+        for rowNum,row in enumerate(self.data):
+            self.SetRowLabelSize(40)
+            self.SetRowLabelValue(rowNum,str(rowNum+1))
+            for colNum,col in enumerate(row):
+                self.SetCellAlignment(rowNum,colNum,wx.ALIGN_CENTRE,wx.ALIGN_CENTRE)
+                self.SetCellValue(rowNum,colNum,str(col))
         ##self.EnableEditing(False)
 
-        # simple cell formatting
-        self.SetColSize(3, 200)
-        self.SetRowSize(4, 45)
-        self.SetCellValue(0, 0, "First cell")
-        self.SetCellValue(1, 1, "Another cell")
-        self.SetCellValue(2, 2, "Yet another cell")
-        self.SetCellValue(3, 3, "This cell is read-only")
-        self.SetCellFont(0, 0, wx.Font(12, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_ITALIC, wx.FONTWEIGHT_NORMAL))
-        self.SetCellTextColour(1, 1, wx.RED)
-        self.SetCellBackgroundColour(2, 2, wx.CYAN)
-        self.SetReadOnly(3, 3, True)
-
-        self.SetCellEditor(5, 0, gridlib.GridCellNumberEditor(1,1000))
-        self.SetCellValue(5, 0, "123")
-        self.SetCellEditor(6, 0, gridlib.GridCellFloatEditor())
-        self.SetCellValue(6, 0, "123.34")
-        self.SetCellEditor(7, 0, gridlib.GridCellNumberEditor())
-
-        self.SetCellValue(6, 3, "You can veto editing this cell")
-
-        #self.SetRowLabelSize(0)
-        #self.SetColLabelSize(0)
-
-        # attribute objects let you keep a set of formatting values
-        # in one spot, and reuse them if needed
-        attr = gridlib.GridCellAttr()
-        attr.SetTextColour(wx.BLACK)
-        attr.SetBackgroundColour(wx.RED)
-        attr.SetFont(wx.Font(10, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
-
-        # you can set cell attributes for the whole row (or column)
-        self.SetRowAttr(5, attr)
-
-        self.SetColLabelValue(0, "Custom")
-        self.SetColLabelValue(1, "column")
-        self.SetColLabelValue(2, "labels")
-
-        self.SetColLabelAlignment(wx.ALIGN_LEFT, wx.ALIGN_BOTTOM)
-
-        #self.SetDefaultCellOverflow(False)
-        #r = gridlib.GridCellAutoWrapStringRenderer()
-        #self.SetCellRenderer(9, 1, r)
-
-        # overflow cells
-        self.SetCellValue( 9, 1, "This default cell will overflow into neighboring cells, but not if you turn overflow off.");
-        self.SetCellSize(11, 1, 3, 3);
-        self.SetCellAlignment(11, 1, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE);
-        self.SetCellValue(11, 1, "This cell is set to span 3 rows and 3 columns");
-
-
-        editor = gridlib.GridCellTextEditor()
-        editor.SetParameters('10')
-        self.SetCellEditor(0, 4, editor)
-        self.SetCellValue(0, 4, "Limited text")
-
-        renderer = gridlib.GridCellAutoWrapStringRenderer()
-        self.SetCellRenderer(15,0, renderer)
-        self.SetCellValue(15,0, "The text in this cell will be rendered with word-wrapping")
-
-
-        # test all the events
+        # # simple cell formatting
+        # self.SetColSize(3, 200)
+        # self.SetRowSize(4, 45)
+        # self.SetCellValue(0, 0, "First cell")
+        # self.SetCellValue(1, 1, "Another cell")
+        # self.SetCellValue(2, 2, "Yet another cell")
+        # self.SetCellValue(3, 3, "This cell is read-only")
+        # self.SetCellFont(0, 0, wx.Font(12, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_ITALIC, wx.FONTWEIGHT_NORMAL))
+        # self.SetCellTextColour(1, 1, wx.RED)
+        # self.SetCellBackgroundColour(2, 2, wx.CYAN)
+        # self.SetReadOnly(3, 3, True)
+        #
+        # self.SetCellEditor(5, 0, gridlib.GridCellNumberEditor(1,1000))
+        # self.SetCellValue(5, 0, "123")
+        # self.SetCellEditor(6, 0, gridlib.GridCellFloatEditor())
+        # self.SetCellValue(6, 0, "123.34")
+        # self.SetCellEditor(7, 0, gridlib.GridCellNumberEditor())
+        #
+        # self.SetCellValue(6, 3, "You can veto editing this cell")
+        #
+        # #self.SetRowLabelSize(0)
+        # #self.SetColLabelSize(0)
+        #
+        # # attribute objects let you keep a set of formatting values
+        # # in one spot, and reuse them if needed
+        # attr = gridlib.GridCellAttr()
+        # attr.SetTextColour(wx.BLACK)
+        # attr.SetBackgroundColour(wx.RED)
+        # attr.SetFont(wx.Font(10, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
+        #
+        # # you can set cell attributes for the whole row (or column)
+        # self.SetRowAttr(5, attr)
+        #
+        # self.SetColLabelValue(0, "Custom")
+        # self.SetColLabelValue(1, "column")
+        # self.SetColLabelValue(2, "labels")
+        #
+        # self.SetColLabelAlignment(wx.ALIGN_LEFT, wx.ALIGN_BOTTOM)
+        #
+        # #self.SetDefaultCellOverflow(False)
+        # #r = gridlib.GridCellAutoWrapStringRenderer()
+        # #self.SetCellRenderer(9, 1, r)
+        #
+        # # overflow cells
+        # self.SetCellValue( 9, 1, "This default cell will overflow into neighboring cells, but not if you turn overflow off.");
+        # self.SetCellSize(11, 1, 3, 3);
+        # self.SetCellAlignment(11, 1, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE);
+        # self.SetCellValue(11, 1, "This cell is set to span 3 rows and 3 columns");
+        #
+        #
+        # editor = gridlib.GridCellTextEditor()
+        # editor.SetParameters('10')
+        # self.SetCellEditor(0, 4, editor)
+        # self.SetCellValue(0, 4, "Limited text")
+        #
+        # renderer = gridlib.GridCellAutoWrapStringRenderer()
+        # self.SetCellRenderer(15,0, renderer)
+        # self.SetCellValue(15,0, "The text in this cell will be rendered with word-wrapping")
+        #
+        #
+        # # test all the events
         self.Bind(gridlib.EVT_GRID_CELL_LEFT_CLICK, self.OnCellLeftClick)
         self.Bind(gridlib.EVT_GRID_CELL_RIGHT_CLICK, self.OnCellRightClick)
         self.Bind(gridlib.EVT_GRID_CELL_LEFT_DCLICK, self.OnCellLeftDClick)
@@ -99,48 +147,31 @@ class OrderDetailGrid(gridlib.Grid): ##, mixins.GridAutoEditMixin):
         self.Bind(gridlib.EVT_GRID_SELECT_CELL, self.OnSelectCell)
 
         self.Bind(gridlib.EVT_GRID_EDITOR_SHOWN, self.OnEditorShown)
-        self.Bind(gridlib.EVT_GRID_EDITOR_HIDDEN, self.OnEditorHidden)
         self.Bind(gridlib.EVT_GRID_EDITOR_CREATED, self.OnEditorCreated)
 
 
     def OnCellLeftClick(self, evt):
-        self.log.write("OnCellLeftClick: (%d,%d) %s\n" %
-                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
         evt.Skip()
 
     def OnCellRightClick(self, evt):
-        self.log.write("OnCellRightClick: (%d,%d) %s\n" %
-                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
         evt.Skip()
 
     def OnCellLeftDClick(self, evt):
-        self.log.write("OnCellLeftDClick: (%d,%d) %s\n" %
-                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
         evt.Skip()
 
     def OnCellRightDClick(self, evt):
-        self.log.write("OnCellRightDClick: (%d,%d) %s\n" %
-                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
         evt.Skip()
 
     def OnLabelLeftClick(self, evt):
-        self.log.write("OnLabelLeftClick: (%d,%d) %s\n" %
-                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
         evt.Skip()
 
     def OnLabelRightClick(self, evt):
-        self.log.write("OnLabelRightClick: (%d,%d) %s\n" %
-                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
         evt.Skip()
 
     def OnLabelLeftDClick(self, evt):
-        self.log.write("OnLabelLeftDClick: (%d,%d) %s\n" %
-                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
         evt.Skip()
 
     def OnLabelRightDClick(self, evt):
-        self.log.write("OnLabelRightDClick: (%d,%d) %s\n" %
-                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
         evt.Skip()
 
     def OnGridColSort(self, evt):
@@ -148,37 +179,17 @@ class OrderDetailGrid(gridlib.Grid): ##, mixins.GridAutoEditMixin):
         self.SetSortingColumn(evt.GetCol())
 
     def OnRowSize(self, evt):
-        self.log.write("OnRowSize: row %d, %s\n" %
-                       (evt.GetRowOrCol(), evt.GetPosition()))
         evt.Skip()
 
     def OnColSize(self, evt):
-        self.log.write("OnColSize: col %d, %s\n" %
-                       (evt.GetRowOrCol(), evt.GetPosition()))
         evt.Skip()
 
     def OnRangeSelect(self, evt):
-        if evt.Selecting():
-            msg = 'Selected'
-        else:
-            msg = 'Deselected'
-        self.log.write("OnRangeSelect: %s  top-left %s, bottom-right %s\n" %
-                           (msg, evt.GetTopLeftCoords(), evt.GetBottomRightCoords()))
         evt.Skip()
 
 
     def OnCellChange(self, evt):
-        self.log.write("OnCellChange: (%d,%d) %s\n" %
-                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
-
-        # Show how to stay in a cell that has bad data.  We can't just
-        # call SetGridCursor here since we are nested inside one so it
-        # won't have any effect.  Instead, set coordinates to move to in
-        # idle time.
-        value = self.GetCellValue(evt.GetRow(), evt.GetCol())
-
-        if value == 'no good':
-            self.moveTo = evt.GetRow(), evt.GetCol()
+        evt.Skip()
 
 
     def OnIdle(self, evt):
@@ -190,56 +201,15 @@ class OrderDetailGrid(gridlib.Grid): ##, mixins.GridAutoEditMixin):
 
 
     def OnSelectCell(self, evt):
-        if evt.Selecting():
-            msg = 'Selected'
-        else:
-            msg = 'Deselected'
-        self.log.write("OnSelectCell: %s (%d,%d) %s\n" %
-                       (msg, evt.GetRow(), evt.GetCol(), evt.GetPosition()))
-
-        # Another way to stay in a cell that has a bad value...
-        row = self.GetGridCursorRow()
-        col = self.GetGridCursorCol()
-
-        if self.IsCellEditControlEnabled():
-            self.HideCellEditControl()
-            self.DisableCellEditControl()
-
-        value = self.GetCellValue(row, col)
-
-        if value == 'no good 2':
-            return  # cancels the cell selection
-
         evt.Skip()
 
 
     def OnEditorShown(self, evt):
-        if evt.GetRow() == 6 and evt.GetCol() == 3 and \
-           wx.MessageBox("Are you sure you wish to edit this cell?",
-                        "Checking", wx.YES_NO) == wx.NO:
-            evt.Veto()
-            return
-
-        self.log.write("OnEditorShown: (%d,%d) %s\n" %
-                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
-        evt.Skip()
-
-
-    def OnEditorHidden(self, evt):
-        if evt.GetRow() == 6 and evt.GetCol() == 3 and \
-           wx.MessageBox("Are you sure you wish to  finish editing this cell?",
-                        "Checking", wx.YES_NO) == wx.NO:
-            evt.Veto()
-            return
-
-        self.log.write("OnEditorHidden: (%d,%d) %s\n" %
-                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
         evt.Skip()
 
 
     def OnEditorCreated(self, evt):
-        self.log.write("OnEditorCreated: (%d, %d) %s\n" %
-                       (evt.GetRow(), evt.GetCol(), evt.GetControl()))
+        evt.Skip
 
 class OrderGrid(gridlib.Grid):  ##, mixins.GridAutoEditMixin):
     def __init__(self, parent, master, log):
@@ -496,6 +466,7 @@ class OrderManagementPanel(wx.Panel):
         self.master = master
         self.log = log
         self.busy = False
+        self.showRange=[]
         self.colLabelValueList = ["订单编号","客户名称","产品名称","产品数量","订单交货日期","下单时间","下单员","订单状态"]
         self.colWidthList = [70, 90,70, 60, 90, 100, 80, 70]
         self.orderDetailData = []
@@ -562,7 +533,7 @@ class OrderManagementPanel(wx.Panel):
         #                  lambda e: self.filter.SetValue(''))
         # self.filter.Bind(wx.EVT_TEXT_ENTER, self.OnSearch)
         # self.ReCreateRightPanel()
-        self.Bind(gridlib.EVT_GRID_CELL_LEFT_CLICK, self.OnCellLeftClick)
+        self.orderGrid.Bind(gridlib.EVT_GRID_CELL_LEFT_CLICK, self.OnCellLeftClick)
 
     def ReCreateOrderDetailTree(self):
         self.orderDetailTreePanel.DestroyChildren()
@@ -626,10 +597,6 @@ class OrderManagementPanel(wx.Panel):
                     roomOrderIDList.sort()
                     result[subNum][deckNum][zoneNum]=roomOrderIDList
         roomOrderIDList=result
-        print("subOrderIDList=", subOrderIDList)
-        print("deckOrderIDList=", deckOrderIDList)
-        print("zonekOrderIDList=", zoneOrderIDList)
-        print("roomOrderIDList=", roomOrderIDList)
         return subOrderIDList,deckOrderIDList,zoneOrderIDList,roomOrderIDList
 
     def ReCreateRightPanel(self):
@@ -668,12 +635,14 @@ class OrderManagementPanel(wx.Panel):
         self.orderDetailPanel.Layout()
 
     def ReCreteOrderDetailGridPanel(self):
+        self.rightPanel.Freeze()
         self.orderDetailGridPanel.DestroyChildren()
         vbox = wx.BoxSizer(wx.VERTICAL)
-        self.orderDetailGrid = OrderDetailGrid(self.orderDetailGridPanel,self.log)
+        self.orderDetailGrid = OrderDetailGrid(self.orderDetailGridPanel,self,self.log)
         vbox.Add(self.orderDetailGrid,1,wx.EXPAND)
         self.orderDetailGridPanel.SetSizer(vbox)
         self.orderDetailGridPanel.Layout()
+        self.rightPanel.Thaw()
 
 
     def OnOrderStateSearch(self, event):
