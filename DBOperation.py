@@ -229,34 +229,45 @@ def CreateNewOrderSheet(log,whichDB,newOrderID):
         return -1, []
     cursor = db.cursor()
     sql = """CREATE TABLE `%d` (
-            `Index` INT(11) NOT NULL,
+            `Index` INT(11) NOT NULL AUTO_INCREMENT,
             `订单号` INT(11) NOT NULL,
-            `子订单号` INT(11) NULL DEFAULT NULL,
-            `甲板` VARCHAR(50) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
-            `区域` VARCHAR(50) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
-            `房间` VARCHAR(50) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
-            `图纸` VARCHAR(50) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
-            `数量` INT(11) NULL DEFAULT NULL,
-            `宽度` INT(11) NULL DEFAULT NULL,
-            `高度` INT(11) NULL DEFAULT NULL,
-            `厚度` INT(11) NULL DEFAULT NULL,
-            `X面材质` VARCHAR(50) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
-            `X面颜色` VARCHAR(50) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
-            `Y面材质` VARCHAR(50) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
-            `Y面颜色` VARCHAR(50) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
-            `备注` TEXT NULL DEFAULT NULL COLLATE 'utf8_general_ci',
-            `重量` VARCHAR(50) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
-            `所处工位` VARCHAR(50) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
-            `状态` VARCHAR(50) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+            `子订单号` INT(11) NOT NULL,
+            `甲板` VARCHAR(50) NOT NULL COLLATE 'utf8_general_ci',
+            `区域` VARCHAR(50) NOT NULL COLLATE 'utf8_general_ci',
+            `房间` VARCHAR(50) NOT NULL COLLATE 'utf8_general_ci',
+            `图纸` VARCHAR(50) NOT NULL COLLATE 'utf8_general_ci',
+            `产品类型` VARCHAR(50) NOT NULL COLLATE 'utf8_general_ci',
+            `面板代码` VARCHAR(50) NOT NULL COLLATE 'utf8_general_ci',
+            `数量` INT(11) NOT NULL,
+            `宽度` INT(11) NOT NULL,
+            `高度` INT(11) NOT NULL,
+            `厚度` INT(11) NOT NULL,
+            `X面材质` VARCHAR(50) NOT NULL COLLATE 'utf8_general_ci',
+            `X面颜色` VARCHAR(50) NOT NULL COLLATE 'utf8_general_ci',
+            `Y面材质` VARCHAR(50) NOT NULL COLLATE 'utf8_general_ci',
+            `Y面颜色` VARCHAR(50) NOT NULL COLLATE 'utf8_general_ci',
+            `Z面材质` VARCHAR(50) NOT NULL COLLATE 'utf8_general_ci',
+            `Z面颜色` VARCHAR(50) NOT NULL COLLATE 'utf8_general_ci',
+            `V面材质` VARCHAR(50) NOT NULL COLLATE 'utf8_general_ci',
+            `V面颜色` VARCHAR(50) NOT NULL COLLATE 'utf8_general_ci',
+            `备注` TEXT NOT NULL COLLATE 'utf8_general_ci',
+            `重量` VARCHAR(50) NOT NULL COLLATE 'utf8_general_ci',
+            `胶水单编号` VARCHAR(50) NOT NULL COLLATE 'utf8_general_ci',
+            `胶水单注释` VARCHAR(50) NOT NULL COLLATE 'utf8_general_ci',
+            `所处工位` VARCHAR(50) NOT NULL COLLATE 'utf8_general_ci',
+            `状态` VARCHAR(50) NOT NULL COLLATE 'utf8_general_ci',
             PRIMARY KEY (`Index`) USING BTREE
         )
         COLLATE='utf8_general_ci'
         ENGINE=InnoDB
+        AUTO_INCREMENT=0
+        ;
         """%newOrderID
     try:
         cursor.execute(sql)
         db.commit()  # 必须有，没有的话插入语句不会执行
     except:
+        print("error")
         db.rollback()
     db.close()
 
@@ -318,5 +329,31 @@ def InsertOrderDetailRecord(log,whichDB,OrderID):
         db.commit()  # 必须有，没有的话插入语句不会执行
     except:
         db.rollback()
-        print("error")
+    db.close()
+
+def InsertBatchOrderDataIntoDB(log, whichDB, orderTabelName, orderDataList):
+    try:
+        db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
+                             passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
+    except:
+        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        if log:
+            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+        return -1, []
+    cursor = db.cursor()
+    for data in orderDataList:
+        if data[10]==None:
+            data[10]=0
+        if data[11]==None:
+            data[11]=0
+        sql="""INSERT INTO `%d`(`订单号`,`子订单号`,`产品类型`,`图纸`,`面板代码`,`X面颜色`,`Y面颜色`,`Z面颜色`,`V面颜色`,`高度`,`宽度`,`厚度`,`甲板`,`区域`,`房间`,`胶水单编号`,`胶水单注释`,`数量`)
+        VALUES (%d,%d,'%s','%s','%s','%s','%s','%s','%s',%d,%d,%d,'%s','%s','%s','%s','%s',%d)"""\
+            %(int(orderTabelName),int(orderTabelName),int(data[0]),data[1],data[3],data[4],data[5],data[6],data[7],data[8],int(data[9]),int(data[10]),int(data[11]),data[12],data[13],data[14],data[15],data[16],int(data[17]))
+        cursor.execute(sql)
+        try:
+            db.commit()  # 必须有，没有的话插入语句不会执行
+        except:
+            db.rollback()
+    # temp = cursor.fetchall()  # 获得压条信息
+    # print("temp=",temp)
     db.close()

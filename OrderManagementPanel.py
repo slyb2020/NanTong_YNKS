@@ -4,6 +4,242 @@ from DBOperation import GetAllOrderList,GetOrderDetailRecord
 from OrderDetailTree import OrderDetailTree
 import numpy as np
 import images
+import copy
+
+class OrderDetailGrid(gridlib.Grid): ##, mixins.GridAutoEditMixin):
+    def __init__(self, parent, log):
+        gridlib.Grid.__init__(self, parent, -1)
+        ##mixins.GridAutoEditMixin.__init__(self)
+        self.log = log
+        self.moveTo = None
+
+        self.Bind(wx.EVT_IDLE, self.OnIdle)
+
+        self.CreateGrid(25, 25)#, gridlib.Grid.SelectRows)
+        ##self.EnableEditing(False)
+
+        # simple cell formatting
+        self.SetColSize(3, 200)
+        self.SetRowSize(4, 45)
+        self.SetCellValue(0, 0, "First cell")
+        self.SetCellValue(1, 1, "Another cell")
+        self.SetCellValue(2, 2, "Yet another cell")
+        self.SetCellValue(3, 3, "This cell is read-only")
+        self.SetCellFont(0, 0, wx.Font(12, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_ITALIC, wx.FONTWEIGHT_NORMAL))
+        self.SetCellTextColour(1, 1, wx.RED)
+        self.SetCellBackgroundColour(2, 2, wx.CYAN)
+        self.SetReadOnly(3, 3, True)
+
+        self.SetCellEditor(5, 0, gridlib.GridCellNumberEditor(1,1000))
+        self.SetCellValue(5, 0, "123")
+        self.SetCellEditor(6, 0, gridlib.GridCellFloatEditor())
+        self.SetCellValue(6, 0, "123.34")
+        self.SetCellEditor(7, 0, gridlib.GridCellNumberEditor())
+
+        self.SetCellValue(6, 3, "You can veto editing this cell")
+
+        #self.SetRowLabelSize(0)
+        #self.SetColLabelSize(0)
+
+        # attribute objects let you keep a set of formatting values
+        # in one spot, and reuse them if needed
+        attr = gridlib.GridCellAttr()
+        attr.SetTextColour(wx.BLACK)
+        attr.SetBackgroundColour(wx.RED)
+        attr.SetFont(wx.Font(10, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
+
+        # you can set cell attributes for the whole row (or column)
+        self.SetRowAttr(5, attr)
+
+        self.SetColLabelValue(0, "Custom")
+        self.SetColLabelValue(1, "column")
+        self.SetColLabelValue(2, "labels")
+
+        self.SetColLabelAlignment(wx.ALIGN_LEFT, wx.ALIGN_BOTTOM)
+
+        #self.SetDefaultCellOverflow(False)
+        #r = gridlib.GridCellAutoWrapStringRenderer()
+        #self.SetCellRenderer(9, 1, r)
+
+        # overflow cells
+        self.SetCellValue( 9, 1, "This default cell will overflow into neighboring cells, but not if you turn overflow off.");
+        self.SetCellSize(11, 1, 3, 3);
+        self.SetCellAlignment(11, 1, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE);
+        self.SetCellValue(11, 1, "This cell is set to span 3 rows and 3 columns");
+
+
+        editor = gridlib.GridCellTextEditor()
+        editor.SetParameters('10')
+        self.SetCellEditor(0, 4, editor)
+        self.SetCellValue(0, 4, "Limited text")
+
+        renderer = gridlib.GridCellAutoWrapStringRenderer()
+        self.SetCellRenderer(15,0, renderer)
+        self.SetCellValue(15,0, "The text in this cell will be rendered with word-wrapping")
+
+
+        # test all the events
+        self.Bind(gridlib.EVT_GRID_CELL_LEFT_CLICK, self.OnCellLeftClick)
+        self.Bind(gridlib.EVT_GRID_CELL_RIGHT_CLICK, self.OnCellRightClick)
+        self.Bind(gridlib.EVT_GRID_CELL_LEFT_DCLICK, self.OnCellLeftDClick)
+        self.Bind(gridlib.EVT_GRID_CELL_RIGHT_DCLICK, self.OnCellRightDClick)
+
+        self.Bind(gridlib.EVT_GRID_LABEL_LEFT_CLICK, self.OnLabelLeftClick)
+        self.Bind(gridlib.EVT_GRID_LABEL_RIGHT_CLICK, self.OnLabelRightClick)
+        self.Bind(gridlib.EVT_GRID_LABEL_LEFT_DCLICK, self.OnLabelLeftDClick)
+        self.Bind(gridlib.EVT_GRID_LABEL_RIGHT_DCLICK, self.OnLabelRightDClick)
+
+        self.Bind(gridlib.EVT_GRID_COL_SORT, self.OnGridColSort)
+
+        self.Bind(gridlib.EVT_GRID_ROW_SIZE, self.OnRowSize)
+        self.Bind(gridlib.EVT_GRID_COL_SIZE, self.OnColSize)
+
+        self.Bind(gridlib.EVT_GRID_RANGE_SELECT, self.OnRangeSelect)
+        self.Bind(gridlib.EVT_GRID_CELL_CHANGED, self.OnCellChange)
+        self.Bind(gridlib.EVT_GRID_SELECT_CELL, self.OnSelectCell)
+
+        self.Bind(gridlib.EVT_GRID_EDITOR_SHOWN, self.OnEditorShown)
+        self.Bind(gridlib.EVT_GRID_EDITOR_HIDDEN, self.OnEditorHidden)
+        self.Bind(gridlib.EVT_GRID_EDITOR_CREATED, self.OnEditorCreated)
+
+
+    def OnCellLeftClick(self, evt):
+        self.log.write("OnCellLeftClick: (%d,%d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+        evt.Skip()
+
+    def OnCellRightClick(self, evt):
+        self.log.write("OnCellRightClick: (%d,%d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+        evt.Skip()
+
+    def OnCellLeftDClick(self, evt):
+        self.log.write("OnCellLeftDClick: (%d,%d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+        evt.Skip()
+
+    def OnCellRightDClick(self, evt):
+        self.log.write("OnCellRightDClick: (%d,%d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+        evt.Skip()
+
+    def OnLabelLeftClick(self, evt):
+        self.log.write("OnLabelLeftClick: (%d,%d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+        evt.Skip()
+
+    def OnLabelRightClick(self, evt):
+        self.log.write("OnLabelRightClick: (%d,%d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+        evt.Skip()
+
+    def OnLabelLeftDClick(self, evt):
+        self.log.write("OnLabelLeftDClick: (%d,%d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+        evt.Skip()
+
+    def OnLabelRightDClick(self, evt):
+        self.log.write("OnLabelRightDClick: (%d,%d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+        evt.Skip()
+
+    def OnGridColSort(self, evt):
+        self.log.write("OnGridColSort: %s %s" % (evt.GetCol(), self.GetSortingColumn()))
+        self.SetSortingColumn(evt.GetCol())
+
+    def OnRowSize(self, evt):
+        self.log.write("OnRowSize: row %d, %s\n" %
+                       (evt.GetRowOrCol(), evt.GetPosition()))
+        evt.Skip()
+
+    def OnColSize(self, evt):
+        self.log.write("OnColSize: col %d, %s\n" %
+                       (evt.GetRowOrCol(), evt.GetPosition()))
+        evt.Skip()
+
+    def OnRangeSelect(self, evt):
+        if evt.Selecting():
+            msg = 'Selected'
+        else:
+            msg = 'Deselected'
+        self.log.write("OnRangeSelect: %s  top-left %s, bottom-right %s\n" %
+                           (msg, evt.GetTopLeftCoords(), evt.GetBottomRightCoords()))
+        evt.Skip()
+
+
+    def OnCellChange(self, evt):
+        self.log.write("OnCellChange: (%d,%d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+
+        # Show how to stay in a cell that has bad data.  We can't just
+        # call SetGridCursor here since we are nested inside one so it
+        # won't have any effect.  Instead, set coordinates to move to in
+        # idle time.
+        value = self.GetCellValue(evt.GetRow(), evt.GetCol())
+
+        if value == 'no good':
+            self.moveTo = evt.GetRow(), evt.GetCol()
+
+
+    def OnIdle(self, evt):
+        if self.moveTo is not None:
+            self.SetGridCursor(self.moveTo[0], self.moveTo[1])
+            self.moveTo = None
+
+        evt.Skip()
+
+
+    def OnSelectCell(self, evt):
+        if evt.Selecting():
+            msg = 'Selected'
+        else:
+            msg = 'Deselected'
+        self.log.write("OnSelectCell: %s (%d,%d) %s\n" %
+                       (msg, evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+
+        # Another way to stay in a cell that has a bad value...
+        row = self.GetGridCursorRow()
+        col = self.GetGridCursorCol()
+
+        if self.IsCellEditControlEnabled():
+            self.HideCellEditControl()
+            self.DisableCellEditControl()
+
+        value = self.GetCellValue(row, col)
+
+        if value == 'no good 2':
+            return  # cancels the cell selection
+
+        evt.Skip()
+
+
+    def OnEditorShown(self, evt):
+        if evt.GetRow() == 6 and evt.GetCol() == 3 and \
+           wx.MessageBox("Are you sure you wish to edit this cell?",
+                        "Checking", wx.YES_NO) == wx.NO:
+            evt.Veto()
+            return
+
+        self.log.write("OnEditorShown: (%d,%d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+        evt.Skip()
+
+
+    def OnEditorHidden(self, evt):
+        if evt.GetRow() == 6 and evt.GetCol() == 3 and \
+           wx.MessageBox("Are you sure you wish to  finish editing this cell?",
+                        "Checking", wx.YES_NO) == wx.NO:
+            evt.Veto()
+            return
+
+        self.log.write("OnEditorHidden: (%d,%d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+        evt.Skip()
+
+
+    def OnEditorCreated(self, evt):
+        self.log.write("OnEditorCreated: (%d, %d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetControl()))
 
 class OrderGrid(gridlib.Grid):  ##, mixins.GridAutoEditMixin):
     def __init__(self, parent, master, log):
@@ -330,7 +566,7 @@ class OrderManagementPanel(wx.Panel):
 
     def ReCreateOrderDetailTree(self):
         self.orderDetailTreePanel.DestroyChildren()
-        self.orderDetailTree = OrderDetailTree(self.orderDetailTreePanel,self.log,self.orderDetailTreeStructureList)
+        self.orderDetailTree = OrderDetailTree(self.orderDetailTreePanel,self,self.log,self.data[0],self.treeStructure)
         vbox = wx.BoxSizer(wx.VERTICAL)
         vbox.Add(self.orderDetailTree,1,wx.EXPAND)
         self.orderDetailTreePanel.SetSizer(vbox)
@@ -346,84 +582,55 @@ class OrderManagementPanel(wx.Panel):
             self.ReCreateRightPanel()
             _,self.orderDetailData = GetOrderDetailRecord(self.log,1,self.data[0])
             if len(self.orderDetailData)==0:
-                self.orderDetailTreeStructureList = [
-                    self.data[0],[
-                    ]
-                ]
+                self.treeStructure =[]
             else:
-                orderTreeData = self.TreeDataTransform()
-                # self.orderDetailTreeStructureList = [
-                #         self.data[0],[
-                #         ["ImageNet", [["2017", []], ["2018", []]]],
-                #         ["FasionMNIST", [["2007", []], ["2012", []]]],
-                #         ["MNIST", [["2007", []], ["2012", []]]],
-                #         ["猫狗大战", []],
-                #         ]
-                #     ]
-                self.orderDetailTreeStructureList=[self.data[0],orderTreeData]
+                self.treeStructure = self.TreeDataTransform()
             self.ReCreateOrderDetailTree()
         event.Skip()
 
     def TreeDataTransform(self):
         orderTreeData = np.array(self.orderDetailData)
         subOrderIDList = list(orderTreeData[:,2])#提出所有子订单号组成列表
-        subOrderIDList = set(subOrderIDList)#得到所有不重复的子订单号
-        result=[]
-        for keyword in subOrderIDList:
-            temp = []
-            for subOrder in self.orderDetailData:
-                if str(subOrder[2])==str(keyword):
-                    temp.append(subOrder)
-            result.append([keyword,temp])#把订单按子订单分好
-        for subOrderIndex,subOrder in enumerate(result):
-            # subOrderKeyword = subOrder[0]
-            deckOrderInThisSubOrderList = subOrder[1]
-            deckOrderArray = np.array(deckOrderInThisSubOrderList)
-            deckIDList = list(deckOrderArray[:,3])
-            deckIDList = set(deckIDList)
-            deckOrderList = []
-            for keyword in deckIDList:
-                temp = []
-                for deckOrderIndex,deckOrder in enumerate(deckOrderInThisSubOrderList):
-                    if str(deckOrder[3]) == str(keyword):
-                        temp.append(deckOrder)
-                deckOrderList.append([keyword,temp])
-            result[subOrderIndex][1]=deckOrderList
-
-        for subOrderIndex,subOrder in enumerate(result):
-            deckOrderInThisSubList = subOrder[1]
-            for zoneOrderIndex,zoneOrderInThisDeck in enumerate(deckOrderInThisSubList):
-                zoneOrderInThisDeckList=zoneOrderInThisDeck[1]
-                zoneOrderArray = np.array(zoneOrderInThisDeckList)
-                zoneIDList = list(zoneOrderArray[:,4])
-                zoneIDList = set(zoneIDList)
-                zoneOrderList = []
-                for keyword in zoneIDList:
-                    temp = []
-                    for zoneOrder in zoneOrderInThisDeckList:
-                        if str(zoneOrder[4]) == str(keyword):
-                            temp.append(zoneOrder)
-                    zoneOrderList.append([keyword,temp])
-                result[subOrderIndex][1][zoneOrderIndex][1]=zoneOrderList
-
-        for subOrderIndex,subOrder in enumerate(result):
-            deckOrderInThisSubList = subOrder[1]
-            for zoneOrderIndex,zoneOrderInThisDeck in enumerate(deckOrderInThisSubList):
-                zoneOrderInThisDeckList=zoneOrderInThisDeck[1]
-                for roomOrderIndex,roomOrderInThisZone in enumerate(zoneOrderInThisDeckList):
-                    roomOrderInThisZoneList = roomOrderInThisZone[1]
-                    roomOrderArray = np.array(roomOrderInThisZoneList)
-                    roomIDList = list(roomOrderArray[:,5])
-                    roomIDList = set(roomIDList)
-                    roomOrderList = []
-                    for keyword in roomIDList:
-                        temp = []
-                        for roomOrder in roomOrderInThisZoneList:
-                            if str(roomOrder[5]) == str(keyword):
-                                temp.append(roomOrder)
-                        roomOrderList.append([keyword,temp])
-                result[subOrderIndex][1][zoneOrderIndex][1][roomOrderIndex][1]=roomOrderList
-        return result
+        subOrderIDList = list(set(subOrderIDList))#得到所有不重复的子订单号
+        subOrderIDList.sort()
+        result=copy.deepcopy(subOrderIDList)
+        for subNum, subOrderID in enumerate(result):
+            deckOrderIDList = []
+            for data in orderTreeData:
+                if str(data[2])==str(subOrderID):
+                    deckOrderIDList.append(data[3])
+            deckOrderIDList = list(set(deckOrderIDList))
+            deckOrderIDList.sort()
+            result[subNum]=deckOrderIDList
+        deckOrderIDList = result
+        result=copy.deepcopy(deckOrderIDList)
+        for subNum,subOrderID in enumerate(result):
+            for deckNum,deckOrderID in enumerate(subOrderID):
+                zoneOrderIDList=[]
+                for data in orderTreeData:
+                    if str(data[2])==str(subOrderIDList[subNum]) and str(data[3])==str(deckOrderID):
+                        zoneOrderIDList.append(data[4])
+                zoneOrderIDList = list(set(zoneOrderIDList))
+                zoneOrderIDList.sort()
+                result[subNum][deckNum]=zoneOrderIDList
+        zoneOrderIDList=result
+        result=copy.deepcopy(zoneOrderIDList)
+        for subNum,subOrderID in enumerate(result):
+            for deckNum,deckOrderID in enumerate(subOrderID):
+                for zoneNum,zoneOrderID in enumerate(deckOrderID):
+                    roomOrderIDList=[]
+                    for data in orderTreeData:
+                        if str(data[2])==str(subOrderIDList[subNum]) and str(data[3])==str(deckOrderIDList[subNum][deckNum]) and str(data[4])==str(zoneOrderID):
+                            roomOrderIDList.append(data[5])
+                    roomOrderIDList = list(set(roomOrderIDList))
+                    roomOrderIDList.sort()
+                    result[subNum][deckNum][zoneNum]=roomOrderIDList
+        roomOrderIDList=result
+        print("subOrderIDList=", subOrderIDList)
+        print("deckOrderIDList=", deckOrderIDList)
+        print("zonekOrderIDList=", zoneOrderIDList)
+        print("roomOrderIDList=", roomOrderIDList)
+        return subOrderIDList,deckOrderIDList,zoneOrderIDList,roomOrderIDList
 
     def ReCreateRightPanel(self):
         self.rightPanel.DestroyChildren()
@@ -459,6 +666,15 @@ class OrderManagementPanel(wx.Panel):
         hbox.Add(self.orderDetailGridPanel,1,wx.EXPAND)
         self.orderDetailPanel.SetSizer(hbox)
         self.orderDetailPanel.Layout()
+
+    def ReCreteOrderDetailGridPanel(self):
+        self.orderDetailGridPanel.DestroyChildren()
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        self.orderDetailGrid = OrderDetailGrid(self.orderDetailGridPanel,self.log)
+        vbox.Add(self.orderDetailGrid,1,wx.EXPAND)
+        self.orderDetailGridPanel.SetSizer(vbox)
+        self.orderDetailGridPanel.Layout()
+
 
     def OnOrderStateSearch(self, event):
         self.orderStateSearch = self.orderStateSearchCtrl.GetValue()

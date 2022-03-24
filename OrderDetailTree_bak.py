@@ -11,15 +11,13 @@ from DBOperation import GetOrderDetailRecord,InsertOrderDetailRecord
 import numpy as np
 
 class OrderDetailTree(wx.Panel):
-    def __init__(self, parent, master,log, orderID,structure,size=wx.DefaultSize, ):
+    def __init__(self, parent, log, structureList,size=wx.DefaultSize, ):
         # Use the WANTS_CHARS style so the panel doesn't eat the Return key.
         wx.Panel.__init__(self, parent, -1, size=size, style=wx.BORDER_THEME)
         self.Bind(wx.EVT_SIZE, self.OnSize)
-        self.master = master
         self.log = log
-        self.orderID = orderID
-        # self.dataList = structureList[1]
-        subOrderList,deckOrderList,zoneOrderList,roomOrderList=structure
+        self.orderID = structureList[0]
+        self.dataList = structureList[1]
         # datasetList = [
         #     ["ImageNet", [["2017", []], ["2018", []]]],
         #     ["FasionMNIST", [["2007", []], ["2012", []]]],
@@ -47,103 +45,53 @@ class OrderDetailTree(wx.Panel):
         self.tree.SetItemData(self.root, "根")
         self.tree.SetItemImage(self.root, fldridx, wx.TreeItemIcon_Normal)
         self.tree.SetItemImage(self.root, fldropenidx, wx.TreeItemIcon_Expanded)
-        # subOrderList=['1','2','3']
-        # deckOrderList=[
-        #     [1],
-        #     [1,2],
-        #     [1,2,3],
-        # ]
-        # zoneOrderList=[
-        #     [
-        #         [1,2,3]
-        #     ],
-        #     [
-        #         [1,2,3],
-        #         [1,2,3],
-        #     ],
-        #     [
-        #         [1,2,3],
-        #         [1,2,3],
-        #         [1,2,3]
-        #     ],
-        # ]
-        # roomOrderList=[
-        #     [
-        #         [
-        #             [1,],[1,2],[1,2,3]
-        #         ]
-        #     ],
-        #     [
-        #         [
-        #             [1,2,3],[1,2,3],[1,2,3]
-        #         ],
-        #         [
-        #             [1,2,3],[1,2,3],[1,2,3]
-        #         ],
-        #     ],
-        #     [
-        #         [
-        #             [1,2,3],[1,2,3],[1,2,3]
-        #         ],
-        #         [
-        #             [1,2,3],[1,2,3],[1,2,3]
-        #         ],
-        #         [
-        #             [1,2,3],[1,2,3],[1,2,3]
-        #         ]
-        #     ],
-        # ]
+        subOrderTreePass = True if len(self.dataList)==1 else False
+        for subOrderList in self.dataList:
+            if not subOrderTreePass:
+                sub = self.tree.AppendItem(self.root, "子订单"+subOrderList[0])
+                self.tree.SetItemData(sub, "子订单")
+                self.tree.SetItemImage(sub, fldridx, wx.TreeItemIcon_Normal)
+                self.tree.SetItemImage(sub, fldropenidx, wx.TreeItemIcon_Expanded)
+            else:
+                sub = self.root
+            deckOrderTreePass = True if len(subOrderList[1])==1 else False
+            for deckOrderList in subOrderList[1]:
+                if not deckOrderTreePass:
+                    deck = self.tree.AppendItem(sub, "甲板"+deckOrderList[0])
+                    self.tree.SetItemData(deck, "甲板订单")
+                    self.tree.SetItemImage(deck, fldridx, wx.TreeItemIcon_Normal)
+                    self.tree.SetItemImage(deck, fldropenidx, wx.TreeItemIcon_Expanded)
+                else:
+                    deck = sub
+                zoneOrderTreePass = True if len(deckOrderList[1])==1 else False
+                for zoneOrderList in deckOrderList[1]:
+                    if not zoneOrderTreePass:
+                        zone = self.tree.AppendItem(deck, "区域"+zoneOrderList[0])
+                        self.tree.SetItemData(zone, "区域订单")
+                        self.tree.SetItemImage(zone, fldridx, wx.TreeItemIcon_Normal)
+                        self.tree.SetItemImage(zone, fldropenidx, wx.TreeItemIcon_Selected)
+                    else:
+                        zone = deck
+                    roomOrderTreePass = True if len(zoneOrderList[1])==1 else False
+                    for roomOrderList in zoneOrderList[1]:
+                        if not roomOrderTreePass:
+                            room = self.tree.AppendItem(zone, "房间"+str(roomOrderList[0]))
+                            self.tree.SetItemData(room, "房间订单")
+                            self.tree.SetItemImage(room, fldridx, wx.TreeItemIcon_Normal)
+                            self.tree.SetItemImage(room, fldropenidx, wx.TreeItemIcon_Selected)
+                        else:
+                            room = zone
+                        # print(roomOrderList)
+                        # for componentList in roomOrderList[1]:
+                        #     item = self.tree.AppendItem(zone, str(componentList[6]))
+                        #     self.tree.SetItemData(item, "零件订单")
+                        #     self.tree.SetItemImage(item, fileidx, wx.TreeItemIcon_Normal)
+                        #     self.tree.SetItemImage(item, smileidx, wx.TreeItemIcon_Selected)
 
-        for subOrderNum, subOrder in enumerate(subOrderList):
-            sub = self.tree.AppendItem(self.root, "子订单"+subOrder)
-            self.tree.SetItemData(sub, "子订单_"+str(subOrder))
-            self.tree.SetItemImage(sub, fldridx, wx.TreeItemIcon_Normal)
-            self.tree.SetItemImage(sub, fldropenidx, wx.TreeItemIcon_Expanded)
-            for deckOrderNum, deckOrder in enumerate(deckOrderList[subOrderNum]):
-                deck = self.tree.AppendItem(sub, "甲板" + str(deckOrder))
-                self.tree.SetItemData(deck, "甲板订单_"+str(subOrder)+'_'+str(deckOrder))
-                self.tree.SetItemImage(deck, fldridx, wx.TreeItemIcon_Normal)
-                self.tree.SetItemImage(deck, fldropenidx, wx.TreeItemIcon_Expanded)
-                for zoneOrderNum, zoneOrder in enumerate(zoneOrderList[subOrderNum][deckOrderNum]):
-                    zone = self.tree.AppendItem(deck,"区域" + str(zoneOrder))
-                    self.tree.SetItemData(zone, "区域订单_"+str(subOrder)+'_'+str(deckOrder)+'_'+str(zoneOrder))
-                    self.tree.SetItemImage(zone, fldridx, wx.TreeItemIcon_Normal)
-                    self.tree.SetItemImage(zone, fldropenidx, wx.TreeItemIcon_Expanded)
-                    for roomOrderNum,roomOrder in enumerate(roomOrderList[subOrderNum][deckOrderNum][zoneOrderNum]):
-                        room = self.tree.AppendItem(zone, "房间" + str(roomOrder))
-                        self.tree.SetItemData(room, "房间订单_"+str(subOrder)+'_'+str(deckOrder)+'_'+str(zoneOrder)+'_'+str(roomOrder))
-                        self.tree.SetItemImage(room, fldridx, wx.TreeItemIcon_Normal)
-                        self.tree.SetItemImage(room, fldropenidx, wx.TreeItemIcon_Expanded)
         self.tree.ExpandAll()
         self.Bind(wx.EVT_TREE_BEGIN_LABEL_EDIT, self.OnBeginEdit, self.tree)
         self.Bind(wx.EVT_TREE_END_LABEL_EDIT, self.OnEndEdit, self.tree)
         self.tree.Bind(wx.EVT_RIGHT_DOWN, self.OnRightDown)
-        self.tree.Bind(wx.EVT_LEFT_DOWN, self.OnLeftDown)
-
-    def OnLeftDown(self,event):
-        pt = event.GetPosition();
-        item, flags = self.tree.HitTest(pt)
-        itemData = self.tree.GetItemData(item)
-        if itemData == "根":
-            self.master.ReCreteOrderDetailGridPanel()
-        else:
-            dataList= itemData.split("_")[1:]
-            # if dataList[0]=='子订单':
-            #     subOrderID=dataList[1]
-            # elif dataList[0]=='甲板订单':
-            #     subOrderID=dataList[1]
-            #     deckOrderID=dataList[2]
-            # elif dataList[0]=='区域订单':
-            #     subOrderID=dataList[1]
-            #     deckOrderID=dataList[2]
-            #     zoneOrderID=dataList[3]
-            # elif dataList[0]=='房间订单':
-            #     subOrderID=dataList[1]
-            #     deckOrderID=dataList[2]
-            #     zoneOrderID=dataList[3]
-            #     roomOrderID=dataList[4]
-            print(dataList)
-        event.Skip()
 
     def OnRightDown(self, event):
         pt = event.GetPosition();

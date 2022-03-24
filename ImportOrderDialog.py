@@ -3,6 +3,7 @@ import os
 import images
 from ExcelOperation import GetSheetNameListFromExcelFileName,ExcelGridShowPanel
 from ExcelOperation import GetSheetDataFromExcelFileName
+from DBOperation import InsertBatchOrderDataIntoDB,CreateNewOrderSheet,GetOrderDetailRecord,InsertNewOrderRecord
 dirName = os.path.dirname(os.path.abspath(__file__))
 bitmapDir = os.path.join(dirName, 'bitmaps')
 
@@ -140,13 +141,21 @@ class ImportOrderFromExcelDialog(wx.Dialog):
             self.subOrderIDList = self.GetSubOrderIDList()
             self.keyDataColPostion = self.GetKeyDataColPosition()
             self.ReCreateMainInformationPanel()
-            # btn_ok.Bind(wx.EVT_BUTTON, self.OnOk)
+        btn_ok.Bind(wx.EVT_BUTTON, self.OnOk)
         # btn_cancel.Bind(wx.EVT_BUTTON, self.OnCancel)
         # manualInputBTN.Bind(wx.EVT_BUTTON, self.OnCancel)
 
-    # def OnOk(self, event):
-    #     event.Skip()
-    #
+    def OnOk(self, event):
+        InsertNewOrderRecord(self.parent.log,1,self.newOrderID)
+        CreateNewOrderSheet(self.parent.log,1,self.newOrderID)
+        orderDataList = []
+        for pageNum, page in enumerate(self.sheetPage):
+            (rowStart,rowEnd) = self.keyDataColPostion[pageNum][0]
+            for data in page.data[rowStart:rowEnd,:]:
+                orderDataList.append(data)
+        InsertBatchOrderDataIntoDB(self.parent.log, 1, self.newOrderID, orderDataList)
+        event.Skip()
+
     # def OnCancel(self, event):
     #     # self.log.WriteText("操作员：'%s' 取消库存参数设置操作\r\n"%(self.parent.operator_name))
 
@@ -182,6 +191,7 @@ class ImportOrderFromExcelDialog(wx.Dialog):
         hbox.Add(wx.StaticText(self.mainInformationPanel, label='区域：', size=(50,-1)), 0, wx.TOP, 5)
         self.zoneIDCombo = wx.ComboBox(self.mainInformationPanel, size=(80,25),
                                            choices=self.subOrderIDList, style=wx.TE_READONLY|wx.ALIGN_RIGHT)
+        self.zoneIDCombo.Bind(wx.EVT_COMBOBOX, self.OnDeckIDChanged)
         self.zoneIDCombo.SetBackgroundColour(wx.GREEN)
         # self.deckIDCombo.SetValue(self.deckIDList[0])
         hbox.Add(self.zoneIDCombo, 0, wx.RIGHT, 20)
@@ -189,13 +199,15 @@ class ImportOrderFromExcelDialog(wx.Dialog):
         hbox.Add(wx.StaticText(self.mainInformationPanel, label='房间：', size=(50,-1)), 0, wx.TOP, 5)
         self.roomIDCombo = wx.ComboBox(self.mainInformationPanel, size=(80,25),
                                            choices=self.subOrderIDList, style=wx.TE_READONLY|wx.ALIGN_RIGHT)
+        self.roomIDCombo.Bind(wx.EVT_COMBOBOX, self.OnRoomIDChanged)
         self.roomIDCombo.SetBackgroundColour(wx.GREEN)
         # self.deckIDCombo.SetValue(self.deckIDList[0])
         hbox.Add(self.roomIDCombo, 0, wx.RIGHT, 20)
 
         self.mainInformationPanel.SetSizer(hbox)
         self.mainInformationPanel.Layout()
-        deckList = self.GetDeckItemList(0, self.subOrderIDList[0])
+        self.currentPageNum = self.notebook.GetSelection()
+        deckList = self.GetDeckItemList(self.currentPageNum, self.subOrderIDList[0])
         self.deckIDCombo.SetItems(deckList)
         self.deckIDCombo.SetValue(deckList[0])
         zoneList = self.GetZoneItemList(0, self.subOrderIDList[0],deckList[0])
@@ -204,6 +216,38 @@ class ImportOrderFromExcelDialog(wx.Dialog):
         roomList = self.GetRoomItemList(0, self.subOrderIDList[0],deckList[0],zoneList[0])
         self.roomIDCombo.SetItems(roomList)
         self.roomIDCombo.SetValue(roomList[0])
+        self.ShowSelectionData()
+
+    def OnDeckIDChanged(self, event):
+        roomList = self.GetRoomItemList(self.currentPageNum, self.subOrderIDList[0],self.deckIDCombo.GetValue(),self.zoneIDCombo.GetValue())
+        self.roomIDCombo.SetItems(roomList)
+        self.roomIDCombo.SetValue(roomList[0])
+        self.ShowSelectionData()
+
+
+    def OnRoomIDChanged(self,event):
+        self.ShowSelectionData()
+
+    def ShowSelectionData(self):
+        subOrderID = self.subOrderIDCombo.GetValue()
+        deckID = self.deckIDCombo.GetValue()
+        zoneID = self.zoneIDCombo.GetValue()
+        roomID = self.roomIDCombo.GetValue()
+
+        for pageNum, page in enumerate(self.sheetPage):
+            subOrderCol = self.keyDataColPostion[pageNum][1][0]
+            deckCol = self.keyDataColPostion[pageNum][1][1]
+            zoneCol = self.keyDataColPostion[pageNum][1][2]
+            roomCol = self.keyDataColPostion[pageNum][1][3]
+            dataRowStart = self.keyDataColPostion[pageNum][0][0]
+            dataRowEnd = self.keyDataColPostion[pageNum][0][1]
+            for rowNum, data in enumerate(self.sheetPage[pageNum].data[dataRowStart:dataRowEnd+1,:]):
+                for colNum in range(self.sheetPage[pageNum].data.shape[1]):#先清除全部背景
+                    self.sheetPage[pageNum].SetCellBackgroundColour(rowNum + dataRowStart, colNum, wx.WHITE)
+                if str(data[subOrderCol]) == subOrderID and str(data[deckCol])==deckID and str(data[zoneCol])==zoneID and str(data[roomCol])==roomID:
+                    for colNum in range(self.sheetPage[pageNum].data.shape[1]):#再设置满足条件的背景
+                        self.sheetPage[pageNum].SetCellBackgroundColour(rowNum+dataRowStart,colNum,wx.Colour(170,240,170))
+        self.sheetPage[self.currentPageNum].Refresh()
 
 
     def GetMainOrderID(self):
