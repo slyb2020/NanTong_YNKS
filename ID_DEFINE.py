@@ -14,8 +14,8 @@ dbUserName = ['root','root']
 dbPassword = ['','']
 dbName = ['智能生产管理系统','智能生产管理系统_调试']
 orderDBName = ['订单数据库','订单数据库_调试']
-orderDetailLabelList=['Index','订单号','子订单号','甲板','区域','房间','图纸','面板代码','X面颜色','Y面颜色','高度','宽度','厚度','数量','Z面颜色','V面颜色']
-orderDetailColSizeList = [30,40,60,40,40,50,70,70,60,60,40,40,40,40,50,50]
+orderDetailLabelList=['Index','订单号','子订单','甲板','区域','房间','图纸','面板代码','X面颜色','Y面颜色','高度','宽度','厚度','数量','Z面颜色','V面颜色']
+orderDetailColSizeList = [30,40,50,35,35,50,70,80,60,60,40,40,40,40,50,50]
 import wx
 
 MENU_CHECK_IN = wx.NewIdRef()

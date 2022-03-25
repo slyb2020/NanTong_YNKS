@@ -43,6 +43,7 @@ from BluePrintManagementPanel import BluePrintManagementPanel
 from ExcelImport import XLSGridFrame
 from DBOperation import CreateNewOrderSheet,InsertNewOrderRecord,GetAllOrderList
 from ImportOrderDialog import ImportOrderFromExcelDialog
+from ProductionScheduleDialog import ProductionScheduleDialog
 
 dirName = os.path.dirname(os.path.abspath(__file__))
 bitmapDir = os.path.join(dirName, 'bitmaps')
@@ -250,7 +251,6 @@ class MainPanel(wx.Panel):
                  size=(1024, 768), style=wx.TAB_TRAVERSAL):
         wx.Panel.__init__(self, parent, id, pos, size, style)
         self.parent = parent
-
         il = wx.ImageList(16, 16)
         self.idx1 = il.Add(images._rt_smiley.GetBitmap())
         self.idx2 = il.Add(images.GridBG.GetBitmap())
@@ -355,20 +355,23 @@ class MainPanel(wx.Panel):
         if self.parent.operatorCharacter in ["技术员","下单员","管理员"]:
             item = self._pnl.AddFoldPanel("订单操作面板", collapsed=False,
                                           foldIcons=Images)
-            panel = wx.Panel(item, -1, size=(300, 300))
+            panel = wx.Panel(item, -1, size=(300, 600))
             bitmap = wx.Bitmap("bitmaps/aquabutton.png",
                                wx.BITMAP_TYPE_PNG)
             self.newOrderBTN = AB.AquaButton(panel, wx.ID_ANY, bitmap, "  新建订单", size=(100, 50))
             self.newOrderBTN.Bind(wx.EVT_BUTTON,self.OnNewOrderBTN)
             self.newOrderBTN.SetForegroundColour(wx.BLACK)
-            self.editOrderBTN = AB.AquaButton(panel, wx.ID_ANY, bitmap, "  订单管理", size=(100, 50))
+            self.editOrderBTN = AB.AquaButton(panel, wx.ID_ANY, bitmap, "  批量排产", size=(100, 50))
             self.editOrderBTN.SetForegroundColour(wx.BLACK)
             static = wx.StaticLine(panel, -1)
             vbox = wx.BoxSizer(wx.VERTICAL)
             vbox.Add(self.newOrderBTN, 0, wx.EXPAND | wx.TOP | wx.BOTTOM, 5)
             vbox.Add(self.editOrderBTN, 0, wx.EXPAND | wx.TOP | wx.BOTTOM, 5)
             vbox.Add(static, 0, wx.EXPAND | wx.TOP | wx.BOTTOM, 5)
+            self.orderInfoPanel=wx.Panel(panel,size=(-1,500))
+            vbox.Add(self.orderInfoPanel,0,wx.EXPAND)
             panel.SetSizer(vbox)
+            # self.ReCreateOrderInfoPanel()
             self._pnl.AddFoldPanelWindow(item, panel, fpb.FPB_ALIGN_WIDTH, 5, 0)
             if self.parent.operatorCharacter == "下单员":
                 item.Expand()
@@ -425,6 +428,101 @@ class MainPanel(wx.Panel):
                 item.Expand()
             else:
                 item.Collapse()
+
+    def ReCreateOrderInfoPanel(self):
+        self.orderInfoPanel.DestroyChildren()
+        vbox=wx.BoxSizer(wx.VERTICAL)
+        title = wx.StaticBox(self.orderInfoPanel,label=("订单详细信息"),size=(-1,500))
+        vbox.Add(title,1,wx.EXPAND)
+        self.orderInfoPanel.SetSizer(vbox)
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        vbox.Add((-1,20))
+        hhbox = wx.BoxSizer()
+        hhbox.Add((5,-1))
+        hhbox.Add(wx.StaticText(title,label="总面积:",size=(70,-1)),0,wx.TOP,5)
+        self.orderTotalSquireTXT=wx.TextCtrl(title,size=(40,-1))
+        hhbox.Add(self.orderTotalSquireTXT,1,wx.RIGHT,5)
+        vbox.Add(hhbox,0,wx.EXPAND)
+
+        vbox.Add((-1,5))
+        hhbox = wx.BoxSizer()
+        hhbox.Add((5,-1))
+        hhbox.Add(wx.StaticText(title,label="子订单数:",size=(70,-1)),0,wx.TOP,5)
+        self.subOrderAmountTXT=wx.TextCtrl(title,size=(40,-1))
+        hhbox.Add(self.subOrderAmountTXT,1,wx.RIGHT,5)
+        vbox.Add(hhbox,0,wx.EXPAND)
+
+        vbox.Add((-1,5))
+        hhbox = wx.BoxSizer()
+        hhbox.Add((5,-1))
+        hhbox.Add(wx.StaticText(title,label="总墙板数:",size=(70,-1)),0,wx.TOP,5)
+        self.orderTotalPanelAmountTXT=wx.TextCtrl(title,size=(40,-1))
+        hhbox.Add(self.orderTotalPanelAmountTXT,1,wx.RIGHT,5)
+        vbox.Add(hhbox,0,wx.EXPAND)
+
+        vbox.Add((-1,5))
+        hhbox = wx.BoxSizer()
+        hhbox.Add((5,-1))
+        hhbox.Add(wx.StaticText(title,label="总天花板数:",size=(70,-1)),0,wx.TOP,5)
+        self.orderTotalCeilingAmountTXT=wx.TextCtrl(title,size=(40,-1))
+        hhbox.Add(self.orderTotalCeilingAmountTXT,1,wx.RIGHT,5)
+        vbox.Add(hhbox,0,wx.EXPAND)
+
+        vbox.Add((-1,5))
+        hhbox = wx.BoxSizer()
+        hhbox.Add((5,-1))
+        hhbox.Add(wx.StaticText(title,label="总构件数:",size=(70,-1)),0,wx.TOP,5)
+        self.orderTotalConstructionAmountTXT=wx.TextCtrl(title,size=(40,-1))
+        hhbox.Add(self.orderTotalConstructionAmountTXT,1,wx.RIGHT,5)
+        vbox.Add(hhbox,0,wx.EXPAND)
+
+        vbox.Add((-1,5))
+        hhbox = wx.BoxSizer()
+        hhbox.Add((5,-1))
+        hhbox.Add(wx.StaticText(title,label="总部件数:",size=(70,-1)),0,wx.TOP,5)
+        self.orderTotalComponentAmountTXT=wx.TextCtrl(title,size=(40,-1))
+        hhbox.Add(self.orderTotalComponentAmountTXT,1,wx.RIGHT,5)
+        vbox.Add(hhbox,0,wx.EXPAND)
+
+        vbox.Add((-1,5))
+        hhbox = wx.BoxSizer()
+        hhbox.Add((5,-1))
+        hhbox.Add(wx.StaticText(title,label="订单状态:",size=(70,-1)),0,wx.TOP,5)
+        self.orderStateTXT=wx.TextCtrl(title,size=(40,-1),style=wx.TE_READONLY)
+        self.orderStateTXT.SetValue(self.work_zone_Panel.orderManagmentPanel.data[7])
+        hhbox.Add(self.orderStateTXT,1,wx.RIGHT,5)
+        vbox.Add(hhbox,0,wx.EXPAND)
+        print(self.work_zone_Panel.orderManagmentPanel.data)
+        if self.work_zone_Panel.orderManagmentPanel.data[7] == "接单":
+            vbox.Add((-1,5))
+            self.specificOrderProductionBTN = wx.Button(title,label="排  产",size=(-1,40))
+            self.specificOrderProductionBTN.Bind(wx.EVT_BUTTON,self.OnSpecificOrderProductionBTN)
+            vbox.Add(self.specificOrderProductionBTN,0,wx.EXPAND|wx.ALL,5)
+        elif self.work_zone_Panel.orderManagmentPanel.data[7] == "已排产":
+            vbox.Add((-1,5))
+            self.specificOrderPrintScheduleBTN = wx.Button(title,label="打印任务单",size=(-1,40))
+            vbox.Add(self.specificOrderPrintScheduleBTN,0,wx.EXPAND|wx.ALL,5)
+
+        title.SetSizer(vbox)
+        self.orderInfoPanel.Layout()
+
+    def OnSpecificOrderProductionBTN(self,event):
+        dlg = wx.MessageDialog(self, '将进行排产操作，此操作不可逆，是否继续?',
+                               '信息提示',
+                               wx.OK | wx.CANCEL | wx.ICON_INFORMATION
+                               # wx.YES_NO | wx.NO_DEFAULT | wx.CANCEL | wx.ICON_INFORMATION
+                               )
+        if dlg.ShowModal()==wx.ID_OK:
+            dlg.Destroy()
+            dlg = ProductionScheduleDialog(self,self.work_zone_Panel.orderManagmentPanel.data[0])
+            dlg.CenterOnScreen()
+            if dlg.ShowModal()==wx.ID_OK:
+                self.work_zone_Panel.orderManagmentPanel.data[7] = "已排产"#这个之前应该增加一个数据库更新操作
+                self.work_zone_Panel.orderManagmentPanel.orderGrid.ReCreate()
+        else:
+            dlg.Destroy()
+        self.ReCreateOrderInfoPanel()
+
     def OnNewOrderBTN(self,event):
         from DBOperation import GetTableListFromDB
         _,dbNameList = GetTableListFromDB(None,1)

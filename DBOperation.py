@@ -69,11 +69,34 @@ def GetAllOrderList(log, whichDB):
             log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
         return -1, []
     cursor = db.cursor()
-    sql = """SELECT `订单编号`,`客户名称`,`产品名称`,`产品数量`,`订单交货日期`,`下单时间`,`下单员ID`,`状态` from `订单信息` """
+    sql = """SELECT `订单编号`,`订单名称`,`总价`,`产品数量`,`订单交货日期`,`下单时间`,`下单员ID`,`状态` from `订单信息` """
     cursor.execute(sql)
     temp = cursor.fetchall()  # 获得压条信息
     db.close()
     return 0, temp
+
+def UpdateOrderInfo(log, whichDB,data):
+    try:
+        db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
+                             passwd='%s' % dbPassword[whichDB], db='%s' % dbName[whichDB], charset='utf8')
+    except:
+        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        if log:
+            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+        return -1, []
+    cursor = db.cursor()
+    sql = "UPDATE 订单信息 SET `订单名称`='%s',`总价`='%s',`产品数量`='%s',`状态`='%s' WHERE `订单编号` = '%s'" \
+          % (str(data[1]),str(data[2]),str(data[3]),str(data[4]),str(data[0]))
+    # sql = "INSERT INTO 图纸信息(`图纸号`,`面板增量`,`中板增量`,`背板增量`,`剪板505`,`成型405`,`成型409`,`成型406`,`折弯652`," \
+    #       "`热压100`,`热压306`,`冲铣`,`图纸状态`,`创建人`,`中板`,`打包9000`,`图纸大类`,`创建时间`,`备注`)" \
+    #       "VALUES ('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')"\
+    #       % (data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],data[12],data[13],data[14],data[15],data[16],datetime.date.today(),data[17])
+    try:
+        cursor.execute(sql)
+        db.commit()  # 必须有，没有的话插入语句不会执行
+    except:
+        db.rollback()
+    db.close()
 
 def GetAllBoardList(log, whichDB,whichBoard,state='在用'):
     try:

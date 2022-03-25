@@ -467,8 +467,8 @@ class OrderManagementPanel(wx.Panel):
         self.log = log
         self.busy = False
         self.showRange=[]
-        self.colLabelValueList = ["订单编号","客户名称","产品名称","产品数量","订单交货日期","下单时间","下单员","订单状态"]
-        self.colWidthList = [70, 90,70, 60, 90, 100, 80, 70]
+        self.colLabelValueList = ["订单编号","订单名称","总价","产品数量","订单交货日期","下单时间","下单员","订单状态"]
+        self.colWidthList = [60, 65,50, 60, 85, 75, 60, 60]
         self.orderDetailData = []
         _, orderList = GetAllOrderList(self.log, 1)
         self.dataArray = np.array(orderList)
@@ -478,7 +478,7 @@ class OrderManagementPanel(wx.Panel):
         self.productNameSearch=''
         self.operatorSearch=''
         hbox = wx.BoxSizer()
-        self.leftPanel = wx.Panel(self, size=(700, -1))
+        self.leftPanel = wx.Panel(self, size=(580, -1))
         hbox.Add(self.leftPanel, 0, wx.EXPAND)
         self.rightPanel = wx.Panel(self, style=wx.BORDER_THEME)
         hbox.Add(self.rightPanel, 1, wx.EXPAND)
@@ -557,6 +557,9 @@ class OrderManagementPanel(wx.Panel):
             else:
                 self.treeStructure = self.TreeDataTransform()
             self.ReCreateOrderDetailTree()
+            self.master.mainPANEL.orderData = self.dataArray[row]
+            self.master.mainPANEL.orderState = "接单"
+            self.master.mainPANEL.ReCreateOrderInfoPanel()
         event.Skip()
 
     def TreeDataTransform(self):
