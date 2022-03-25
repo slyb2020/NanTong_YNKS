@@ -501,10 +501,18 @@ class MainPanel(wx.Panel):
         elif self.work_zone_Panel.orderManagmentPanel.data[7] == "已排产":
             vbox.Add((-1,5))
             self.specificOrderPrintScheduleBTN = wx.Button(title,label="打印任务单",size=(-1,40))
+            self.specificOrderPrintScheduleBTN.Bind(wx.EVT_BUTTON,self.OnPrintScheduleBTN)
             vbox.Add(self.specificOrderPrintScheduleBTN,0,wx.EXPAND|wx.ALL,5)
 
         title.SetSizer(vbox)
         self.orderInfoPanel.Layout()
+
+    def OnPrintScheduleBTN(self,event):
+        dlg = ProductionScheduleDialog(self, self.log, self.work_zone_Panel.orderManagmentPanel.data[0])
+        dlg.CenterOnScreen()
+        if dlg.ShowModal() == wx.ID_OK:
+            pass
+        dlg.Destroy()
 
     def OnSpecificOrderProductionBTN(self,event):
         dlg = wx.MessageDialog(self, '将进行排产操作，此操作不可逆，是否继续?',
@@ -513,12 +521,14 @@ class MainPanel(wx.Panel):
                                # wx.YES_NO | wx.NO_DEFAULT | wx.CANCEL | wx.ICON_INFORMATION
                                )
         if dlg.ShowModal()==wx.ID_OK:
+            self.work_zone_Panel.orderManagmentPanel.data[7] = "已排产"  # 这个之前应该增加一个数据库更新操作
+            self.work_zone_Panel.orderManagmentPanel.orderGrid.ReCreate()
             dlg.Destroy()
-            dlg = ProductionScheduleDialog(self,self.work_zone_Panel.orderManagmentPanel.data[0])
+            dlg = ProductionScheduleDialog(self,self.log, self.work_zone_Panel.orderManagmentPanel.data[0])
             dlg.CenterOnScreen()
             if dlg.ShowModal()==wx.ID_OK:
-                self.work_zone_Panel.orderManagmentPanel.data[7] = "已排产"#这个之前应该增加一个数据库更新操作
-                self.work_zone_Panel.orderManagmentPanel.orderGrid.ReCreate()
+                pass
+            dlg.Destroy()
         else:
             dlg.Destroy()
         self.ReCreateOrderInfoPanel()
