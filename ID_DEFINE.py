@@ -8,6 +8,17 @@
 @time: 2019/6/16 15:23
 @desc:
 """
+import os
+
+#需要设置的参数：
+# 1.工单存放文件夹
+dirName = os.path.dirname(os.path.abspath(__file__))
+bitmapDir = os.path.join(dirName, 'bitmaps')
+scheduleDir = os.path.join(dirName, '工单/')
+
+# sys.path.append(os.path.split(dirName)[0])
+
+
 
 dbHostName = ["127.0.0.1",'127.0.0.1']
 dbUserName = ['root','root']

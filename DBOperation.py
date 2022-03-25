@@ -369,9 +369,9 @@ def InsertBatchOrderDataIntoDB(log, whichDB, orderTabelName, orderDataList):
             data[10]=0
         if data[11]==None:
             data[11]=0
-        sql="""INSERT INTO `%d`(`订单号`,`子订单号`,`产品类型`,`图纸`,`面板代码`,`X面颜色`,`Y面颜色`,`Z面颜色`,`V面颜色`,`高度`,`宽度`,`厚度`,`甲板`,`区域`,`房间`,`胶水单编号`,`胶水单注释`,`数量`)
-        VALUES (%d,%d,'%s','%s','%s','%s','%s','%s','%s',%d,%d,%d,'%s','%s','%s','%s','%s',%d)"""\
-            %(int(orderTabelName),int(orderTabelName),int(data[0]),data[1],data[3],data[4],data[5],data[6],data[7],data[8],int(data[9]),int(data[10]),int(data[11]),data[12],data[13],data[14],data[15],data[16],int(data[17]))
+        sql="""INSERT INTO `%d`(`订单号`,`子订单号`,`产品类型`,`图纸`,`面板代码`,`X面颜色`,`Y面颜色`,`Z面颜色`,`V面颜色`,`高度`,`宽度`,`厚度`,`甲板`,`区域`,`房间`,`数量`)
+        VALUES (%d,%d,'%s','%s','%s','%s','%s','%s','%s',%d,%d,%d,'%s','%s','%s',%d)"""\
+            %(int(orderTabelName),int(orderTabelName),int(data[0]),data[1],data[3],data[4],data[5],data[6],data[7],data[8],int(data[9]),int(data[10]),int(data[11]),data[12],data[13],data[14],int(data[15]))
         cursor.execute(sql)
         try:
             db.commit()  # 必须有，没有的话插入语句不会执行

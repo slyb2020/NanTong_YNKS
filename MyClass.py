@@ -47,7 +47,7 @@ from ProductionScheduleDialog import ProductionScheduleDialog
 
 dirName = os.path.dirname(os.path.abspath(__file__))
 bitmapDir = os.path.join(dirName, 'bitmaps')
-sys.path.append(os.path.split(dirName)[0])
+scheduleDir = os.path.join(dirName, '工单/')
 
 
 def switchRGBtoBGR(colour):
@@ -492,7 +492,6 @@ class MainPanel(wx.Panel):
         self.orderStateTXT.SetValue(self.work_zone_Panel.orderManagmentPanel.data[7])
         hhbox.Add(self.orderStateTXT,1,wx.RIGHT,5)
         vbox.Add(hhbox,0,wx.EXPAND)
-        print(self.work_zone_Panel.orderManagmentPanel.data)
         if self.work_zone_Panel.orderManagmentPanel.data[7] == "接单":
             vbox.Add((-1,5))
             self.specificOrderProductionBTN = wx.Button(title,label="排  产",size=(-1,40))
