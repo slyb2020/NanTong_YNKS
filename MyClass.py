@@ -566,12 +566,11 @@ class MainPanel(wx.Panel):
                 dlg = ImportOrderFromExcelDialog(self, self.newOrderID)
                 dlg.CenterOnScreen()
                 if dlg.ShowModal() == wx.ID_OK:
-                    pass
                     # InsertNewOrderRecord(self.log, 1, self.newOrderID)
                     # CreateNewOrderSheet(self.log, 1, self.newOrderID)
-                    # _, boardList = GetAllOrderList(self.log, 1)
-                    # self.work_zone_Panel.orderManagmentPanel.dataArray = np.array(boardList)
-                    # self.work_zone_Panel.orderManagmentPanel.orderGrid.ReCreate()
+                    _, boardList = GetAllOrderList(self.log, 1)
+                    self.work_zone_Panel.orderManagmentPanel.dataArray = np.array(boardList)
+                    self.work_zone_Panel.orderManagmentPanel.orderGrid.ReCreate()
                 dlg.Destroy()
 
                 # _, boardList = GetAllOrderList(self.log, 1)

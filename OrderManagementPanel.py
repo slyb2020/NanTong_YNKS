@@ -311,7 +311,8 @@ class OrderGrid(gridlib.Grid):  ##, mixins.GridAutoEditMixin):
     def ReCreate(self):
         self.ClearGrid()
         self.EnableEditing(False)
-
+        if self.GetNumberRows()<self.master.dataArray.shape[0]:
+            self.InsertRows(0,self.master.dataArray.shape[0]-self.GetNumberRows())
         self.SetColLabelAlignment(wx.ALIGN_CENTRE, wx.ALIGN_CENTRE_VERTICAL)
 
         self.SetRowLabelSize(50)
@@ -321,7 +322,6 @@ class OrderGrid(gridlib.Grid):  ##, mixins.GridAutoEditMixin):
             self.SetColLabelValue(i,title)
         for i, width in enumerate(self.master.colWidthList):
             self.SetColSize(i, width)
-
         for i, order in enumerate(self.master.dataArray):
             self.SetRowSize(i, 25)
             for j, item in enumerate(order):
