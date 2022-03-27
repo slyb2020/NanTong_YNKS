@@ -44,6 +44,7 @@ from ExcelImport import XLSGridFrame
 from DBOperation import CreateNewOrderSheet,InsertNewOrderRecord,GetAllOrderList
 from ImportOrderDialog import ImportOrderFromExcelDialog
 from ProductionScheduleDialog import ProductionScheduleDialog
+from PackageDialog import PackageDialog
 
 dirName = os.path.dirname(os.path.abspath(__file__))
 bitmapDir = os.path.join(dirName, 'bitmaps')
@@ -506,11 +507,18 @@ class MainPanel(wx.Panel):
             # self.glueSchedulePrintBTN.Bind(wx.EVT_BUTTON,self.OnGlueSchedulePrintBTN)
             vbox.Add(self.glueSchedulePrintBTN,0,wx.EXPAND|wx.ALL,5)
             self.packageBTN = wx.Button(title,label="产品打包",size=(-1,40))
-            # self.glueSchedulePrintBTN.Bind(wx.EVT_BUTTON,self.OnPackagetBTN)
+            self.packageBTN.Bind(wx.EVT_BUTTON,self.OnPackageBTN)
             vbox.Add(self.packageBTN,0,wx.EXPAND|wx.ALL,5)
 
         title.SetSizer(vbox)
         self.orderInfoPanel.Layout()
+
+    def OnPackageBTN(self,event):
+        dlg = PackageDialog(self, self.log, self.work_zone_Panel.orderManagmentPanel.data[0])
+        dlg.CenterOnScreen()
+        if dlg.ShowModal() == wx.ID_OK:
+            pass
+        dlg.Destroy()
 
     def OnPrintScheduleBTN(self,event):
         dlg = ProductionScheduleDialog(self, self.log, self.work_zone_Panel.orderManagmentPanel.data[0])
@@ -526,9 +534,9 @@ class MainPanel(wx.Panel):
                                # wx.YES_NO | wx.NO_DEFAULT | wx.CANCEL | wx.ICON_INFORMATION
                                )
         if dlg.ShowModal()==wx.ID_OK:
+            dlg.Destroy()
             self.work_zone_Panel.orderManagmentPanel.data[7] = "已排产"  # 这个之前应该增加一个数据库更新操作
             self.work_zone_Panel.orderManagmentPanel.orderGrid.ReCreate()
-            dlg.Destroy()
             dlg = ProductionScheduleDialog(self,self.log, self.work_zone_Panel.orderManagmentPanel.data[0])
             dlg.CenterOnScreen()
             if dlg.ShowModal()==wx.ID_OK:
