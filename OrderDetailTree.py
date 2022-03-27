@@ -121,9 +121,13 @@ class OrderDetailTree(wx.Panel):
         self.tree.Bind(wx.EVT_LEFT_DOWN, self.OnLeftDown)
 
     def OnLeftDown(self,event):
-        pt = event.GetPosition();
+        pt = event.GetPosition()
         item, flags = self.tree.HitTest(pt)
-        itemData = self.tree.GetItemData(item)
+        try:
+            itemData = self.tree.GetItemData(item)
+        except:
+            event.Skip()
+            return
         if itemData == "根":
             self.master.showRange=[]
             self.master.ReCreteOrderDetailGridPanel()
@@ -147,7 +151,7 @@ class OrderDetailTree(wx.Panel):
         event.Skip()
 
     def OnRightDown(self, event):
-        pt = event.GetPosition();
+        pt = event.GetPosition()
         item, flags = self.tree.HitTest(pt)
         if item:
             self.tree.SelectItem(item)

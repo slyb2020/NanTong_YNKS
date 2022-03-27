@@ -502,6 +502,12 @@ class MainPanel(wx.Panel):
             self.specificOrderPrintScheduleBTN = wx.Button(title,label="打印任务单",size=(-1,40))
             self.specificOrderPrintScheduleBTN.Bind(wx.EVT_BUTTON,self.OnPrintScheduleBTN)
             vbox.Add(self.specificOrderPrintScheduleBTN,0,wx.EXPAND|wx.ALL,5)
+            self.glueSchedulePrintBTN = wx.Button(title,label="打印胶水单",size=(-1,40))
+            # self.glueSchedulePrintBTN.Bind(wx.EVT_BUTTON,self.OnGlueSchedulePrintBTN)
+            vbox.Add(self.glueSchedulePrintBTN,0,wx.EXPAND|wx.ALL,5)
+            self.packageBTN = wx.Button(title,label="产品打包",size=(-1,40))
+            # self.glueSchedulePrintBTN.Bind(wx.EVT_BUTTON,self.OnPackagetBTN)
+            vbox.Add(self.packageBTN,0,wx.EXPAND|wx.ALL,5)
 
         title.SetSizer(vbox)
         self.orderInfoPanel.Layout()

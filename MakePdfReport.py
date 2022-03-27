@@ -27,27 +27,27 @@ def coord(x, y, height, unit=1):
     x, y = x * unit, height -  y * unit
     return x, y
 
-def simple_table_with_style(filename):
-    doc = SimpleDocTemplate(filename, pagesize=letter)
-    story = []
+# def simple_table_with_style(filename):
+#     doc = SimpleDocTemplate(filename, pagesize=letter)
+#     story = []
+#
+#     data = [['col_{}'.format(x) for x in range(1, 6)],
+#             [str(x) for x in range(1, 6)],
+#             ['a', 'b', 'c', 'd', 'e']
+#             ]
+#
+#     tblstyle = TableStyle([('BACKGROUND', (0, 0), (-1, 0), colors.red),
+#                            ('TEXTCOLOR', (0, 1), (-1, 1), colors.blue)
+#                            ])
+#
+#     tbl = Table(data)
+#     tbl.setStyle(tblstyle)
+#     story.append(tbl)
+#
+#     doc.build(story)
+#     print("here")
 
-    data = [['col_{}'.format(x) for x in range(1, 6)],
-            [str(x) for x in range(1, 6)],
-            ['a', 'b', 'c', 'd', 'e']
-            ]
-
-    tblstyle = TableStyle([('BACKGROUND', (0, 0), (-1, 0), colors.red),
-                           ('TEXTCOLOR', (0, 1), (-1, 1), colors.blue)
-                           ])
-
-    tbl = Table(data)
-    tbl.setStyle(tblstyle)
-    story.append(tbl)
-
-    doc.build(story)
-    print("here")
-
-def drawBitmap(c):
+def DrawMaterialSchedule(c):
     I = Image("D:\\WorkSpace\\Python\\NanTong_YNKS\\bitmaps\\PVC.jpg")
     styleSheet = getSampleStyleSheet()
     I.drawHeight = 1.25 * inch * I.drawHeight / I.drawWidth
@@ -111,7 +111,6 @@ def drawBitmap(c):
     # t._argW[3] = 1.5 * inch
     t.wrapOn(c, 186.5 * mm, 800 * mm)
     t.drawOn(c, 12.5 * mm, 130 * mm)
-
 def MakeMaterialScheduleTemplate(filename,data=[]):
     width, height = letter
     myCanvas = canvas.Canvas(filename, pagesize=letter)
@@ -122,12 +121,249 @@ def MakeMaterialScheduleTemplate(filename,data=[]):
     myCanvas.setFont("SimSun", 12)
     myCanvas.drawCentredString(width/2,710, text="Inexa (NanTong) Interiors Co.Ltd Meterial Requisition")
     DrawLine(myCanvas,1,*coord(10, 33, height, mm),*coord(200, 33, height, mm))
-    myCanvas.drawString(40,670, text="订单号；%s"%'15457-001')
+    myCanvas.drawString(40,670, text="订单号；%s"%'64757-001')
     myCanvas.drawRightString(width-50, 670, '出单日期：%s'%(datetime.date.today()))
     # simple_table_with_style(filename)
-    drawBitmap(myCanvas)
+    DrawMaterialSchedule(myCanvas)
     myCanvas.save()
 
+def DrawCutSchedule(c):
+    I = Image("D:\\WorkSpace\\Python\\NanTong_YNKS\\bitmaps\\PVC.jpg")
+    styleSheet = getSampleStyleSheet()
+    I.drawHeight = 1.25 * inch * I.drawHeight / I.drawWidth
+    I.drawWidth = 1.25 * inch
+    P0 = Paragraph('''
+         <b>A pa<font color=red>r</font>a<i>graph</i></b>
+         <super><font color=yellow>1</font></super>''',
+                   styleSheet["BodyText"])
+    P = Paragraph('''
+         <para align=center spaceb=3>The <b>ReportLab Left
+         <font color=red>Logo</font></b>
+         Image</para>''',
+                  styleSheet["BodyText"])
+    Title1 = Paragraph('<font name="SimSun">序号</font>')
+    Title2 = Paragraph('<font name="SimSun">原材颜色</font>')
+    Title3 = Paragraph('<font name="SimSun">原材厚度</font>')
+    Title4 = Paragraph('<font name="SimSun">原材宽度mm</font>')
+    Title5 = Paragraph('<font name="SimSun">横切长度mm</font>')
+    Title6 = Paragraph('<font name="SimSun">横切数量</font>')
+    Title7 = Paragraph('<font name="SimSun">纵切宽度mm</font>')
+    Title8 = Paragraph('<font name="SimSun">纵切数量</font>')
+    Title9 = Paragraph('<font name="SimSun">图纸号</font>')
+    data = [
+            [Title1, Title2, Title3, Title4, Title5, Title6, Title7, Title8, Title9],
+            ['0', '9GLAV', '0.56', '1234', '2400', '37', '110', '30','N.2SF.0001'],
+            ['1', '9GLAV', '0.56', '1234', '2400', '37', '111', '20','N.2SF.0002'],
+            ['2', '9GLAV', '0.56', '1234', '2400', '37', '112', '50','N.2SF.0001'],
+            ['3', '9GLAV', '0.56', '1234', '2400', '37', '113', '20','N.2SA.0001'],
+            ['4', '9GLAV', '0.56', '1234', '2400', '37', '114', '30','N.2SF.0003'],
+            ['5', '9GLAV', '0.56', '1234', '2400', '37', '115', '35','N.2SF.0001'],
+            ['6', 'G', '0.56', '1234', '2400', '37', '110', '10','N.2SF.0001'],
+            ['7', 'G', '0.56', '1234', '2400', '37', '111', '20','N.2SF.0001'],
+            ['8', 'G', '0.56', '1234', '2400', '37', '112', '30','N.2SF.0001'],
+            ['9', 'G', '0.56', '1234', '2400', '37', '113', '40','N.2SF.0001'],
+            ['10', 'G', '0.56', '1234', '2400', '37', '114', '50','N.2SF.0001'],
+            ['11', 'G', '0.56', '1234', '2400', '37', '115', '15','N.2SF.0001'],
+            ['12', 'G', '0.56', '1234', '2400', '37', '116', '5','N.2SF.0001'],
+            ['13', 'G', '0.56', '1234', '2400', '37', '117', '5','N.2SF.0001'],
+            ['14', 'G', '0.56', '1234', '2400', '37', '118', '10','N.2SF.0001'],
+        ]
+    t = Table(data, style=[
+                           ('ALIGN', (0, 1), (-1, -1), 'CENTER'),
+                           ('GRID', (0, 0), (-1, -1), 0.5, colors.black),       #   类别，(起始列，起始行）,(结束列，结束行)，线宽，颜色  #GRID是内外都有线   #BOX是只有外框，内部没线
+                           ('BOX', (0, 0), (-1, -1), 2, colors.black),
+                           # ('BOX', (1, 0), (2, -1), 2, colors.black),
+                           # ('BOX', (3, 0), (4, -1), 2, colors.black),
+                           ('BACKGROUND', (0, 0), (-1, 0), colors.khaki),
+                           ('BACKGROUND', (4, 1), (5, -1), colors.beige),
+                           ('BACKGROUND', (6, 1), (7, -1), colors.lavender),
+                           ('LINEABOVE', (0, 1), (-1, 1), 2, colors.black),
+                           ('LINEBEFORE', (4, 0), (4, -1), 2, colors.black),
+                           ('LINEBEFORE', (6, 0), (6, -1), 2, colors.black),
+                           ('LINEBEFORE', (8, 0), (8, -1), 2, colors.black),
+                           ('SPAN',(1,1),(1,6)),
+                           ('SPAN',(1,7),(1,-1)),
+                           ('SPAN',(2,1),(2,6)),
+                           ('SPAN',(2,7),(2,-1)),
+                           ('SPAN',(3,1),(3,6)),
+                           ('SPAN',(4,1),(4,6)),
+                           ('SPAN',(3,7),(3,-1)),
+                           ('SPAN',(4,7),(4,-1)),
+                           ('SPAN',(5,1),(5,6)),
+                           ('SPAN',(5,7),(5,-1)),
+                           ('VALIGN', (1, 1), (5, 6), 'MIDDLE'),
+                           ('VALIGN', (1, 7), (5, -1), 'MIDDLE'),
+                           # ('BACKGROUND', (1, 1), (1, 2), colors.lavender),
+                           # ('BACKGROUND', (2, 2), (2, 3), colors.orange),
+                           # ('BOX', (0, 0), (-1, -1), 2, colors.black),
+                           # ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+                           # # ('ALIGN', (0, 3), (0, 3), 'CENTER'),
+                           # ('BACKGROUND', (3, 0), (3, 0), colors.limegreen),
+                           # ('BACKGROUND', (3, 1), (3, 1), colors.khaki),
+                           # # ('ALIGN', (3, 1), (3, 1), 'CENTER'),
+                           # ('BACKGROUND', (3, 2), (3, 2), colors.beige),
+                           # # ('ALIGN', (3, 2), (3, 2), 'LEFT'),
+                           ],colWidths=[12.0*mm,20*mm,20*mm,23*mm,23*mm,20*mm,23*mm,20*mm,25.0*mm])
+    # Table(data, colWidths=[1.9 * inch] * 5)
+    # t._argW[3] = 1.5 * inch
+    t.wrapOn(c, 186.5 * mm, 800 * mm)
+    t.drawOn(c, 12.5 * mm, 130 * mm)
+def MakeCutScheduleTemplate(filename,data=[]):
+    width, height = letter
+    myCanvas = canvas.Canvas(filename, pagesize=letter)
+    myCanvas.setFont("SimSun", 18)
+    myCanvas.drawCentredString(width/2,730, text="伊纳克赛(南通)精致内饰材料有限公司剪切任务单")
+    myCanvas.drawImage("bitmaps/python_logo.png", 30, 710,
+                        width=40, height=40)
+    myCanvas.setFont("SimSun", 12)
+    myCanvas.drawCentredString(width/2,710, text="Inexa (NanTong) Interiors Co.Ltd Plate Shear Schedule")
+    DrawLine(myCanvas,1,*coord(10, 33, height, mm),*coord(200, 33, height, mm))
+    myCanvas.drawString(40,670, text="订单号；%s"%'64757-001')
+    myCanvas.drawRightString(width-50, 670, '出单日期：%s'%(datetime.date.today()))
+    # simple_table_with_style(filename)
+    DrawCutSchedule(myCanvas)
+    myCanvas.save()
+
+def DrawBendSchedule(c):
+    Title1 = Paragraph('<font name="SimSun">序号</font>')
+    Title2 = Paragraph('<font name="SimSun">板材颜色</font>')
+    Title3 = Paragraph('<font name="SimSun">板材厚度</font>')
+    Title4 = Paragraph('<font name="SimSun">剪切长度</font>')
+    Title5 = Paragraph('<font name="SimSun">剪切宽度</font>')
+    Title6 = Paragraph('<font name="SimSun">折弯长度</font>')
+    Title7 = Paragraph('<font name="SimSun">折弯宽度</font>')
+    Title8 = Paragraph('<font name="SimSun">数量</font>')
+    Title9 = Paragraph('<font name="SimSun">图纸</font>')
+    Title10 = Paragraph('<font name="SimSun">面</font>')
+    data = [
+            [Title1, Title2, Title3, Title4, Title5, Title6, Title7, Title8, Title9, Title10],
+            ['1', '9GLAV', '0.56', '1495', '560','1495','548','37','CC64001','X'],
+            ['2', '9GLAV', '0.56', '1495', '560','1495','548','37','CC64001','X'],
+            ['3', '9GLAV', '0.56', '1495', '560','1495','548','37','CC64001','X'],
+            ['4', '9GLAV', '0.56', '1495', '560','1495','548','37','CC64001','X'],
+            ['5', '9GLAV', '0.56', '1495', '560','1495','548','37','CC64001','X'],
+            ['6', '9GLAV', '0.56', '1495', '560','1495','548','37','CC64001','X'],
+            ['7', '9GLAV', '0.56', '1495', '560','1495','548','37','CC64001','X'],
+            ['8', '9GLAV', '0.56', '1495', '560','1495','548','37','CC64001','X'],
+            ['9', '9GLAV', '0.56', '1495', '560','1495','548','37','CC64001','X'],
+            ['10', '9GLAV', '0.56', '1495', '560','1495','548','37','CC64001','X'],
+            ['11', '9GLAV', '0.56', '1495', '560','1495','548','37','CC64001','X'],
+            ['12', '9GLAV', '0.56', '1495', '560','1495','548','37','CC64001','X'],
+            ['13', '9GLAV', '0.56', '1495', '560','1495','548','37','CC64001','X'],
+            ['14', '9GLAV', '0.56', '1495', '560','1495','548','37','CC64001','X'],
+    ]
+    t = Table(data, style=[
+                           ('ALIGN', (0, 1), (-1, -1), 'CENTER'),
+                           ('GRID', (0, 0), (-1, -1), 1, colors.black),       #   类别，(起始列，起始行）,(结束列，结束行)，线宽，颜色  #GRID是内外都有线   #BOX是只有外框，内部没线
+                           ('BOX', (0, 0), (-1, -1), 2, colors.black),
+                           # ('BACKGROUND', (0, 0), (-1, 0), colors.beige),
+                           ('BACKGROUND', (0, 0), (-1, 0), colors.khaki),
+                           # ('SPAN',(0,0),(1,0)),
+                           # ('LINEABOVE', (1, 2), (-2, 2), 1, colors.blue),
+                           # ('LINEBEFORE', (2, 1), (2, -2), 1, colors.pink),
+                           # ('BACKGROUND', (1, 1), (1, 2), colors.lavender),
+                           # ('BACKGROUND', (2, 2), (2, 3), colors.orange),
+                           # ('BOX', (0, 0), (-1, -1), 2, colors.black),
+                           # ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+                           # ('VALIGN', (3, 0), (3, 0), 'BOTTOM'),
+                           # # ('ALIGN', (0, 3), (0, 3), 'CENTER'),
+                           # ('BACKGROUND', (3, 0), (3, 0), colors.limegreen),
+                           # ('BACKGROUND', (3, 1), (3, 1), colors.khaki),
+                           # # ('ALIGN', (3, 1), (3, 1), 'CENTER'),
+                           # ('BACKGROUND', (3, 2), (3, 2), colors.beige),
+                           # # ('ALIGN', (3, 2), (3, 2), 'LEFT'),
+                           ],colWidths=[15*mm,20.0*mm,20.0*mm,20.0*mm,20.0*mm,20.0*mm,20.0*mm,15.0*mm,25.0*mm,12.0*mm])
+    # Table(data, colWidths=[1.9 * inch] * 5)
+    # t._argW[3] = 1.5 * inch
+    t.wrapOn(c, 186.5 * mm, 800 * mm)
+    t.drawOn(c, 12.5 * mm, 130 * mm)
+def MakeBendScheduleTemplate(filename,data=[]):
+    width, height = letter
+    myCanvas = canvas.Canvas(filename, pagesize=letter)
+    myCanvas.setFont("SimSun", 18)
+    myCanvas.drawCentredString(width/2,730, text="伊纳克赛(南通)精致内饰材料有限公司折弯任务单")
+    myCanvas.drawImage("bitmaps/python_logo.png", 30, 710,
+                        width=40, height=40)
+    myCanvas.setFont("SimSun", 12)
+    myCanvas.drawCentredString(width/2,710, text="Inexa (NanTong) Interiors Co.Ltd Bending Schedule")
+    DrawLine(myCanvas,1,*coord(10, 33, height, mm),*coord(200, 33, height, mm))
+    myCanvas.drawString(40,670, text="订单号；%s"%'64757-001')
+    myCanvas.drawRightString(width-50, 670, '出单日期：%s'%(datetime.date.today()))
+    # simple_table_with_style(filename)
+    DrawBendSchedule(myCanvas)
+    myCanvas.save()
+
+def DrawFormingSchedule(c):
+    Title1 = Paragraph('<font name="SimSun">序号</font>')
+    Title2 = Paragraph('<font name="SimSun">胶水单</font>')
+    Title3 = Paragraph('<font name="SimSun">图纸</font>')
+    Title4 = Paragraph('<font name="SimSun">长度</font>')
+    Title5 = Paragraph('<font name="SimSun">宽度</font>')
+    Title6 = Paragraph('<font name="SimSun">厚度</font>')
+    Title7 = Paragraph('<font name="SimSun">X</font>')
+    Title8 = Paragraph('<font name="SimSun">Y</font>')
+    Title9 = Paragraph('<font name="SimSun">Z</font>')
+    Title10 = Paragraph('<font name="SimSun">V</font>')
+    Title11 = Paragraph('<font name="SimSun">数量</font>')
+    data = [
+            [Title1, Title2, Title3, Title4, Title5, Title6, Title7, Title8, Title9, Title10, Title11],
+            ['1', '1122', 'N.2SA.0001', '1495','548', '50','79070','Y1058','','','1'],
+            ['2', '1122', 'CC64001',    '1495','548', '25','RAL1101','G','','','2'],
+            ['3', '1122', 'N.2SA.0001', '1495','548', '100','79070','G','','','3'],
+            ['4', '1122', 'N.2SA.0001', '1495','548', '50','79070','G','','','4'],
+            ['5', '1122', 'N.2SA.0001', '1495','548', '50','79070','G','','','5'],
+            ['6', '1122', 'N.2SA.0001', '1495','548', '50','79070','G','','','23'],
+            ['7', '1122', 'CC64001',    '1495','548', '25','79070','G','','','2'],
+            ['8', '1122', 'N.2SA.0001', '1495','548', '100','79070','G','','','3'],
+            ['9', '1122', 'N.2SA.0001', '1495','548', '50','79070','G','','','34'],
+            ['10', '1122', 'N.2SA.0001', '1495','548', '50','79070','G','','','2'],
+            ['11', '1122', 'N.2SA.0001', '1495','548', '50','79070','G','','','23'],
+            ['12', '1122', 'CC64001',    '1495','548', '25','79070','G','','','56'],
+            ['13', '1122', 'N.2SA.0001', '1495','548', '100','79070','G','','','3'],
+            ['14', '1122', 'N.2SA.0001', '1495','548', '50','79070','G','','','34'],
+            ['15', '1122', 'N.2SA.0001', '1495','548', '50','79070','G','','','100'],
+    ]
+    t = Table(data, style=[
+                           ('ALIGN', (0, 1), (-1, -1), 'CENTER'),
+                           ('GRID', (0, 0), (-1, -1), 1, colors.black),       #   类别，(起始列，起始行）,(结束列，结束行)，线宽，颜色  #GRID是内外都有线   #BOX是只有外框，内部没线
+                           ('BOX', (0, 0), (-1, -1), 2, colors.black),
+                           ('BACKGROUND', (0, 0), (-1, 0), colors.khaki),
+                           ('BACKGROUND', (3, 1), (5, -1), colors.beige),
+                           ('BACKGROUND', (6, 1), (9, -1), colors.pink),
+                           # ('SPAN',(0,0),(1,0)),
+                           # ('LINEABOVE', (1, 2), (-2, 2), 1, colors.blue),
+                           # ('LINEBEFORE', (2, 1), (2, -2), 1, colors.pink),
+                           # ('BACKGROUND', (1, 1), (1, 2), colors.lavender),
+                           # ('BACKGROUND', (2, 2), (2, 3), colors.orange),
+                           # ('BOX', (0, 0), (-1, -1), 2, colors.black),
+                           # ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+                           # ('VALIGN', (3, 0), (3, 0), 'BOTTOM'),
+                           # # ('ALIGN', (0, 3), (0, 3), 'CENTER'),
+                           # ('BACKGROUND', (3, 0), (3, 0), colors.limegreen),
+                           # ('BACKGROUND', (3, 1), (3, 1), colors.khaki),
+                           # # ('ALIGN', (3, 1), (3, 1), 'CENTER'),
+                           # ('BACKGROUND', (3, 2), (3, 2), colors.beige),
+                           # # ('ALIGN', (3, 2), (3, 2), 'LEFT'),
+                           ],colWidths=[12*mm,15.0*mm,25.0*mm,15.0*mm,15.0*mm,12.0*mm,20.0*mm,20.0*mm,20.0*mm,20*mm,15.0*mm])
+    # Table(data, colWidths=[1.9 * inch] * 5)
+    # t._argW[3] = 1.5 * inch
+    t.wrapOn(c, 186.5 * mm, 800 * mm)
+    t.drawOn(c, 12.5 * mm, 130 * mm)
+def MakeFormingScheduleTemplate(filename,data=[]):
+    width, height = letter
+    myCanvas = canvas.Canvas(filename, pagesize=letter)
+    myCanvas.setFont("SimSun", 18)
+    myCanvas.drawCentredString(width/2,730, text="伊纳克赛(南通)精致内饰材料有限公司成型任务单")
+    myCanvas.drawImage("bitmaps/python_logo.png", 30, 710,
+                        width=40, height=40)
+    myCanvas.setFont("SimSun", 12)
+    myCanvas.drawCentredString(width/2,710, text="Inexa (NanTong) Interiors Co.Ltd Forming Schedule")
+    DrawLine(myCanvas,1,*coord(10, 33, height, mm),*coord(200, 33, height, mm))
+    myCanvas.drawString(40,670, text="订单号；%s"%'64757-001')
+    myCanvas.drawRightString(width-50, 670, '出单日期：%s'%(datetime.date.today()))
+    # simple_table_with_style(filename)
+    DrawFormingSchedule(myCanvas)
+    myCanvas.save()
 
 
 # def form_letter():
@@ -203,6 +439,6 @@ def MakeMaterialScheduleTemplate(filename,data=[]):
 
 if __name__ == '__main__':
     # form_letter()
-    MakeMaterialScheduleTemplate("出料单.pdf")
+    MakeFormingScheduleTemplate("成型任务单.pdf")
 
 

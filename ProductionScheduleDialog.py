@@ -2,7 +2,7 @@ import wx
 import os
 from wx.lib.pdfviewer import pdfViewer, pdfButtonPanel
 from ID_DEFINE import *
-from MakePdfReport import MakeMaterialScheduleTemplate
+from MakePdfReport import *
 
 class PDFViewerPanel(wx.Panel):
     def __init__(self, parent, log):
@@ -74,14 +74,14 @@ class ProductionScheduleDialog(wx.Dialog):
         hhbox = wx.BoxSizer()
         hhbox.Add((10, -1))
         self.cutScheduleButton = wx.Button(controlPanel, label="裁切计划单", size=(90, 90))
-        self.cutScheduleButton.Bind(wx.EVT_BUTTON, self.OnOpenFileBTN)
+        self.cutScheduleButton.Bind(wx.EVT_BUTTON, self.OnCutScheduleBTN)
         hhbox.Add(self.cutScheduleButton, 1, wx.ALL, 5)
         vbox.Add(hhbox,0,wx.EXPAND)
         vbox.Add((-1,5))
         hhbox = wx.BoxSizer()
         hhbox.Add((10, -1))
         self.bendScheduleButton = wx.Button(controlPanel, label="折弯任务单", size=(90, 90))
-        self.bendScheduleButton.Bind(wx.EVT_BUTTON, self.OnOpenFileBTN)
+        self.bendScheduleButton.Bind(wx.EVT_BUTTON, self.OnBendScheduleBTN)
         hhbox.Add(self.bendScheduleButton, 1, wx.ALL, 5)
         vbox.Add(hhbox,0,wx.EXPAND)
         vbox.Add((-1,5))
@@ -94,9 +94,9 @@ class ProductionScheduleDialog(wx.Dialog):
         vbox.Add((-1,5))
         hhbox = wx.BoxSizer()
         hhbox.Add((10, -1))
-        self.formScheduleButton = wx.Button(controlPanel, label="成型任务单", size=(90, 90))
-        self.formScheduleButton.Bind(wx.EVT_BUTTON, self.OnOpenFileBTN)
-        hhbox.Add(self.formScheduleButton, 1, wx.ALL, 5)
+        self.formingScheduleButton = wx.Button(controlPanel, label="成型任务单", size=(90, 90))
+        self.formingScheduleButton.Bind(wx.EVT_BUTTON, self.OnFormingScheduleBTN)
+        hhbox.Add(self.formingScheduleButton, 1, wx.ALL, 5)
         vbox.Add(hhbox,0,wx.EXPAND)
         vbox.Add((-1,5))
         hhbox = wx.BoxSizer()
@@ -159,6 +159,33 @@ class ProductionScheduleDialog(wx.Dialog):
             MakeMaterialScheduleTemplate(filename)
         else:
             MakeMaterialScheduleTemplate(filename)
+        self.pdfViewerPanel.viewer.LoadFile(filename)
+
+    def OnCutScheduleBTN(self, event):
+        filename = scheduleDir+'%s/CutSchedule.pdf'%self.orderID
+        if not os.path.exists(filename):
+            print("filename:%sdoes not exist!"%filename)
+            MakeCutScheduleTemplate(filename)
+        else:
+            MakeCutScheduleTemplate(filename)
+        self.pdfViewerPanel.viewer.LoadFile(filename)
+
+    def OnBendScheduleBTN(self, event):
+        filename = scheduleDir+'%s/BendSchedule.pdf'%self.orderID
+        if not os.path.exists(filename):
+            print("filename:%sdoes not exist!"%filename)
+            MakeBendScheduleTemplate(filename)
+        else:
+            MakeBendScheduleTemplate(filename)
+        self.pdfViewerPanel.viewer.LoadFile(filename)
+
+    def OnFormingScheduleBTN(self, event):
+        filename = scheduleDir+'%s/FormingSchedule.pdf'%self.orderID
+        if not os.path.exists(filename):
+            print("filename:%sdoes not exist!"%filename)
+            MakeFormingScheduleTemplate(filename)
+        else:
+            MakeFormingScheduleTemplate(filename)
         self.pdfViewerPanel.viewer.LoadFile(filename)
 
     def OnOpenFileBTN(self, event):

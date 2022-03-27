@@ -25,7 +25,7 @@ fonts.addMapping('hei', 0, 1, 'hei')
 stylesheet = getSampleStyleSheet()
 elements = []
 
-doc = SimpleDocTemplate('出料单.pdf')
+doc = SimpleDocTemplate('剪切任务单.pdf')
 
 elements.append(Paragraph('<font name="hei">学 生 成 绩 单</font>', stylesheet['Title']))
 elements.append(Spacer(1, 12))
