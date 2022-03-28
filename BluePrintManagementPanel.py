@@ -252,6 +252,7 @@ class BluePrintShowPanel(wx.Panel):
 
     def Recreate(self,filename,state='查看'):
         self.filename = filename
+        print(state)
         if state!='查看':
             self.pageUpBTN = wx.Button(self,label="▲",size=(30,30),name='pageUp')
             self.pageDownBTN = wx.Button(self,label="▼",size=(30,30),name='pageDown')
@@ -914,7 +915,7 @@ class SpecificBluePrintManagementPanel(wx.Panel):
             self.ReCreateMiddlePanel(self.type,state=self.editState)
             self.ReCreateRightPanel()
             filename = '图纸/%s/%s.jpg' % (self.bluePrintIndexCtrl.GetValue(), self.pageNo)
-            self.picPanel.Recreate(filename)
+            self.picPanel.Recreate(filename,'新建')
         else:
             wx.MessageBox("请先结束当前编辑工作后，再进行新的编辑操作！", "信息提示")
 
