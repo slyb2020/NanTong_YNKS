@@ -7,6 +7,17 @@ import wx.grid as gridlib
 import numpy as np
 import images
 import wx.lib.scrolledpanel as scrolled
+from ID_DEFINE import *
+from ProductionScheduleDialog import PDFViewerPanel
+
+
+class BluePrintShowPanel(PDFViewerPanel):
+    def __init__(self, parent, log,filename=""):
+        super(BluePrintShowPanel, self).__init__(parent, log)
+        if filename!="":
+            self.filename = filename
+            self.viewer.LoadFile(self.filename)
+
 
 class BluePrintGrid(gridlib.Grid):  ##, mixins.GridAutoEditMixin):
     def __init__(self, parent, master, log):
@@ -242,75 +253,6 @@ class BluePrintGrid(gridlib.Grid):  ##, mixins.GridAutoEditMixin):
         self.log.write("OnEditorCreated: (%d, %d) %s\n" %
                        (evt.GetRow(), evt.GetCol(), evt.GetControl()))
 
-class BluePrintShowPanel(wx.Panel):
-    def __init__(self, parent,size):
-        wx.Panel.__init__(self, parent, size=size)
-        self.filename = ''
-        self.SetAutoLayout(True)
-        self.Bind(wx.EVT_PAINT, self.OnPaint)
-        self.Bind(wx.EVT_SIZE, self.OnResize)
-
-    def Recreate(self,filename,state='查看'):
-        self.filename = filename
-        print(state)
-        if state!='查看':
-            self.pageUpBTN = wx.Button(self,label="▲",size=(30,30),name='pageUp')
-            self.pageDownBTN = wx.Button(self,label="▼",size=(30,30),name='pageDown')
-            hbox = wx.BoxSizer(wx.VERTICAL)
-            hbox.Add(self.pageUpBTN,0)
-            hbox.Add(self.pageDownBTN,0)
-            self.SetSizer(hbox)
-            self.Layout()
-        self.Refresh()
-
-    def OnResize(self, evt):
-        self.Refresh()
-
-    def OnPaint(self, evt):
-        if self.filename:
-            dc = wx.PaintDC(self)
-            dc.SetBackground(wx.Brush("WHITE"))
-            dc.Clear()
-            x,y = self.GetClientSize()
-            bmp = wx.Image(self.filename).Scale(width=x, height=y,
-                                                      quality=wx.IMAGE_QUALITY_BOX_AVERAGE).ConvertToBitmap()
-            dc.DrawBitmap(bmp, 0, 0, True)
-        evt.Skip()
-# class BluePrintShowPanel(wx.Panel):
-#     def __init__(self, parent,size):
-#         wx.Panel.__init__(self, parent, size=size)
-#         self.filename = ''
-#         self.SetAutoLayout(True)
-#         self.Bind(wx.EVT_PAINT, self.OnPaint)
-#         self.Bind(wx.EVT_SIZE, self.OnResize)
-#
-#     def Recreate(self,filename,state='查看'):
-#         self.filename = filename
-#         print(state)
-#         if state!='查看':
-#             self.pageUpBTN = wx.Button(self,label="▲",size=(30,30),name='pageUp')
-#             self.pageDownBTN = wx.Button(self,label="▼",size=(30,30),name='pageDown')
-#             hbox = wx.BoxSizer(wx.VERTICAL)
-#             hbox.Add(self.pageUpBTN,0)
-#             hbox.Add(self.pageDownBTN,0)
-#             self.SetSizer(hbox)
-#             self.Layout()
-#         self.Refresh()
-#
-#     def OnResize(self, evt):
-#         self.Refresh()
-#
-#     def OnPaint(self, evt):
-#         if self.filename:
-#             dc = wx.PaintDC(self)
-#             dc.SetBackground(wx.Brush("WHITE"))
-#             dc.Clear()
-#             x,y = self.GetClientSize()
-#             bmp = wx.Image(self.filename).Scale(width=x, height=y,
-#                                                       quality=wx.IMAGE_QUALITY_BOX_AVERAGE).ConvertToBitmap()
-#             dc.DrawBitmap(bmp, 0, 0, True)
-#         evt.Skip()
-
 class SpecificBluePrintManagementPanel(wx.Panel):
     def __init__(self, parent, master, log, type,state='在用'):
         wx.Panel.__init__(self, parent)
@@ -347,22 +289,6 @@ class SpecificBluePrintManagementPanel(wx.Panel):
         # self.CreateRightPanel()
         self.Bind(gridlib.EVT_GRID_CELL_LEFT_CLICK, self.OnCellLeftClick)
         self.Bind(gridlib.EVT_GRID_CELL_LEFT_DCLICK, self.OnCellLeftDClick)
-        self.Bind(wx.EVT_BUTTON, self.OnButton)
-
-    def OnButton(self,event):
-        obj = event.GetEventObject()
-        if obj.GetName()=='pageUp':
-            self.pageNo=int(self.data[17])
-            if self.pageNo>1:
-                self.pageNo -=1
-            else:
-                self.pageNo = len(os.listdir('图纸/%s/'%self.bluePrintIndexCtrl.GetValue()))
-            self.data[17]=str(self.pageNo)
-            print("page=",self.data[17])
-            filename = '图纸/%s/%s.jpg' % (self.bluePrintIndexCtrl.GetValue(), self.data[17])
-            print(filename)
-            # self.bluePrintShowPanel.Recreate(filename, self.editState)
-        event.Skip()
 
     def OnCellLeftDClick(self, evt):
         if self.busy == False:
@@ -373,12 +299,16 @@ class SpecificBluePrintManagementPanel(wx.Panel):
                     self.data = self.dataArray[row]
                     self.pageNo = self.data[17]
                     index = self.data[0].split('.')[1]
-                    filename = '图纸/%s/%s.jpg'%(index,self.pageNo)
+                    # filename = 'Stena 生产图纸/%s/%s.jpg'%(index,self.pageNo)
+                    filename = bluePrintDir + 'Stena 生产图纸 %s/' % index + self.data[32] + '.pdf'
                     self.editState = '编辑'
                     self.ReCreateMiddlePanel(self.type, self.editState)
-                    # self.ReCreateRightPanel()
+                    self.ReCreateRightPanel(filename)
                     # self.bluePrintShowPanel.Recreate(filename, self.editState)
-        evt.Skip()
+            evt.Skip()
+        else:
+            wx.MessageBox("请先结束当前编辑工作后，再进行新的编辑操作！", "信息提示")
+
 
     def OnCellLeftClick(self, evt):
         if self.busy == False:
@@ -388,12 +318,15 @@ class SpecificBluePrintManagementPanel(wx.Panel):
             self.data = self.dataArray[row]
             self.pageNo = self.data[17]
             index = self.data[0].split('.')[1]
-            filename = '图纸/%s/%s.jpg' % (index, self.pageNo)
+            filename = bluePrintDir+'Stena 生产图纸 %s/'%index+self.data[32]+'.pdf'
             self.editState = '查看'
             self.ReCreateMiddlePanel(self.type, self.editState)
-            self.ReCreateRightPanel()
-            # self.bluePrintShowPanel.Recreate(filename)
-        evt.Skip()
+            self.ReCreateRightPanel(filename)
+            evt.Skip()
+        else:
+            wx.MessageBox("请先结束当前编辑工作后，再进行新的编辑操作！", "信息提示")
+
+
 
     def CreateLeftPanel(self):
         vvbox = wx.BoxSizer(wx.VERTICAL)
@@ -466,12 +399,10 @@ class SpecificBluePrintManagementPanel(wx.Panel):
                     processMiddle += '/'
         return [processFront,processMiddle,processRear]
 
-    def ReCreateRightPanel(self):
+    def ReCreateRightPanel(self,filename=""):
+        self.rightPanel.DestroyChildren()
         vbox = wx.BoxSizer(wx.VERTICAL)
-        # self.bluePrintShowPanel = BluePrintShowPanel(self.rightPanel, size=(550, 450))
-        from ProductionScheduleDialog import PDFViewerPanel
-        self.bluePrintShowPanel = PDFViewerPanel(self.rightPanel, self.log,False)
-        self.bluePrintShowPanel.viewer.LoadFile("Stena 生产图纸/Stena 生产图纸 2SA/Stena 生产图纸 2SA_页面_01.pdf")
+        self.bluePrintShowPanel = BluePrintShowPanel(self.rightPanel, self.log,filename)
         vbox.Add(self.bluePrintShowPanel, 1, wx.EXPAND)
         self.rightPanel.SetSizer(vbox)
         self.rightPanel.Layout()
@@ -582,7 +513,6 @@ class SpecificBluePrintManagementPanel(wx.Panel):
 
 
         if state == "查看":
-            print(self.data)
             if self.data[18]=='Y':
                 hhbox = wx.BoxSizer()
                 hhbox.Add(20,-1)
@@ -895,12 +825,12 @@ class SpecificBluePrintManagementPanel(wx.Panel):
             self.frontWidthDeltaCtrl.Enable(False)
             self.rearLengthDeltaCtrl.Enable(False)
             self.rearWidthDeltaCtrl.Enable(False)
-            # self.shapeprocess405Check.Enable(False)
-            # self.shapeprocess406Check.Enable(False)
+            self.shapeprocess405Check.Enable(False)
+            self.shapeprocess406Check.Enable(False)
             # self.shapeprocess409Check.Enable(False)
-            # self.bowprocess652Check.Enable(False)
-            # self.hotpressprocess100Check.Enable(False)
-            # self.hotpressprocess306Check.Enable(False)
+            self.bowprocess652Check.Enable(False)
+            self.hotpressprocess100Check.Enable(False)
+            self.hotpressprocess306Check.Enable(False)
             # self.holeprocess9000Check.Enable(False)
             # self.shapeprocess405RearCheck.Enable(False)
             # self.shapeprocess406RearCheck.Enable(False)
@@ -1081,7 +1011,7 @@ class SpecificBluePrintManagementPanel(wx.Panel):
             self.editState = '新建'
             self.ReCreateMiddlePanel(self.type,state=self.editState)
             self.ReCreateRightPanel()
-            filename = '图纸/%s/%s.jpg' % (self.bluePrintIndexCtrl.GetValue(), self.pageNo)
+            # filename = '图纸/%s/%s.jpg' % (self.bluePrintIndexCtrl.GetValue(), self.pageNo)
             # self.bluePrintShowPanel.Recreate(filename, '新建')
         else:
             wx.MessageBox("请先结束当前编辑工作后，再进行新的编辑操作！", "信息提示")
