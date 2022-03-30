@@ -5,13 +5,14 @@ from ID_DEFINE import *
 from MakePdfReport import *
 
 class PDFViewerPanel(wx.Panel):
-    def __init__(self, parent, log):
+    def __init__(self, parent, log,controlEnable=True):
         wx.Panel.__init__(self, parent, -1)
         hsizer = wx.BoxSizer( wx.HORIZONTAL )
         vsizer = wx.BoxSizer( wx.VERTICAL )
-        self.buttonpanel = pdfButtonPanel(self, wx.ID_ANY,
-                                wx.DefaultPosition, wx.DefaultSize, 0)
-        vsizer.Add(self.buttonpanel, 0, wx.GROW|wx.LEFT|wx.RIGHT|wx.TOP, 5)
+        if controlEnable:
+            self.buttonpanel = pdfButtonPanel(self, wx.ID_ANY,
+                                    wx.DefaultPosition, wx.DefaultSize, 0)
+            vsizer.Add(self.buttonpanel, 0, wx.GROW|wx.LEFT|wx.RIGHT|wx.TOP, 5)
         self.viewer = pdfViewer( self, wx.ID_ANY, wx.DefaultPosition,
                                 wx.DefaultSize, wx.HSCROLL|wx.VSCROLL|wx.SUNKEN_BORDER)
         vsizer.Add(self.viewer, 1, wx.GROW|wx.LEFT|wx.RIGHT|wx.BOTTOM, 5)
@@ -23,8 +24,9 @@ class PDFViewerPanel(wx.Panel):
         self.SetAutoLayout(True)
 
         # introduce buttonpanel and viewer to each other
-        self.buttonpanel.viewer = self.viewer
-        self.viewer.buttonpanel = self.buttonpanel
+        if controlEnable:
+            self.buttonpanel.viewer = self.viewer
+            self.viewer.buttonpanel = self.buttonpanel
 
         # self.Bind(wx.EVT_BUTTON, self.OnLoadButton, loadbutton)
 

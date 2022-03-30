@@ -276,6 +276,40 @@ class BluePrintShowPanel(wx.Panel):
                                                       quality=wx.IMAGE_QUALITY_BOX_AVERAGE).ConvertToBitmap()
             dc.DrawBitmap(bmp, 0, 0, True)
         evt.Skip()
+# class BluePrintShowPanel(wx.Panel):
+#     def __init__(self, parent,size):
+#         wx.Panel.__init__(self, parent, size=size)
+#         self.filename = ''
+#         self.SetAutoLayout(True)
+#         self.Bind(wx.EVT_PAINT, self.OnPaint)
+#         self.Bind(wx.EVT_SIZE, self.OnResize)
+#
+#     def Recreate(self,filename,state='查看'):
+#         self.filename = filename
+#         print(state)
+#         if state!='查看':
+#             self.pageUpBTN = wx.Button(self,label="▲",size=(30,30),name='pageUp')
+#             self.pageDownBTN = wx.Button(self,label="▼",size=(30,30),name='pageDown')
+#             hbox = wx.BoxSizer(wx.VERTICAL)
+#             hbox.Add(self.pageUpBTN,0)
+#             hbox.Add(self.pageDownBTN,0)
+#             self.SetSizer(hbox)
+#             self.Layout()
+#         self.Refresh()
+#
+#     def OnResize(self, evt):
+#         self.Refresh()
+#
+#     def OnPaint(self, evt):
+#         if self.filename:
+#             dc = wx.PaintDC(self)
+#             dc.SetBackground(wx.Brush("WHITE"))
+#             dc.Clear()
+#             x,y = self.GetClientSize()
+#             bmp = wx.Image(self.filename).Scale(width=x, height=y,
+#                                                       quality=wx.IMAGE_QUALITY_BOX_AVERAGE).ConvertToBitmap()
+#             dc.DrawBitmap(bmp, 0, 0, True)
+#         evt.Skip()
 
 class SpecificBluePrintManagementPanel(wx.Panel):
     def __init__(self, parent, master, log, type,state='在用'):
@@ -327,7 +361,7 @@ class SpecificBluePrintManagementPanel(wx.Panel):
             print("page=",self.data[17])
             filename = '图纸/%s/%s.jpg' % (self.bluePrintIndexCtrl.GetValue(), self.data[17])
             print(filename)
-            self.picPanel.Recreate(filename, self.editState)
+            # self.bluePrintShowPanel.Recreate(filename, self.editState)
         event.Skip()
 
     def OnCellLeftDClick(self, evt):
@@ -343,7 +377,7 @@ class SpecificBluePrintManagementPanel(wx.Panel):
                     self.editState = '编辑'
                     self.ReCreateMiddlePanel(self.type, self.editState)
                     # self.ReCreateRightPanel()
-                    self.picPanel.Recreate(filename, self.editState)
+                    # self.bluePrintShowPanel.Recreate(filename, self.editState)
         evt.Skip()
 
     def OnCellLeftClick(self, evt):
@@ -358,7 +392,7 @@ class SpecificBluePrintManagementPanel(wx.Panel):
             self.editState = '查看'
             self.ReCreateMiddlePanel(self.type, self.editState)
             self.ReCreateRightPanel()
-            self.picPanel.Recreate(filename)
+            # self.bluePrintShowPanel.Recreate(filename)
         evt.Skip()
 
     def CreateLeftPanel(self):
@@ -434,14 +468,17 @@ class SpecificBluePrintManagementPanel(wx.Panel):
 
     def ReCreateRightPanel(self):
         vbox = wx.BoxSizer(wx.VERTICAL)
-        self.picPanel = BluePrintShowPanel(self.rightPanel, size=(550, 450))
-        vbox.Add(self.picPanel,1,wx.EXPAND)
+        # self.bluePrintShowPanel = BluePrintShowPanel(self.rightPanel, size=(550, 450))
+        from ProductionScheduleDialog import PDFViewerPanel
+        self.bluePrintShowPanel = PDFViewerPanel(self.rightPanel, self.log,False)
+        self.bluePrintShowPanel.viewer.LoadFile("Stena 生产图纸/Stena 生产图纸 2SA/Stena 生产图纸 2SA_页面_01.pdf")
+        vbox.Add(self.bluePrintShowPanel, 1, wx.EXPAND)
         self.rightPanel.SetSizer(vbox)
         self.rightPanel.Layout()
 
     def ReCreateMiddlePanel(self, type, state='查看'):
         if len(self.data)>0:
-            processFront, processMiddle, processRear = self.Translate(self.data)
+            procedure, processMiddle, processRear = self.Translate(self.data)
         self.middlePanel.Freeze()
         self.middlePanel.DestroyChildren()
         vbox = wx.BoxSizer(wx.VERTICAL)
@@ -470,23 +507,35 @@ class SpecificBluePrintManagementPanel(wx.Panel):
             hhbox.Add(self.bluePrintIndexCtrl, 0)
             hhbox.Add(self.bluePrintNoSpin,0,wx.RIGHT,20)
         else:
+            self.bluePrintNoTXT = wx.TextCtrl(self.middlePanel,size=(45,-1),style=wx.TE_READONLY)
+            self.bluePrintNoTXT.SetValue(self.data[0].split('.')[2])
             hhbox.Add(self.bluePrintTypeCombo, 1, wx.RIGHT, 10)
-            hhbox.Add(self.bluePrintIndexCtrl, 1, wx.RIGHT,20)
+            hhbox.Add(self.bluePrintIndexCtrl, 0)
+            hhbox.Add(self.bluePrintNoTXT, 0, wx.RIGHT,20)
         vbox.Add(hhbox,0,wx.EXPAND)
 
         vbox.Add((-1,5))
         hhbox = wx.BoxSizer()
-        if state=='新建':
-            self.middleEnableCheck = wx.CheckBox(self.middlePanel,label='有中板',size=(60,-1))
-            self.middleEnableCheck.SetValue(True if self.data[14]=='Y' else False)
-            self.middleEnableCheck.Bind(wx.EVT_CHECKBOX, self.OnMiddleEnableCheck)
-            hhbox.Add(20,-1)
-            hhbox.Add(self.middleEnableCheck,0)
-        else:
-            hhbox.Add((70,-1))
-        hhbox.Add(wx.StaticText(self.middlePanel, label = '长度方向', size=(70,-1), style=wx.ALIGN_CENTRE),1)
         hhbox.Add((20,-1))
-        hhbox.Add(wx.StaticText(self.middlePanel, label = '宽度方向', size=(70,-1), style=wx.ALIGN_CENTRE),1)
+        # if state=='新建':
+        #     self.middleEnableCheck = wx.CheckBox(self.middlePanel,label='有中板',size=(60,-1),style=wx.CHK_3STATE|wx.CHK_ALLOW_3RD_STATE_FOR_USER)
+        #     # self.middleEnableCheck.SetValue(True if self.data[14]=='Y' else False)
+        #     self.middleEnableCheck.Bind(wx.EVT_CHECKBOX, self.OnMiddleEnableCheck)
+        #     hhbox.Add(20,-1)
+        #     hhbox.Add(self.middleEnableCheck,0)
+        # else:
+        #     hhbox.Add((70,-1))
+        self.middleNumberSPIN = wx.SpinCtrl(self.middlePanel, size=(60, -1), style=wx.TE_READONLY)
+        self.middleNumberSPIN.SetRange(0, 2)
+        self.middleNumberSPIN.SetValue(int(self.data[14]))
+        hhbox.Add(self.middleNumberSPIN, 0)
+
+        if state == '查看':
+            self.middleNumberSPIN.Show(False)
+            hhbox.Add((60,-1))
+        hhbox.Add(wx.StaticText(self.middlePanel, label = '长度方向', size=(70,-1), style=wx.ALIGN_CENTRE),1,wx.TOP,5)
+        hhbox.Add((20,-1))
+        hhbox.Add(wx.StaticText(self.middlePanel, label = '宽度方向', size=(70,-1), style=wx.ALIGN_CENTRE),1,wx.TOP,5)
         vbox.Add(hhbox,0,wx.EXPAND|wx.RIGHT,20)
         vbox.Add((-1,5))
 
@@ -503,19 +552,20 @@ class SpecificBluePrintManagementPanel(wx.Panel):
         vbox.Add(hhbox,0,wx.EXPAND)
         vbox.Add((-1,5))
 
-        if self.data[14]=='Y':
-            hhbox = wx.BoxSizer()
-            hhbox.Add((20,-1))
-            hhbox.Add(wx.StaticText(self.middlePanel, label='中板增量:', size=(60, -1)), 0, wx.TOP, 5)
-            self.middleLengthDeltaCtrl=wx.SpinCtrl(self.middlePanel, -1, "", (70, 50))
-            self.middleLengthDeltaCtrl.SetRange(-100, 100)
-            hhbox.Add(self.middleLengthDeltaCtrl,1,wx.RIGHT,10)
-            # hhbox.Add((10,-1))
-            self.middleWidthDeltaCtrl=wx.SpinCtrl(self.middlePanel, -1, "", (70, 50))
-            self.middleWidthDeltaCtrl.SetRange(-100, 100)
-            hhbox.Add(self.middleWidthDeltaCtrl,1,wx.RIGHT,20)
-            vbox.Add(hhbox,0,wx.EXPAND)
-            vbox.Add((-1,5))
+        if int(self.data[14])>0:
+            for i in range(int(self.data[14])):
+                hhbox = wx.BoxSizer()
+                hhbox.Add((20,-1))
+                hhbox.Add(wx.StaticText(self.middlePanel, label='中板增量%d:'%i, size=(60, -1)), 0, wx.TOP, 5)
+                self.middleLengthDeltaCtrl=wx.SpinCtrl(self.middlePanel, -1, "", (70, 50))
+                self.middleLengthDeltaCtrl.SetRange(-100, 100)
+                hhbox.Add(self.middleLengthDeltaCtrl,1,wx.RIGHT,10)
+                # hhbox.Add((10,-1))
+                self.middleWidthDeltaCtrl=wx.SpinCtrl(self.middlePanel, -1, "", (70, 50))
+                self.middleWidthDeltaCtrl.SetRange(-100, 100)
+                hhbox.Add(self.middleWidthDeltaCtrl,1,wx.RIGHT,20)
+                vbox.Add(hhbox,0,wx.EXPAND)
+                vbox.Add((-1,5))
 
         hhbox = wx.BoxSizer()
         hhbox.Add((20,-1))
@@ -528,166 +578,281 @@ class SpecificBluePrintManagementPanel(wx.Panel):
         self.rearWidthDeltaCtrl.SetRange(-100, 100)
         hhbox.Add(self.rearWidthDeltaCtrl,1,wx.RIGHT,20)
         vbox.Add(hhbox,0,wx.EXPAND)
-        vbox.Add((-1,5))
+        vbox.Add((-1,10))
 
-        frontFrame = wx.StaticBox(self.middlePanel,label='面板工序:',size=(100,80))
-        vbox.Add(frontFrame,0,wx.EXPAND|wx.LEFT|wx.RIGHT,7)
-        topBorder, otherBorder = frontFrame.GetBordersForSizer()
+
+        if state == "查看":
+            print(self.data)
+            if self.data[18]=='Y':
+                hhbox = wx.BoxSizer()
+                hhbox.Add(20,-1)
+                # hhbox.Add(wx.CheckBox(self.middlePanel),0,wx.TOP,5)
+                hhbox.Add(wx.StaticText(self.middlePanel,label="a: "),0,wx.TOP,5)
+                self.aSPIN = wx.SpinCtrl(self.middlePanel, size=(35, -1), style=wx.TE_READONLY)
+                self.aSPIN.SetRange(0, 4000)
+                self.aSPIN.SetValue(int(self.data[19]))
+                self.aSPIN.Enable(False)
+                hhbox.Add(self.aSPIN,1)
+                vbox.Add(hhbox,0,wx.EXPAND|wx.RIGHT,20)
+                vbox.Add((-1,5))
+
+            if self.data[20]=='Y':
+                hhbox = wx.BoxSizer()
+                hhbox.Add(20,-1)
+                # hhbox.Add(wx.CheckBox(self.middlePanel),0,wx.TOP,5)
+                hhbox.Add(wx.StaticText(self.middlePanel,label="b: "),0,wx.TOP,5)
+                self.bSPIN = wx.SpinCtrl(self.middlePanel, size=(35, -1), style=wx.TE_READONLY)
+                self.bSPIN.SetRange(0, 4000)
+                self.bSPIN.SetValue(int(self.data[21]))
+                self.bSPIN.Enable(False)
+                hhbox.Add(self.bSPIN,1)
+                vbox.Add(hhbox,0,wx.EXPAND|wx.RIGHT,20)
+                vbox.Add((-1,5))
+
+            if self.data[22]=='Y':
+                hhbox = wx.BoxSizer()
+                hhbox.Add(20,-1)
+                # hhbox.Add(wx.CheckBox(self.middlePanel),0,wx.TOP,5)
+                hhbox.Add(wx.StaticText(self.middlePanel,label="c: "),0,wx.TOP,5)
+                self.cSPIN = wx.SpinCtrl(self.middlePanel, size=(35, -1), style=wx.TE_READONLY)
+                self.cSPIN.SetRange(0, 4000)
+                self.cSPIN.SetValue(int(self.data[23]))
+                self.cSPIN.Enable(False)
+                hhbox.Add(self.cSPIN,1)
+                vbox.Add(hhbox,0,wx.EXPAND|wx.RIGHT,20)
+                vbox.Add((-1,5))
+
+            if self.data[24]=='Y':
+                hhbox = wx.BoxSizer()
+                hhbox.Add(20,-1)
+                # hhbox.Add(wx.CheckBox(self.middlePanel),0,wx.TOP,5)
+                hhbox.Add(wx.StaticText(self.middlePanel,label="d: "),0,wx.TOP,5)
+                self.dSPIN = wx.SpinCtrl(self.middlePanel, size=(35, -1), style=wx.TE_READONLY)
+                self.dSPIN.SetRange(0, 4000)
+                self.dSPIN.SetValue(int(self.data[25]))
+                self.dSPIN.Enable(False)
+                hhbox.Add(self.dSPIN,1)
+                vbox.Add(hhbox,0,wx.EXPAND|wx.RIGHT,20)
+                vbox.Add((-1,5))
+
+            if self.data[26]=='Y':
+                hhbox = wx.BoxSizer()
+                hhbox.Add(20,-1)
+                hhbox.Add(wx.CheckBox(self.middlePanel),0,wx.TOP,5)
+                hhbox.Add(wx.StaticText(self.middlePanel,label="e: "),0,wx.TOP,5)
+                self.eSPIN = wx.SpinCtrl(self.middlePanel, size=(35, -1), style=wx.TE_READONLY)
+                self.eSPIN.SetRange(0, 4000)
+                self.eSPIN.SetValue(int(self.data[27]))
+                self.eSPIN.Enable(False)
+                hhbox.Add(self.eSPIN,1)
+                vbox.Add(hhbox,0,wx.EXPAND|wx.RIGHT,20)
+                vbox.Add((-1,5))
+
+            if self.data[28]=='Y':
+                hhbox = wx.BoxSizer()
+                hhbox.Add(20,-1)
+                # hhbox.Add(wx.CheckBox(self.middlePanel),0,wx.TOP,5)
+                hhbox.Add(wx.StaticText(self.middlePanel,label="f: "),0,wx.TOP,5)
+                self.fSPIN = wx.SpinCtrl(self.middlePanel, size=(35, -1), style=wx.TE_READONLY)
+                self.fSPIN.SetRange(0, 4000)
+                self.fSPIN.SetValue(int(self.data[29]))
+                self.fSPIN.Enable(False)
+                hhbox.Add(self.fSPIN,1)
+                vbox.Add(hhbox,0,wx.EXPAND|wx.RIGHT,20)
+                vbox.Add((-1,5))
+
+            if self.data[30]=='Y':
+                hhbox = wx.BoxSizer()
+                hhbox.Add(20,-1)
+                hhbox.Add(wx.CheckBox(self.middlePanel),0,wx.TOP,5)
+                # hhbox.Add(wx.StaticText(self.middlePanel,label="CY: "),0,wx.TOP,5)
+                self.cYSPIN = wx.SpinCtrl(self.middlePanel, size=(35, -1), style=wx.TE_READONLY)
+                self.cYSPIN.SetRange(0, 4000)
+                self.cYSPIN.SetValue(int(self.data[31]))
+                self.cYSPIN.Enable(False)
+                hhbox.Add(self.cYSPIN,1)
+                vbox.Add(hhbox,0,wx.EXPAND|wx.RIGHT,20)
+        else:
+            hhbox = wx.BoxSizer()
+            hhbox.Add(20, -1)
+            self.aCheckCtrl = wx.CheckBox(self.middlePanel)
+            hhbox.Add(self.aCheckCtrl, 0, wx.TOP, 5)
+            hhbox.Add(wx.StaticText(self.middlePanel, label="a: "), 0, wx.TOP, 5)
+            self.aSPIN = wx.SpinCtrl(self.middlePanel, size=(35, -1), style=wx.TE_READONLY)
+            self.aSPIN.SetRange(0, 4000)
+            self.aSPIN.SetValue(self.data[19])
+            if self.data[18]=='Y':
+                self.aCheckCtrl.SetValue(True)
+                self.aSPIN.Enable(True)
+            else:
+                self.aCheckCtrl.SetValue(False)
+                self.aSPIN.Enable(False)
+            hhbox.Add(self.aSPIN, 1)
+            vbox.Add(hhbox, 0, wx.EXPAND | wx.RIGHT, 20)
+            vbox.Add((-1, 5))
+
+            hhbox = wx.BoxSizer()
+            hhbox.Add(20, -1)
+            self.bCheckCtrl = wx.CheckBox(self.middlePanel)
+            hhbox.Add(self.bCheckCtrl, 0, wx.TOP, 5)
+            hhbox.Add(wx.StaticText(self.middlePanel, label="b: "), 0, wx.TOP, 5)
+            self.bSPIN = wx.SpinCtrl(self.middlePanel, size=(35, -1), style=wx.TE_READONLY)
+            self.bSPIN.SetRange(0, 4000)
+            self.bSPIN.SetValue(self.data[21])
+            if self.data[20]=='Y':
+                self.bCheckCtrl.SetValue(True)
+                self.bSPIN.Enable(True)
+            else:
+                self.bCheckCtrl.SetValue(False)
+                self.bSPIN.Enable(False)
+            hhbox.Add(self.bSPIN, 1)
+            vbox.Add(hhbox, 0, wx.EXPAND | wx.RIGHT, 20)
+            vbox.Add((-1, 5))
+
+            hhbox = wx.BoxSizer()
+            hhbox.Add(20, -1)
+            self.cCheckCtrl = wx.CheckBox(self.middlePanel)
+            hhbox.Add(self.cCheckCtrl, 0, wx.TOP, 5)
+            hhbox.Add(wx.StaticText(self.middlePanel, label="c: "), 0, wx.TOP, 5)
+            self.cSPIN = wx.SpinCtrl(self.middlePanel, size=(35, -1), style=wx.TE_READONLY)
+            self.cSPIN.SetRange(0, 4000)
+            self.cSPIN.SetValue(self.data[23])
+            if self.data[22]=='Y':
+                self.cCheckCtrl.SetValue(True)
+                self.cSPIN.Enable(True)
+            else:
+                self.cCheckCtrl.SetValue(False)
+                self.cSPIN.Enable(False)
+            hhbox.Add(self.cSPIN, 1)
+            vbox.Add(hhbox, 0, wx.EXPAND | wx.RIGHT, 20)
+            vbox.Add((-1, 5))
+
+            hhbox = wx.BoxSizer()
+            hhbox.Add(20, -1)
+            self.dCheckCtrl = wx.CheckBox(self.middlePanel)
+            hhbox.Add(self.dCheckCtrl, 0, wx.TOP, 5)
+            hhbox.Add(wx.StaticText(self.middlePanel, label="d: "), 0, wx.TOP, 5)
+            self.dSPIN = wx.SpinCtrl(self.middlePanel, size=(35, -1), style=wx.TE_READONLY)
+            self.dSPIN.SetRange(0, 4000)
+            self.dSPIN.SetValue(self.data[25])
+            if self.data[24]=='Y':
+                self.dCheckCtrl.SetValue(True)
+                self.dSPIN.Enable(True)
+            else:
+                self.dCheckCtrl.SetValue(False)
+                self.dSPIN.Enable(False)
+            hhbox.Add(self.dSPIN, 1)
+            vbox.Add(hhbox, 0, wx.EXPAND | wx.RIGHT, 20)
+            vbox.Add((-1, 5))
+
+            hhbox = wx.BoxSizer()
+            hhbox.Add(20, -1)
+            self.eCheckCtrl = wx.CheckBox(self.middlePanel)
+            hhbox.Add(self.eCheckCtrl, 0, wx.TOP, 5)
+            hhbox.Add(wx.StaticText(self.middlePanel, label="e: "), 0, wx.TOP, 5)
+            self.eSPIN = wx.SpinCtrl(self.middlePanel, size=(35, -1), style=wx.TE_READONLY)
+            self.eSPIN.SetRange(0, 4000)
+            self.eSPIN.SetValue(self.data[27])
+            if self.data[26]=='Y':
+                self.eCheckCtrl.SetValue(True)
+                self.eSPIN.Enable(True)
+            else:
+                self.eCheckCtrl.SetValue(False)
+                self.eSPIN.Enable(False)
+            hhbox.Add(self.eSPIN, 1)
+            vbox.Add(hhbox, 0, wx.EXPAND | wx.RIGHT, 20)
+            vbox.Add((-1, 5))
+
+            hhbox = wx.BoxSizer()
+            hhbox.Add(20, -1)
+            self.fCheckCtrl = wx.CheckBox(self.middlePanel)
+            hhbox.Add(self.fCheckCtrl, 0, wx.TOP, 5)
+            hhbox.Add(wx.StaticText(self.middlePanel, label="f: "), 0, wx.TOP, 5)
+            self.fSPIN = wx.SpinCtrl(self.middlePanel, size=(35, -1), style=wx.TE_READONLY)
+            self.fSPIN.SetRange(0, 4000)
+            self.fSPIN.SetValue(self.data[29])
+            if self.data[28]=='Y':
+                self.fCheckCtrl.SetValue(True)
+                self.fSPIN.Enable(True)
+            else:
+                self.fCheckCtrl.SetValue(False)
+                self.fSPIN.Enable(False)
+            hhbox.Add(self.fSPIN, 1)
+            vbox.Add(hhbox, 0, wx.EXPAND | wx.RIGHT, 20)
+            vbox.Add((-1, 5))
+
+            hhbox = wx.BoxSizer()
+            hhbox.Add(20, -1)
+            self.cYCheckCtrl = wx.CheckBox(self.middlePanel)
+            hhbox.Add(self.cYCheckCtrl, 0, wx.TOP, 5)
+            hhbox.Add(wx.StaticText(self.middlePanel, label="cY: "), 0, wx.TOP, 5)
+            self.cYSPIN = wx.SpinCtrl(self.middlePanel, size=(35, -1), style=wx.TE_READONLY)
+            self.cYSPIN.SetRange(0, 4000)
+            self.cYSPIN.SetValue(self.data[31])
+            if self.data[30]=='Y':
+                self.cYCheckCtrl.SetValue(True)
+                self.cYSPIN.Enable(True)
+            else:
+                self.cYCheckCtrl.SetValue(False)
+                self.cYSPIN.Enable(False)
+            hhbox.Add(self.cYSPIN, 1)
+            vbox.Add(hhbox, 0, wx.EXPAND | wx.RIGHT, 20)
+            vbox.Add((-1, 5))
+
+        vbox.Add((-1,20))
+
+        procudureFrame = wx.StaticBox(self.middlePanel,label='生产工序:',size=(100,80))
+        vbox.Add(procudureFrame,0,wx.EXPAND|wx.LEFT|wx.RIGHT,7)
+        topBorder, otherBorder = procudureFrame.GetBordersForSizer()
         bsizer=wx.BoxSizer(wx.VERTICAL)
         bsizer.AddSpacer(topBorder+5)
         hhbox = wx.BoxSizer()
         hhbox.AddSpacer(otherBorder+2)
 
         vvbox = wx.BoxSizer(wx.VERTICAL)
-        self.shapeprocess405FrontCheck = wx.CheckBox(frontFrame,label='成型405')
-        if '405' in processFront:
-            self.shapeprocess405FrontCheck.SetValue(True)
-        vvbox.Add(self.shapeprocess405FrontCheck,0)
-        self.shapeprocess406FrontCheck = wx.CheckBox(frontFrame,label='成型406')
-        if '406' in processFront:
-            self.shapeprocess406FrontCheck.SetValue(True)
-        vvbox.Add(self.shapeprocess406FrontCheck,0)
-        self.shapeprocess409FrontCheck = wx.CheckBox(frontFrame,label='成型409')
-        if '409' in processFront:
-            self.shapeprocess409FrontCheck.SetValue(True)
-        vvbox.Add(self.shapeprocess409FrontCheck,0)
-        hhbox.Add(vvbox)
+        self.shapeprocess405Check = wx.CheckBox(procudureFrame,label='成型405')
+        if self.data[5]=='Y':
+            self.shapeprocess405Check.SetValue(True)
+        vvbox.Add(self.shapeprocess405Check,0)
+        self.shapeprocess406Check = wx.CheckBox(procudureFrame,label='成型406')
+        if self.data[7]=='Y':
+            self.shapeprocess406Check.SetValue(True)
+        vvbox.Add(self.shapeprocess406Check,0)
+        # self.shapeprocess409Check = wx.CheckBox(procudureFrame,label='成型409')
+        # if self.data[6]=='Y':
+        #     self.shapeprocess409Check.SetValue(True)
+        # vvbox.Add(self.shapeprocess409Check,0)
+        hhbox.Add(vvbox,1)
 
         vvbox = wx.BoxSizer(wx.VERTICAL)
-        self.bowprocess652FrontCheck = wx.CheckBox(frontFrame,label='折弯652')
-        if '652' in processFront:
-            self.bowprocess652FrontCheck.SetValue(True)
-        vvbox.Add(self.bowprocess652FrontCheck,0)
-        hhbox.Add(vvbox)
+        self.bowprocess652Check = wx.CheckBox(procudureFrame,label='折弯652')
+        if self.data[8]=='Y':
+            self.bowprocess652Check.SetValue(True)
+        vvbox.Add(self.bowprocess652Check,0)
+        hhbox.Add(vvbox,1)
 
         vvbox = wx.BoxSizer(wx.VERTICAL)
-        self.hotpressprocess100FrontCheck = wx.CheckBox(frontFrame,label='热压100')
-        if '100' in processFront:
-            self.hotpressprocess100FrontCheck.SetValue(True)
-        vvbox.Add(self.hotpressprocess100FrontCheck,0)
-        self.hotpressprocess306FrontCheck = wx.CheckBox(frontFrame,label='热压306')
-        if '306' in processFront:
-            self.hotpressprocess306FrontCheck.SetValue(True)
-        vvbox.Add(self.hotpressprocess306FrontCheck,0)
-        hhbox.Add(vvbox)
+        self.hotpressprocess100Check = wx.CheckBox(procudureFrame,label='热压100')
+        if self.data[9]=='Y':
+            self.hotpressprocess100Check.SetValue(True)
+        vvbox.Add(self.hotpressprocess100Check,0)
+        self.hotpressprocess306Check = wx.CheckBox(procudureFrame,label='特制品306')
+        if self.data[10]=='Y':
+            self.hotpressprocess306Check.SetValue(True)
+        vvbox.Add(self.hotpressprocess306Check,0)
+        hhbox.Add(vvbox,1)
 
-        vvbox = wx.BoxSizer(wx.VERTICAL)
-        self.holeprocess9000FrontCheck = wx.CheckBox(frontFrame,label='冲铣xxx')
-        if '9000' in processFront:
-            self.holeprocess9000FrontCheck.SetValue(True)
-        vvbox.Add(self.holeprocess9000FrontCheck,0)
-        hhbox.Add(vvbox)
-        bsizer.Add(hhbox)
-        frontFrame.SetSizer(bsizer)
-
-
-
-        if self.data[14]=='Y':
-            middleFrame = wx.StaticBox(self.middlePanel,label='Z板工序:',size=(100,80))
-            vbox.Add(middleFrame,0,wx.EXPAND|wx.LEFT|wx.RIGHT,7)
-            topBorder, otherBorder = middleFrame.GetBordersForSizer()
-            bsizer=wx.BoxSizer(wx.VERTICAL)
-            bsizer.AddSpacer(topBorder+5)
-            hhbox = wx.BoxSizer()
-            hhbox.AddSpacer(otherBorder+2)
-
-            vvbox = wx.BoxSizer(wx.VERTICAL)
-            self.shapeprocess405MiddleCheck = wx.CheckBox(middleFrame,label='成型405')
-            if '405' in processMiddle:
-                self.shapeprocess405MiddleCheck.SetValue(True)
-            vvbox.Add(self.shapeprocess405MiddleCheck,0)
-            self.shapeprocess406MiddleCheck = wx.CheckBox(middleFrame,label='成型406')
-            if '406' in processMiddle:
-                self.shapeprocess406MiddleCheck.SetValue(True)
-            vvbox.Add(self.shapeprocess406MiddleCheck,0)
-            self.shapeprocess409MiddleCheck = wx.CheckBox(middleFrame,label='成型409')
-            if '409' in processMiddle:
-                self.shapeprocess409MiddleCheck.SetValue(True)
-            vvbox.Add(self.shapeprocess409MiddleCheck,0)
-            hhbox.Add(vvbox)
-
-            vvbox = wx.BoxSizer(wx.VERTICAL)
-            self.bowprocess652MiddleCheck = wx.CheckBox(middleFrame,label='折弯652')
-            if '652' in processMiddle:
-                self.bowprocess652MiddleCheck.SetValue(True)
-            vvbox.Add(self.bowprocess652MiddleCheck,0)
-            hhbox.Add(vvbox)
-
-            vvbox = wx.BoxSizer(wx.VERTICAL)
-            self.hotpressprocess100MiddleCheck = wx.CheckBox(middleFrame,label='热压100')
-            if '100' in processMiddle:
-                self.hotpressprocess100MiddleCheck.SetValue(True)
-            vvbox.Add(self.hotpressprocess100MiddleCheck,0)
-            self.hotpressprocess306MiddleCheck = wx.CheckBox(middleFrame,label='热压306')
-            if '306' in processMiddle:
-                self.hotpressprocess306MiddleCheck.SetValue(True)
-            vvbox.Add(self.hotpressprocess306MiddleCheck,0)
-            hhbox.Add(vvbox)
-
-            vvbox = wx.BoxSizer(wx.VERTICAL)
-            self.holeprocess9000MiddleCheck = wx.CheckBox(middleFrame,label='冲铣xxx')
-            if '9000' in processMiddle:
-                self.holeprocess9000MiddleCheck.SetValue(True)
-            vvbox.Add(self.holeprocess9000MiddleCheck,0)
-            hhbox.Add(vvbox)
-            bsizer.Add(hhbox)
-            middleFrame.SetSizer(bsizer)
-
-        rearFrame = wx.StaticBox(self.middlePanel,label='背板工序:',size=(100,80))
-        vbox.Add(rearFrame,0,wx.EXPAND|wx.LEFT|wx.RIGHT,7)
-        topBorder, otherBorder = rearFrame.GetBordersForSizer()
-        bsizer = wx.BoxSizer(wx.VERTICAL)
-        bsizer.AddSpacer(topBorder + 5)
-        hhbox = wx.BoxSizer()
-        hhbox.AddSpacer(otherBorder + 2)
         # vvbox = wx.BoxSizer(wx.VERTICAL)
-        # self.cutProcess505RearCheck = wx.CheckBox(rearFrame, label='剪板505')
-        # self.cutProcess505RearCheck.Enable(False)
-        # if '505' in processRear:
-        #     self.cutProcess505RearCheck.SetValue(True)
-        # vvbox.Add(self.cutProcess505RearCheck, 0)
+        # self.holeprocess9000Check = wx.CheckBox(procudureFrame,label='冲铣xxx')
+        # if '9000' in procedure:
+        #     self.holeprocess9000Check.SetValue(True)
+        # vvbox.Add(self.holeprocess9000Check,0)
+        # hhbox.Add(vvbox)
+        bsizer.Add(hhbox,1,wx.EXPAND)
+        procudureFrame.SetSizer(bsizer)
 
-        vvbox = wx.BoxSizer(wx.VERTICAL)
-        self.shapeprocess405RearCheck = wx.CheckBox(rearFrame, label='成型405')
-        if '405' in processRear:
-            self.shapeprocess405RearCheck.SetValue(True)
-        vvbox.Add(self.shapeprocess405RearCheck, 0)
-        self.shapeprocess406RearCheck = wx.CheckBox(rearFrame, label='成型406')
-        if '406' in processRear:
-            self.shapeprocess406RearCheck.SetValue(True)
-        vvbox.Add(self.shapeprocess406RearCheck, 0)
-        self.shapeprocess409RearCheck = wx.CheckBox(rearFrame, label='成型409')
-        if '409' in processRear:
-            self.shapeprocess409RearCheck.SetValue(True)
-        vvbox.Add(self.shapeprocess409RearCheck, 0)
-        hhbox.Add(vvbox)
 
-        vvbox = wx.BoxSizer(wx.VERTICAL)
-        self.bowprocess652RearCheck = wx.CheckBox(rearFrame, label='折弯652')
-        if '652' in processRear:
-            self.bowprocess652RearCheck.SetValue(True)
-        vvbox.Add(self.bowprocess652RearCheck, 0)
-        hhbox.Add(vvbox)
 
-        vvbox = wx.BoxSizer(wx.VERTICAL)
-        self.hotpressprocess100RearCheck = wx.CheckBox(rearFrame, label='热压100')
-        if '100' in processRear:
-            self.hotpressprocess100RearCheck.SetValue(True)
-        vvbox.Add(self.hotpressprocess100RearCheck, 0)
-        self.hotpressprocess306RearCheck = wx.CheckBox(rearFrame, label='热压306')
-        if '306' in processRear:
-            self.hotpressprocess306RearCheck.SetValue(True)
-        vvbox.Add(self.hotpressprocess306RearCheck, 0)
-        hhbox.Add(vvbox)
-
-        vvbox = wx.BoxSizer(wx.VERTICAL)
-        self.holeprocess9000RearCheck = wx.CheckBox(rearFrame, label='冲铣xxx')
-        if '9000' in processRear:
-            self.holeprocess9000RearCheck.SetValue(True)
-        vvbox.Add(self.holeprocess9000RearCheck, 0)
-        hhbox.Add(vvbox)
-        bsizer.Add(hhbox)
-        rearFrame.SetSizer(bsizer)
 
         temp = self.data[1].split(',')
         self.frontLengthDelta = temp[0]
@@ -708,6 +873,8 @@ class SpecificBluePrintManagementPanel(wx.Panel):
         self.rearWidthDeltaCtrl.SetValue(self.rearWidthDelta)
 
         if state != '查看':
+            if state == '编辑':
+                self.bluePrintTypeCombo.Enable(False)
             vbox.Add(wx.Panel(self.middlePanel, size=(10, 10)), 1, wx.EXPAND)
             hhbox=wx.BoxSizer()
             hhbox.Add((10,-1))
@@ -728,30 +895,30 @@ class SpecificBluePrintManagementPanel(wx.Panel):
             self.frontWidthDeltaCtrl.Enable(False)
             self.rearLengthDeltaCtrl.Enable(False)
             self.rearWidthDeltaCtrl.Enable(False)
-            self.shapeprocess405FrontCheck.Enable(False)
-            self.shapeprocess406FrontCheck.Enable(False)
-            self.shapeprocess409FrontCheck.Enable(False)
-            self.bowprocess652FrontCheck.Enable(False)
-            self.hotpressprocess100FrontCheck.Enable(False)
-            self.hotpressprocess306FrontCheck.Enable(False)
-            self.holeprocess9000FrontCheck.Enable(False)
-            self.shapeprocess405RearCheck.Enable(False)
-            self.shapeprocess406RearCheck.Enable(False)
-            self.shapeprocess409RearCheck.Enable(False)
-            self.bowprocess652RearCheck.Enable(False)
-            self.hotpressprocess100RearCheck.Enable(False)
-            self.hotpressprocess306RearCheck.Enable(False)
-            self.holeprocess9000RearCheck.Enable(False)
+            # self.shapeprocess405Check.Enable(False)
+            # self.shapeprocess406Check.Enable(False)
+            # self.shapeprocess409Check.Enable(False)
+            # self.bowprocess652Check.Enable(False)
+            # self.hotpressprocess100Check.Enable(False)
+            # self.hotpressprocess306Check.Enable(False)
+            # self.holeprocess9000Check.Enable(False)
+            # self.shapeprocess405RearCheck.Enable(False)
+            # self.shapeprocess406RearCheck.Enable(False)
+            # self.shapeprocess409RearCheck.Enable(False)
+            # self.bowprocess652RearCheck.Enable(False)
+            # self.hotpressprocess100RearCheck.Enable(False)
+            # self.hotpressprocess306RearCheck.Enable(False)
+            # self.holeprocess9000RearCheck.Enable(False)
             if self.data[14]=='Y':
                 self.middleLengthDeltaCtrl.Enable(False)
                 self.middleWidthDeltaCtrl.Enable(False)
-                self.shapeprocess405MiddleCheck.Enable(False)
-                self.shapeprocess406MiddleCheck.Enable(False)
-                self.shapeprocess409MiddleCheck.Enable(False)
-                self.bowprocess652MiddleCheck.Enable(False)
-                self.hotpressprocess100MiddleCheck.Enable(False)
-                self.hotpressprocess306MiddleCheck.Enable(False)
-                self.holeprocess9000MiddleCheck.Enable(False)
+                # self.shapeprocess405MiddleCheck.Enable(False)
+                # self.shapeprocess406MiddleCheck.Enable(False)
+                # self.shapeprocess409MiddleCheck.Enable(False)
+                # self.bowprocess652MiddleCheck.Enable(False)
+                # self.hotpressprocess100MiddleCheck.Enable(False)
+                # self.hotpressprocess306MiddleCheck.Enable(False)
+                # self.holeprocess9000MiddleCheck.Enable(False)
 
         self.middlePanel.SetSizer(vbox)
         self.middlePanel.Refresh()
@@ -759,7 +926,7 @@ class SpecificBluePrintManagementPanel(wx.Panel):
         self.middlePanel.Thaw()
 
     def OnMiddleEnableCheck(self, event):
-        self.data[14]='Y' if self.middleEnableCheck.GetValue() else 'N'
+        # self.data[14]='Y' if self.middleEnableCheck.GetValue() else 'N'
         self.ReCreateMiddlePanel(self.type, '新建')
         event.Skip()
 
@@ -800,7 +967,7 @@ class SpecificBluePrintManagementPanel(wx.Panel):
         self.data[3] = '%s,%s'%(self.rearLengthDeltaCtrl.GetValue(),self.rearWidthDeltaCtrl.GetValue())
         self.data[4] = 'FR' if self.data[14]=='N' else 'FMR'
         self.data[5] = ''#成型405工序
-        if self.shapeprocess405FrontCheck.GetValue():
+        if self.shapeprocess405Check.GetValue():
             self.data[5] += 'F'
         if self.data[14] == 'Y':
             if self.shapeprocess405MiddleCheck.GetValue():
@@ -809,7 +976,7 @@ class SpecificBluePrintManagementPanel(wx.Panel):
             self.data[5] += 'R'
 
         self.data[6] = ''#成型409工序
-        if self.shapeprocess409FrontCheck.GetValue():
+        if self.shapeprocess409Check.GetValue():
             self.data[6] += 'F'
         if self.data[14] == 'Y':
             if self.shapeprocess409MiddleCheck.GetValue():
@@ -818,7 +985,7 @@ class SpecificBluePrintManagementPanel(wx.Panel):
             self.data[6] += 'R'
 
         self.data[7] = ''#成型406工序
-        if self.shapeprocess406FrontCheck.GetValue():
+        if self.shapeprocess406Check.GetValue():
             self.data[7] += 'F'
         if self.data[14] == 'Y':
             if self.shapeprocess406MiddleCheck.GetValue():
@@ -827,7 +994,7 @@ class SpecificBluePrintManagementPanel(wx.Panel):
             self.data[7] += 'R'
 
         self.data[8] = ''#折弯652工序
-        if self.bowprocess652FrontCheck.GetValue():
+        if self.bowprocess652Check.GetValue():
             self.data[8] += 'F'
         if self.data[14] == 'Y':
             if self.bowprocess652MiddleCheck.GetValue():
@@ -836,7 +1003,7 @@ class SpecificBluePrintManagementPanel(wx.Panel):
             self.data[8] += 'R'
 
         self.data[9] = ''#热压100工序
-        if self.hotpressprocess100FrontCheck.GetValue():
+        if self.hotpressprocess100Check.GetValue():
             self.data[9] += 'F'
         if self.data[14] == 'Y':
             if self.hotpressprocess100MiddleCheck.GetValue():
@@ -844,8 +1011,8 @@ class SpecificBluePrintManagementPanel(wx.Panel):
         if self.hotpressprocess100RearCheck.GetValue():
             self.data[9] += 'R'
 
-        self.data[10] = ''#热压306工序
-        if self.hotpressprocess306FrontCheck.GetValue():
+        self.data[10] = ''#特制品306工序
+        if self.hotpressprocess306Check.GetValue():
             self.data[10] += 'F'
         if self.data[14] == 'Y':
             if self.hotpressprocess306MiddleCheck.GetValue():
@@ -853,14 +1020,14 @@ class SpecificBluePrintManagementPanel(wx.Panel):
         if self.hotpressprocess306RearCheck.GetValue():
             self.data[10] += 'R'
 
-        self.data[11] = ''#冲洗xxx工序
-        if self.holeprocess9000FrontCheck.GetValue():
-            self.data[11] += 'F'
-        if self.data[14] == 'Y':
-            if self.holeprocess9000MiddleCheck.GetValue():
-                self.data[11] += 'M'
-        if self.holeprocess9000RearCheck.GetValue():
-            self.data[11] += 'R'
+        # self.data[11] = ''#冲洗xxx工序
+        # if self.holeprocess9000Check.GetValue():
+        #     self.data[11] += 'F'
+        # if self.data[14] == 'Y':
+        #     if self.holeprocess9000MiddleCheck.GetValue():
+        #         self.data[11] += 'M'
+        # if self.holeprocess9000RearCheck.GetValue():
+        #     self.data[11] += 'R'
 
         self.data[12]='在用'
         self.data[13]='%s'%self.master.master.master.operatorID
@@ -876,7 +1043,7 @@ class SpecificBluePrintManagementPanel(wx.Panel):
     def OnBluePrintTypeChanged(self,event):
         self.bluePrintType = self.bluePrintTypeCombo.GetValue()
         key=self.typeBluePrintDict[self.bluePrintType]
-        self.picPanel.Recreate('bitmaps/%s.JPG'%key)
+        # self.bluePrintShowPanel.Recreate('bitmaps/%s.JPG' % key)
         self.bluePrintIndexCtrl.SetValue(key)
         # if self.bluePrintType == '25mm墙板':
         #     self.picPanel.Recreate('bitmaps/2SA.JPG')
@@ -910,12 +1077,12 @@ class SpecificBluePrintManagementPanel(wx.Panel):
                     self.data = ['']*18
                 else:
                     self.data = self.dataArray[0]
-            self.data[14]='N'
+            self.data[14]='0'
             self.editState = '新建'
             self.ReCreateMiddlePanel(self.type,state=self.editState)
             self.ReCreateRightPanel()
             filename = '图纸/%s/%s.jpg' % (self.bluePrintIndexCtrl.GetValue(), self.pageNo)
-            self.picPanel.Recreate(filename,'新建')
+            # self.bluePrintShowPanel.Recreate(filename, '新建')
         else:
             wx.MessageBox("请先结束当前编辑工作后，再进行新的编辑操作！", "信息提示")
 
