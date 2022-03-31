@@ -6,7 +6,7 @@ import time
 import datetime
 
 
-def InsertBluePrintInDB(log,whichDB,drawingNoList,aList,bList,cList,dList,eList,fList,cyList,sheetName):
+def InsertBluePrintInDB(log,whichDB,drawingNoList,aList,bList,cList,dList,eList,fList,cyList,sheetName,frontDelta,middleDelta,rearDelta):
     try:
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % dbName[whichDB], charset='utf8')
@@ -61,9 +61,9 @@ def InsertBluePrintInDB(log,whichDB,drawingNoList,aList,bList,cList,dList,eList,
             cyEnable = 'N'
             cy='0'
         sql = "INSERT INTO 图纸信息(`图纸号`,`a使能`,`a`,`b使能`,`b`,`c使能`,`c`,`d使能`,`d`," \
-              "`e使能`,`e`,`f使能`,`f`,`CY使能`,`CY`,`图纸名`)" \
-              "VALUES ('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')"\
-              % (drawingNo,aEnable,a,bEnable,b,cEnable,c,dEnable,d,eEnable,e,fEnable,f,cyEnable,cy,sheetName)
+              "`e使能`,`e`,`f使能`,`f`,`CY使能`,`CY`,`图纸名`,`面板增量`,`中板增量`,`背板增量`)" \
+              "VALUES ('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')"\
+              % (drawingNo,aEnable,a,bEnable,b,cEnable,c,dEnable,d,eEnable,e,fEnable,f,cyEnable,cy,sheetName,frontDelta,middleDelta,rearDelta)
         try:
             cursor.execute(sql)
             db.commit()  # 必须有，没有的话插入语句不会执行
@@ -78,6 +78,9 @@ for sheetName in aaa:
     print(sheetName)
     d = GetSheetDataFromExcelFileName(fileName,sheetName)
     sheetData = np.array(d)
+    frontDelta = sheetData[1,0]
+    middleDelta = sheetData[2,0]
+    rearDelta = sheetData[3,0]
     sheetData = sheetData[:,1:]
     titleData = list(sheetData[0,:])
     title = []
@@ -179,7 +182,7 @@ for sheetName in aaa:
         temp = "%s.%s.%s"%(no[0],no[1],no[2])
         drawingNoList.append(temp)
     print(drawingNoList,aList,bList,cList,dList,eList,fList,cyList,sheetName)
-    InsertBluePrintInDB(None,1,drawingNoList,aList,bList,cList,dList,eList,fList,cyList,sheetName)
+    InsertBluePrintInDB(None,1,drawingNoList,aList,bList,cList,dList,eList,fList,cyList,sheetName,frontDelta,middleDelta,rearDelta)
 
 
 

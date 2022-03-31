@@ -2,13 +2,14 @@ import os
 
 import wx
 import wx.grid as gridlib
-from DBOperation import GetAllBluPrintList, GetRGBWithRalID,GetAllColor,SaveBluePrintInDB,UpdateBluePrintInDB
+from DBOperation import GetAllBluPrintList, GetRGBWithRalID,GetAllColor,SaveBluePrintInDB,UpdateBluePrintInDB,GetAllConstructionList
 import wx.grid as gridlib
 import numpy as np
 import images
 import wx.lib.scrolledpanel as scrolled
 from ID_DEFINE import *
 from ProductionScheduleDialog import PDFViewerPanel
+import datetime
 
 
 class BluePrintShowPanel(PDFViewerPanel):
@@ -41,7 +42,7 @@ class BluePrintGrid(gridlib.Grid):  ##, mixins.GridAutoEditMixin):
             self.SetColSize(i, width)
 
         for i, temp in enumerate(self.master.dataArray):
-            self.SetRowSize(i, 50)
+            self.SetRowSize(i, 25)
             data = self.Translate(temp)
             for j, item in enumerate(data):
                 # self.SetCellBackgroundColour(i,j,wx.Colour(250, 250, 250))
@@ -74,27 +75,13 @@ class BluePrintGrid(gridlib.Grid):  ##, mixins.GridAutoEditMixin):
     def Translate(self, data):
         result = list(data[:4])
         processFront = ''
-        processMiddle=''
-        processRear=''
-        processList=["505",'405','409','406','652','100','306','9000']
+        processList=["505",'405','409','406','652','100','306']
         for i,process in enumerate(processList):
-            if 'F' in data[i+4]:
+            if 'Y' == data[i+4]:
                 processFront += process
-                if i<7:
-                    processFront += '/'
-            if 'R' in data[i+4]:
-                processRear += process
-                if i<7:
-                    processRear += '/'
-            if 'M' in data[i+4]:
-                processMiddle += process
-                if i<7:
-                    processMiddle += '/'
-        if processMiddle=='':
-            process = '面板:'+processFront + '\r\n' + '背板:'+processRear
-        else:
-            process='面板:'+processFront+'\r\n'+ '中板:'+ processMiddle+'\r\n' + '背板:'+processRear
-        result.append(process)
+                processFront += '/'
+        processFront += '9000'
+        result.append(processFront)
         result.append(data[12])
         return result
 
@@ -114,7 +101,7 @@ class BluePrintGrid(gridlib.Grid):  ##, mixins.GridAutoEditMixin):
             self.SetColSize(i, width)
 
         for i, temp in enumerate(self.master.dataArray):
-            self.SetRowSize(i, 50)
+            self.SetRowSize(i, 25)
             data = self.Translate(temp)
             for j, item in enumerate(data):
                 # self.SetCellBackgroundColour(i,j,wx.Colour(250, 250, 250))
@@ -252,6 +239,201 @@ class BluePrintGrid(gridlib.Grid):  ##, mixins.GridAutoEditMixin):
     def OnEditorCreated(self, evt):
         self.log.write("OnEditorCreated: (%d, %d) %s\n" %
                        (evt.GetRow(), evt.GetCol(), evt.GetControl()))
+class ConstructionGrid(gridlib.Grid):  ##, mixins.GridAutoEditMixin):
+    def __init__(self, parent, master, log):
+        gridlib.Grid.__init__(self, parent, -1)
+        self.log = log
+        self.master = master
+        self.moveTo = None
+
+        self.Bind(wx.EVT_IDLE, self.OnIdle)
+        self.CreateGrid(self.master.dataArray.shape[0], len(self.master.colLabelValueList))  # , gridlib.Grid.SelectRows)
+        self.EnableEditing(False)
+
+        self.SetColLabelAlignment(wx.ALIGN_CENTRE, wx.ALIGN_CENTRE_VERTICAL)
+
+        self.SetRowLabelSize(50)
+        self.SetColLabelSize(25)
+
+        for i, title in enumerate(self.master.colLabelValueList):
+            self.SetColLabelValue(i,title)
+        for i, width in enumerate(self.master.colWidthList):
+            self.SetColSize(i, width)
+
+        for i, data in enumerate(self.master.dataArray):
+            self.SetRowSize(i, 25)
+            for j, item in enumerate(data[:-2]):
+                # self.SetCellBackgroundColour(i,j,wx.Colour(250, 250, 250))
+                self.SetCellAlignment(i, j, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
+                self.SetCellValue(i, j, str(item))
+
+        # self.Bind(gridlib.EVT_GRID_CELL_LEFT_CLICK, self.OnCellLeftClick)
+        self.Bind(gridlib.EVT_GRID_CELL_RIGHT_CLICK, self.OnCellRightClick)
+        # self.Bind(gridlib.EVT_GRID_CELL_LEFT_DCLICK, self.OnCellLeftDClick)
+        self.Bind(gridlib.EVT_GRID_CELL_RIGHT_DCLICK, self.OnCellRightDClick)
+
+        self.Bind(gridlib.EVT_GRID_LABEL_LEFT_CLICK, self.OnLabelLeftClick)
+        self.Bind(gridlib.EVT_GRID_LABEL_RIGHT_CLICK, self.OnLabelRightClick)
+        self.Bind(gridlib.EVT_GRID_LABEL_LEFT_DCLICK, self.OnLabelLeftDClick)
+        self.Bind(gridlib.EVT_GRID_LABEL_RIGHT_DCLICK, self.OnLabelRightDClick)
+
+        self.Bind(gridlib.EVT_GRID_COL_SORT, self.OnGridColSort)
+
+        self.Bind(gridlib.EVT_GRID_ROW_SIZE, self.OnRowSize)
+        self.Bind(gridlib.EVT_GRID_COL_SIZE, self.OnColSize)
+
+        self.Bind(gridlib.EVT_GRID_RANGE_SELECT, self.OnRangeSelect)
+        self.Bind(gridlib.EVT_GRID_CELL_CHANGED, self.OnCellChange)
+        self.Bind(gridlib.EVT_GRID_SELECT_CELL, self.OnSelectCell)
+
+        self.Bind(gridlib.EVT_GRID_EDITOR_SHOWN, self.OnEditorShown)
+        self.Bind(gridlib.EVT_GRID_EDITOR_HIDDEN, self.OnEditorHidden)
+        self.Bind(gridlib.EVT_GRID_EDITOR_CREATED, self.OnEditorCreated)
+
+    def ReCreate(self):
+        if self.GetNumberRows()<self.master.dataArray.shape[0]:
+            self.InsertRows(numRows=self.master.dataArray.shape[0]-self.GetNumberRows())
+        self.ClearGrid()
+        self.EnableEditing(False)
+        self.SetColLabelAlignment(wx.ALIGN_CENTRE, wx.ALIGN_CENTRE_VERTICAL)
+
+        self.SetRowLabelSize(50)
+        self.SetColLabelSize(25)
+
+        for i, title in enumerate(self.master.colLabelValueList):
+            self.SetColLabelValue(i,title)
+        for i, width in enumerate(self.master.colWidthList):
+            self.SetColSize(i, width)
+
+        for i, data in enumerate(self.master.dataArray):
+            self.SetRowSize(i, 25)
+            for j, item in enumerate(data[:-1]):
+                # self.SetCellBackgroundColour(i,j,wx.Colour(250, 250, 250))
+                self.SetCellAlignment(i, j, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
+                self.SetCellValue(i, j, str(item))
+
+    def OnCellRightClick(self, evt):
+        self.log.write("OnCellRightClick: (%d,%d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+        evt.Skip()
+
+    def OnCellLeftDClick(self, evt):
+        self.log.write("OnCellLeftDClick: (%d,%d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+        evt.Skip()
+
+    def OnCellRightDClick(self, evt):
+        self.log.write("OnCellRightDClick: (%d,%d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+        evt.Skip()
+
+    def OnLabelLeftClick(self, evt):
+        self.log.write("OnLabelLeftClick: (%d,%d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+        evt.Skip()
+
+    def OnLabelRightClick(self, evt):
+        self.log.write("OnLabelRightClick: (%d,%d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+        evt.Skip()
+
+    def OnLabelLeftDClick(self, evt):
+        self.log.write("OnLabelLeftDClick: (%d,%d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+        evt.Skip()
+
+    def OnLabelRightDClick(self, evt):
+        self.log.write("OnLabelRightDClick: (%d,%d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+        evt.Skip()
+
+    def OnGridColSort(self, evt):
+        self.log.write("OnGridColSort: %s %s" % (evt.GetCol(), self.GetSortingColumn()))
+        self.SetSortingColumn(evt.GetCol())
+
+    def OnRowSize(self, evt):
+        self.log.write("OnRowSize: row %d, %s\n" %
+                       (evt.GetRowOrCol(), evt.GetPosition()))
+        evt.Skip()
+
+    def OnColSize(self, evt):
+        self.log.write("OnColSize: col %d, %s\n" %
+                       (evt.GetRowOrCol(), evt.GetPosition()))
+        evt.Skip()
+
+    def OnRangeSelect(self, evt):
+        if evt.Selecting():
+            msg = 'Selected'
+        else:
+            msg = 'Deselected'
+        self.log.write("OnRangeSelect: %s  top-left %s, bottom-right %s\n" %
+                       (msg, evt.GetTopLeftCoords(), evt.GetBottomRightCoords()))
+        evt.Skip()
+
+    def OnCellChange(self, evt):
+        self.log.write("OnCellChange: (%d,%d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+
+        value = self.GetCellValue(evt.GetRow(), evt.GetCol())
+
+        if value == 'no good':
+            self.moveTo = evt.GetRow(), evt.GetCol()
+
+    def OnIdle(self, evt):
+        if self.moveTo is not None:
+            self.SetGridCursor(self.moveTo[0], self.moveTo[1])
+            self.moveTo = None
+
+        evt.Skip()
+
+    def OnSelectCell(self, evt):
+        if evt.Selecting():
+            msg = 'Selected'
+        else:
+            msg = 'Deselected'
+        self.log.write("OnSelectCell: %s (%d,%d) %s\n" %
+                       (msg, evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+
+        # Another way to stay in a cell that has a bad value...
+        row = self.GetGridCursorRow()
+        col = self.GetGridCursorCol()
+
+        if self.IsCellEditControlEnabled():
+            self.HideCellEditControl()
+            self.DisableCellEditControl()
+
+        value = self.GetCellValue(row, col)
+
+        if value == 'no good 2':
+            return  # cancels the cell selection
+
+        evt.Skip()
+
+    def OnEditorShown(self, evt):
+        if evt.GetRow() == 6 and evt.GetCol() == 3 and \
+                wx.MessageBox("Are you sure you wish to edit this cell?",
+                              "Checking", wx.YES_NO) == wx.NO:
+            evt.Veto()
+            return
+
+        self.log.write("OnEditorShown: (%d,%d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+        evt.Skip()
+
+    def OnEditorHidden(self, evt):
+        if evt.GetRow() == 6 and evt.GetCol() == 3 and \
+                wx.MessageBox("Are you sure you wish to  finish editing this cell?",
+                              "Checking", wx.YES_NO) == wx.NO:
+            evt.Veto()
+            return
+
+        self.log.write("OnEditorHidden: (%d,%d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+        evt.Skip()
+
+    def OnEditorCreated(self, evt):
+        self.log.write("OnEditorCreated: (%d, %d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetControl()))
 
 class SpecificBluePrintManagementPanel(wx.Panel):
     def __init__(self, parent, master, log, type,state='在用'):
@@ -261,24 +443,20 @@ class SpecificBluePrintManagementPanel(wx.Panel):
         self.type = type
         self.state = state
         self.busy = False
-        self.pageNo = 1
-        self.editState = '查看'
         self.editState = '查看'
         self.data = []
         self.processList=self.master.processList
-        self.colWidthList = [80, 65, 65, 65, 170, 70,47]
+        self.colWidthList = [80, 65, 65, 65, 150, 50,47]
         self.colLabelValueList = ['图纸号', '面板增量', '中板增量', '背板增量', '所需工序','状态','']
         _, dataList = GetAllBluPrintList(self.log, 1, self.type,state=self.state)
         self.dataArray = np.array(dataList)
         self.bluePrintIDSearch = ''
-        self.middleLengthDeltaSearch = ''
-        self.middleWidthDeltaSearch = ''
-        self.rearLengthSearch = ''
-        self.rearWidthSearch=''
-        self.workProcessSearch=''
+        self.frontDeltaSearch = ''
+        self.middleDeltaSearch = ''
+        self.rearDeltaSearch = ''
         self.busy = False
         hbox = wx.BoxSizer()
-        self.leftPanel = wx.Panel(self, size=(630, -1))
+        self.leftPanel = wx.Panel(self, size=(590, -1))
         hbox.Add(self.leftPanel, 0, wx.EXPAND)
         self.middlePanel=wx.Panel(self, size=(300, -1))
         hbox.Add(self.middlePanel, 0, wx.EXPAND)
@@ -297,14 +475,11 @@ class SpecificBluePrintManagementPanel(wx.Panel):
                     self.busy = True
                     row = evt.GetRow()
                     self.data = self.dataArray[row]
-                    self.pageNo = self.data[17]
                     index = self.data[0].split('.')[1]
-                    # filename = 'Stena 生产图纸/%s/%s.jpg'%(index,self.pageNo)
                     filename = bluePrintDir + 'Stena 生产图纸 %s/' % index + self.data[32] + '.pdf'
                     self.editState = '编辑'
                     self.ReCreateMiddlePanel(self.type, self.editState)
                     self.ReCreateRightPanel(filename)
-                    # self.bluePrintShowPanel.Recreate(filename, self.editState)
             evt.Skip()
         else:
             wx.MessageBox("请先结束当前编辑工作后，再进行新的编辑操作！", "信息提示")
@@ -316,7 +491,6 @@ class SpecificBluePrintManagementPanel(wx.Panel):
             self.bluePrintGrid.SetSelectionMode(wx.grid.Grid.GridSelectRows)
             self.bluePrintGrid.SelectRow(row)
             self.data = self.dataArray[row]
-            self.pageNo = self.data[17]
             index = self.data[0].split('.')[1]
             filename = bluePrintDir+'Stena 生产图纸 %s/'%index+self.data[32]+'.pdf'
             self.editState = '查看'
@@ -343,25 +517,25 @@ class SpecificBluePrintManagementPanel(wx.Panel):
         self.bluePrintIDSearchCtrl.Bind(wx.EVT_TEXT_ENTER, self.OnBluePrintIDSearch)
         hhbox.Add(self.bluePrintIDSearchCtrl, 0, wx.EXPAND)
 
-        self.middleLengthDeltaSearchCtrl = wx.TextCtrl(searchPanel, size=(self.colWidthList[1], -1),
-                                                       style=wx.TE_PROCESS_ENTER)
-        self.middleLengthDeltaSearchCtrl.Bind(wx.EVT_TEXT_ENTER, self.OnMiddleLengthDeltaSearch)
-        hhbox.Add(self.middleLengthDeltaSearchCtrl, 0, wx.EXPAND)
+        self.frontDeltaSearchCtrl = wx.TextCtrl(searchPanel, size=(self.colWidthList[1], -1),
+                                                style=wx.TE_PROCESS_ENTER)
+        self.frontDeltaSearchCtrl.Bind(wx.EVT_TEXT_ENTER, self.OnFrontDeltaSearch)
+        hhbox.Add(self.frontDeltaSearchCtrl, 0, wx.EXPAND)
 
-        self.middleWidthDeltaSearchCtrl = wx.TextCtrl(searchPanel, size=(self.colWidthList[2], -1),
-                                                       style=wx.TE_PROCESS_ENTER)
-        self.middleWidthDeltaSearchCtrl.Bind(wx.EVT_TEXT_ENTER, self.OnMiddleWidthDeltaSearch)
-        hhbox.Add(self.middleWidthDeltaSearchCtrl, 0, wx.EXPAND)
+        self.middleDeltaSearchCtrl = wx.TextCtrl(searchPanel, size=(self.colWidthList[2], -1),
+                                                 style=wx.TE_PROCESS_ENTER)
+        self.middleDeltaSearchCtrl.Bind(wx.EVT_TEXT_ENTER, self.OnMiddleDeltaSearch)
+        hhbox.Add(self.middleDeltaSearchCtrl, 0, wx.EXPAND)
 
-        self.rearLengthDeltaSearchCtrl = wx.TextCtrl(searchPanel, size=(self.colWidthList[3], -1),
-                                                       style=wx.TE_PROCESS_ENTER)
-        self.rearLengthDeltaSearchCtrl.Bind(wx.EVT_COMBOBOX, self.OnRearLengthDeltaSearch)
-        hhbox.Add(self.rearLengthDeltaSearchCtrl, 0, wx.EXPAND)
+        self.rearDeltaSearchCtrl = wx.TextCtrl(searchPanel, size=(self.colWidthList[3], -1),
+                                               style=wx.TE_PROCESS_ENTER)
+        self.rearDeltaSearchCtrl.Bind(wx.EVT_TEXT_ENTER, self.OnRearDeltaSearch)
+        hhbox.Add(self.rearDeltaSearchCtrl, 0, wx.EXPAND)
 
-        self.rearWidthDeltaSearchCtrl = wx.TextCtrl(searchPanel, size=(self.colWidthList[4], -1),
+        self.procedureSearchCtrl = wx.TextCtrl(searchPanel, size=(self.colWidthList[4], -1),
                                                        style=wx.TE_PROCESS_ENTER)
-        self.rearWidthDeltaSearchCtrl.Bind(wx.EVT_COMBOBOX, self.OnRearWidthDeltaSearch)
-        hhbox.Add(self.rearWidthDeltaSearchCtrl, 0, wx.EXPAND)
+        self.procedureSearchCtrl.Bind(wx.EVT_TEXT_ENTER, self.OnProcedureSearch)
+        hhbox.Add(self.procedureSearchCtrl, 0, wx.EXPAND)
 
         self.createNewBluPrintBTN = wx.Button(searchPanel, label='新建%s图纸' % self.type)
         self.createNewBluPrintBTN.SetBackgroundColour(wx.Colour(22, 211, 111))
@@ -448,14 +622,6 @@ class SpecificBluePrintManagementPanel(wx.Panel):
         vbox.Add((-1,5))
         hhbox = wx.BoxSizer()
         hhbox.Add((20,-1))
-        # if state=='新建':
-        #     self.middleEnableCheck = wx.CheckBox(self.middlePanel,label='有中板',size=(60,-1),style=wx.CHK_3STATE|wx.CHK_ALLOW_3RD_STATE_FOR_USER)
-        #     # self.middleEnableCheck.SetValue(True if self.data[14]=='Y' else False)
-        #     self.middleEnableCheck.Bind(wx.EVT_CHECKBOX, self.OnMiddleEnableCheck)
-        #     hhbox.Add(20,-1)
-        #     hhbox.Add(self.middleEnableCheck,0)
-        # else:
-        #     hhbox.Add((70,-1))
         self.middleNumberSPIN = wx.SpinCtrl(self.middlePanel, size=(60, -1), style=wx.TE_READONLY)
         self.middleNumberSPIN.SetRange(0, 2)
         self.middleNumberSPIN.SetValue(int(self.data[14]))
@@ -568,7 +734,7 @@ class SpecificBluePrintManagementPanel(wx.Panel):
             if self.data[26]=='Y':
                 hhbox = wx.BoxSizer()
                 hhbox.Add(20,-1)
-                hhbox.Add(wx.CheckBox(self.middlePanel),0,wx.TOP,5)
+                # hhbox.Add(wx.CheckBox(self.middlePanel),0,wx.TOP,5)
                 hhbox.Add(wx.StaticText(self.middlePanel,label="e: "),0,wx.TOP,5)
                 self.eSPIN = wx.SpinCtrl(self.middlePanel, size=(35, -1), style=wx.TE_READONLY)
                 self.eSPIN.SetRange(0, 4000)
@@ -748,17 +914,13 @@ class SpecificBluePrintManagementPanel(wx.Panel):
         if self.data[7]=='Y':
             self.shapeprocess406Check.SetValue(True)
         vvbox.Add(self.shapeprocess406Check,0)
-        # self.shapeprocess409Check = wx.CheckBox(procudureFrame,label='成型409')
-        # if self.data[6]=='Y':
-        #     self.shapeprocess409Check.SetValue(True)
-        # vvbox.Add(self.shapeprocess409Check,0)
         hhbox.Add(vvbox,1)
 
         vvbox = wx.BoxSizer(wx.VERTICAL)
-        self.bowprocess652Check = wx.CheckBox(procudureFrame,label='折弯652')
+        self.bendprocess652Check = wx.CheckBox(procudureFrame, label='折弯652')
         if self.data[8]=='Y':
-            self.bowprocess652Check.SetValue(True)
-        vvbox.Add(self.bowprocess652Check,0)
+            self.bendprocess652Check.SetValue(True)
+        vvbox.Add(self.bendprocess652Check, 0)
         hhbox.Add(vvbox,1)
 
         vvbox = wx.BoxSizer(wx.VERTICAL)
@@ -772,17 +934,8 @@ class SpecificBluePrintManagementPanel(wx.Panel):
         vvbox.Add(self.hotpressprocess306Check,0)
         hhbox.Add(vvbox,1)
 
-        # vvbox = wx.BoxSizer(wx.VERTICAL)
-        # self.holeprocess9000Check = wx.CheckBox(procudureFrame,label='冲铣xxx')
-        # if '9000' in procedure:
-        #     self.holeprocess9000Check.SetValue(True)
-        # vvbox.Add(self.holeprocess9000Check,0)
-        # hhbox.Add(vvbox)
         bsizer.Add(hhbox,1,wx.EXPAND)
         procudureFrame.SetSizer(bsizer)
-
-
-
 
         temp = self.data[1].split(',')
         self.frontLengthDelta = temp[0]
@@ -828,37 +981,17 @@ class SpecificBluePrintManagementPanel(wx.Panel):
             self.shapeprocess405Check.Enable(False)
             self.shapeprocess406Check.Enable(False)
             # self.shapeprocess409Check.Enable(False)
-            self.bowprocess652Check.Enable(False)
+            self.bendprocess652Check.Enable(False)
             self.hotpressprocess100Check.Enable(False)
             self.hotpressprocess306Check.Enable(False)
-            # self.holeprocess9000Check.Enable(False)
-            # self.shapeprocess405RearCheck.Enable(False)
-            # self.shapeprocess406RearCheck.Enable(False)
-            # self.shapeprocess409RearCheck.Enable(False)
-            # self.bowprocess652RearCheck.Enable(False)
-            # self.hotpressprocess100RearCheck.Enable(False)
-            # self.hotpressprocess306RearCheck.Enable(False)
-            # self.holeprocess9000RearCheck.Enable(False)
             if self.data[14]=='Y':
                 self.middleLengthDeltaCtrl.Enable(False)
                 self.middleWidthDeltaCtrl.Enable(False)
-                # self.shapeprocess405MiddleCheck.Enable(False)
-                # self.shapeprocess406MiddleCheck.Enable(False)
-                # self.shapeprocess409MiddleCheck.Enable(False)
-                # self.bowprocess652MiddleCheck.Enable(False)
-                # self.hotpressprocess100MiddleCheck.Enable(False)
-                # self.hotpressprocess306MiddleCheck.Enable(False)
-                # self.holeprocess9000MiddleCheck.Enable(False)
 
         self.middlePanel.SetSizer(vbox)
         self.middlePanel.Refresh()
         self.middlePanel.Layout()
         self.middlePanel.Thaw()
-
-    def OnMiddleEnableCheck(self, event):
-        # self.data[14]='Y' if self.middleEnableCheck.GetValue() else 'N'
-        self.ReCreateMiddlePanel(self.type, '新建')
-        event.Skip()
 
     def OnEditOkBTN(self,event):
         if self.editState == '新建':
@@ -888,82 +1021,76 @@ class SpecificBluePrintManagementPanel(wx.Panel):
             self.bluePrintGrid.ReCreate()
 
     def CombineData(self,bluePrintNo):
+        """"`图纸号`, `面板增量`, `中板增量`, `背板增量`, `剪板505`, `成型405`, `成型409`, `成型406`, `折弯652`, `热压100`,
+        `热压306`, `冲铣`, `图纸状态`, `创建人`, `中板`, '打包9000', `创建时间`, `备注`, `a使能`, `a`,
+        `b使能`, `b`, `c使能`, `c`, `d使能`, `d`, `e使能`, `e`, `f使能`, `f`,
+        `CY使能`, `CY`, `图纸名`
+        from `图纸信息`"""
         self.data[0] = bluePrintNo
         self.data[1] = '%s,%s'%(self.frontLengthDeltaCtrl.GetValue(),self.frontWidthDeltaCtrl.GetValue())
-        if self.data[14]=='Y':
-            self.data[2] = '%s,%s'%(self.middleLengthDeltaCtrl.GetValue(),self.middleWidthDeltaCtrl.GetValue())
-        else:
-            self.data[2] = '0,0'
+        if self.data[14]=='1':
+            self.data[2] = '%s,%s,0,0'%(self.middleLengthDeltaCtrl.GetValue(),self.middleWidthDeltaCtrl.GetValue())
+        elif self.data[14]=='2':
+            self.data[2] = '0,0,0,0'
         self.data[3] = '%s,%s'%(self.rearLengthDeltaCtrl.GetValue(),self.rearWidthDeltaCtrl.GetValue())
-        self.data[4] = 'FR' if self.data[14]=='N' else 'FMR'
-        self.data[5] = ''#成型405工序
-        if self.shapeprocess405Check.GetValue():
-            self.data[5] += 'F'
-        if self.data[14] == 'Y':
-            if self.shapeprocess405MiddleCheck.GetValue():
-                self.data[5] += 'M'
-        if self.shapeprocess405RearCheck.GetValue():
-            self.data[5] += 'R'
-
-        self.data[6] = ''#成型409工序
-        if self.shapeprocess409Check.GetValue():
-            self.data[6] += 'F'
-        if self.data[14] == 'Y':
-            if self.shapeprocess409MiddleCheck.GetValue():
-                self.data[6] += 'M'
-        if self.shapeprocess409RearCheck.GetValue():
-            self.data[6] += 'R'
-
-        self.data[7] = ''#成型406工序
-        if self.shapeprocess406Check.GetValue():
-            self.data[7] += 'F'
-        if self.data[14] == 'Y':
-            if self.shapeprocess406MiddleCheck.GetValue():
-                self.data[7] += 'M'
-        if self.shapeprocess406RearCheck.GetValue():
-            self.data[7] += 'R'
-
-        self.data[8] = ''#折弯652工序
-        if self.bowprocess652Check.GetValue():
-            self.data[8] += 'F'
-        if self.data[14] == 'Y':
-            if self.bowprocess652MiddleCheck.GetValue():
-                self.data[8] += 'M'
-        if self.bowprocess652RearCheck.GetValue():
-            self.data[8] += 'R'
-
-        self.data[9] = ''#热压100工序
-        if self.hotpressprocess100Check.GetValue():
-            self.data[9] += 'F'
-        if self.data[14] == 'Y':
-            if self.hotpressprocess100MiddleCheck.GetValue():
-                self.data[9] += 'M'
-        if self.hotpressprocess100RearCheck.GetValue():
-            self.data[9] += 'R'
-
-        self.data[10] = ''#特制品306工序
-        if self.hotpressprocess306Check.GetValue():
-            self.data[10] += 'F'
-        if self.data[14] == 'Y':
-            if self.hotpressprocess306MiddleCheck.GetValue():
-                self.data[10] += 'M'
-        if self.hotpressprocess306RearCheck.GetValue():
-            self.data[10] += 'R'
-
-        # self.data[11] = ''#冲洗xxx工序
-        # if self.holeprocess9000Check.GetValue():
-        #     self.data[11] += 'F'
-        # if self.data[14] == 'Y':
-        #     if self.holeprocess9000MiddleCheck.GetValue():
-        #         self.data[11] += 'M'
-        # if self.holeprocess9000RearCheck.GetValue():
-        #     self.data[11] += 'R'
-
+        self.data[4] = 'Y'
+        self.data[5] = 'Y' if self.shapeprocess405Check.GetValue() else 'N'#成型405工序
+        self.data[7] = 'Y' if self.shapeprocess406Check.GetValue() else 'N'#成型406工序
+        self.data[8] = 'Y' if self.bendprocess652Check.GetValue() else 'N'#折弯652工序
+        self.data[9] = 'Y' if self.hotpressprocess100Check.GetValue() else 'N'#热压100工序
+        self.data[10] = 'Y' if self.hotpressprocess306Check.GetValue() else 'N'#特制品306工序
         self.data[12]='在用'
         self.data[13]='%s'%self.master.master.master.operatorID
-        self.data[15] = 'FR' if self.data[14]=='N' else 'FMR'
-        self.data[16] = '%s'%self.type
-        # self.data[17] = str(self.pageNo)
+        self.data[15] = 'Y'
+        self.data[16] = '%s'%str(datetime.date.today())
+        if self.aCheckCtrl.GetValue():
+            self.data[18]='Y'
+            self.data[19]=str(self.aSPIN.GetValue())
+        else:
+            self.data[18]='N'
+            self.data[19]=''
+
+        if self.bCheckCtrl.GetValue():
+            self.data[20]='Y'
+            self.data[21]=str(self.bSPIN.GetValue())
+        else:
+            self.data[20]='N'
+            self.data[21]=''
+
+        if self.cCheckCtrl.GetValue():
+            self.data[22]='Y'
+            self.data[23]=str(self.cSPIN.GetValue())
+        else:
+            self.data[22]='N'
+            self.data[23]=''
+
+        if self.dCheckCtrl.GetValue():
+            self.data[24]='Y'
+            self.data[25]=str(self.dSPIN.GetValue())
+        else:
+            self.data[24]='N'
+            self.data[25]=''
+
+        if self.eCheckCtrl.GetValue():
+            self.data[26]='Y'
+            self.data[27]=str(self.eSPIN.GetValue())
+        else:
+            self.data[26]='N'
+            self.data[27]=''
+
+        if self.fCheckCtrl.GetValue():
+            self.data[28]='Y'
+            self.data[29]=str(self.fSPIN.GetValue())
+        else:
+            self.data[28]='N'
+            self.data[29]=''
+
+        if self.cYCheckCtrl.GetValue():
+            self.data[30]='Y'
+            self.data[31]=str(self.cYSPIN.GetValue())
+        else:
+            self.data[30]='N'
+            self.data[31]=''
 
     def OnCancel(self,event):
         self.busy = False
@@ -973,16 +1100,7 @@ class SpecificBluePrintManagementPanel(wx.Panel):
     def OnBluePrintTypeChanged(self,event):
         self.bluePrintType = self.bluePrintTypeCombo.GetValue()
         key=self.typeBluePrintDict[self.bluePrintType]
-        # self.bluePrintShowPanel.Recreate('bitmaps/%s.JPG' % key)
         self.bluePrintIndexCtrl.SetValue(key)
-        # if self.bluePrintType == '25mm墙板':
-        #     self.picPanel.Recreate('bitmaps/2SA.JPG')
-        # elif self.bluePrintType == '25mm墙角板':
-        #     self.picPanel.Recreate('bitmaps/2SG.JPG')
-
-
-    # def OnChangeBluePrintBTN(self,event):
-    #     self.picPanel.Recreate('bitmaps/2SG.JPG')
 
     def OnChangeState(self,event):
         if self.state == '在用':
@@ -1004,15 +1122,13 @@ class SpecificBluePrintManagementPanel(wx.Panel):
             self.busy = True
             if len(self.data)==0:
                 if len(self.dataArray)==0:
-                    self.data = ['']*18
+                    self.data = ['']*32
                 else:
                     self.data = self.dataArray[0]
             self.data[14]='0'
             self.editState = '新建'
             self.ReCreateMiddlePanel(self.type,state=self.editState)
             self.ReCreateRightPanel()
-            # filename = '图纸/%s/%s.jpg' % (self.bluePrintIndexCtrl.GetValue(), self.pageNo)
-            # self.bluePrintShowPanel.Recreate(filename, '新建')
         else:
             wx.MessageBox("请先结束当前编辑工作后，再进行新的编辑操作！", "信息提示")
 
@@ -1020,28 +1136,20 @@ class SpecificBluePrintManagementPanel(wx.Panel):
         self.bluePrintIDSearch = self.bluePrintIDSearchCtrl.GetValue()
         self.ReSearch()
 
-    def OnMiddleLengthDeltaSearch(self, event):
-        self.middleLengthDeltaSearch = self.middleLengthDeltaSearchCtrl.GetValue()
+    def OnFrontDeltaSearch(self, event):
+        self.frontDeltaSearch = self.frontDeltaSearchCtrl.GetValue()
         self.ReSearch()
 
-    def OnMiddleWidthDeltaSearch(self, event):
-        self.middleWidthDeltaSearch = self.middleWidthDeltaSearchCtrl.GetValue()
+    def OnMiddleDeltaSearch(self, event):
+        self.middleDeltaSearch = self.middleDeltaSearchCtrl.GetValue()
         self.ReSearch()
 
-    def OnRearLengthDeltaSearch(self, event):
-        self.rearLengthDeltaSearch = self.rearLengthDeltaSearchCtrl.GetValue()
+    def OnRearDeltaSearch(self, event):
+        self.rearDeltaSearch = self.rearDeltaSearchCtrl.GetValue()
         self.ReSearch()
 
-    def OnRearWidthDeltaSearch(self, event):
-        self.rearWidthDeltaSearch = self.rearWidthDeltaSearchCtrl.GetValue()
-        self.ReSearch()
-
-    def OnBoardSupportComponentSearch(self,event):
-        self.boardSupportComponentSearch = self.boardSupportComponentSearchCtrl.GetValue()
-        self.ReSearch()
-
-    def OnBoardSupportWidthSearch(self,event):
-        self.boardSupportWidthSearch = self.boardSupportWidthSearchCtrl.GetValue()
+    def OnProcedureSearch(self, event):
+        self.procedureSearch = self.procedureSearchCtrl.GetValue()
         self.ReSearch()
 
     def ReSearch(self):
@@ -1051,52 +1159,406 @@ class SpecificBluePrintManagementPanel(wx.Panel):
             bluePrintList = []
             for item in self.dataArray:
                 if self.bluePrintIDSearch in str(item[0]):
-                    bluePrintList.append(board)
+                    bluePrintList.append(item)
             self.dataArray = np.array(bluePrintList)
-        # if self.boardMaterialSearch != '':
-        #     bluePrintList = []
-        #     for board in self.boardArray:
-        #         if self.boardMaterialSearch in board[2]:
-        #             bluePrintList.append(board)
-        #     self.boardArray = np.array(bluePrintList)
-        # if self.boardDensitySearch != '':
-        #     bluePrintList = []
-        #     for board in self.boardArray:
-        #         if self.boardDensitySearch in str(board[3]):
-        #             bluePrintList.append(board)
-        #     self.boardArray = np.array(bluePrintList)
-        # if self.boardSupportComponentSearch != '':
-        #     bluePrintList = []
-        #     for board in self.boardArray:
-        #         if self.boardSupportComponentSearch in str(board[4]):
-        #             bluePrintList.append(board)
-        #     self.boardArray = np.array(bluePrintList)
-        # if self.boardSupportWidthSearch != '':
-        #     bluePrintList = []
-        #     for board in self.boardArray:
-        #         if self.boardSupportWidthSearch == str(board[5]):
-        #             bluePrintList.append(board)
-        #     self.boardArray = np.array(bluePrintList)
-        # if self.boardRALIDSearch != '':
-        #     bluePrintList = []
-        #     for board in self.boardArray:
-        #         if self.boardRALIDSearch in str(board[6]):
-        #             bluePrintList.append(board)
-        #     self.boardArray = np.array(bluePrintList)
+        if self.frontDeltaSearch != '':
+            bluePrintList = []
+            for item in self.dataArray:
+                if self.frontDeltaSearch in str(item[1]):
+                    bluePrintList.append(item)
+            self.dataArray = np.array(bluePrintList)
+        if self.middleDeltaSearch != '':
+            bluePrintList = []
+            for item in self.dataArray:
+                if self.middleDeltaSearch in str(item[2]):
+                    bluePrintList.append(item)
+            self.dataArray = np.array(bluePrintList)
+        if self.rearDeltaSearch != '':
+            bluePrintList = []
+            for item in self.dataArray:
+                if self.rearDeltaSearch in str(item[3]):
+                    bluePrintList.append(item)
+            self.dataArray = np.array(bluePrintList)
+        if self.procedureSearch != '':
+            bluePrintList = []
+            for item in self.dataArray:
+                if self.procedureSearch in str(item[4]):
+                    bluePrintList.append(item)
+            self.dataArray = np.array(bluePrintList)
         self.bluePrintGrid.ReCreate()
         # self.bluePrintGrid.Render()
 
     def OnResetSearchItem(self, event):
         self.bluePrintIDSearch = ''
         self.bluePrintIDSearchCtrl.SetValue('')
-        self.middleLengthDeltaSearch = ''
-        self.middleLengthDeltaSearchCtrl.SetValue('')
-        self.middleWidthDeltaSearch = ''
-        self.middleWidthDeltaSearchCtrl.SetValue('')
-        self.rearLengthSearch = ''
-        self.rearLengthDeltaSearchCtrl.SetValue('')
-        self.rearWidthSearch = ''
-        self.rearWidthDeltaSearchCtrl.SetValue('')
+        self.frontDeltaSearch = ''
+        self.frontDeltaSearchCtrl.SetValue('')
+        self.middleDeltaSearch = ''
+        self.middleDeltaSearchCtrl.SetValue('')
+        self.rearDeltaSearch = ''
+        self.rearDeltaSearchCtrl.SetValue('')
+        self.procedureSearch = ''
+        self.procedureSearchCtrl.SetValue('')
+        self.ReSearch()
+class ConstructionManagementPanel(wx.Panel):
+    def __init__(self, parent, master, log, type,state='在用'):
+        wx.Panel.__init__(self, parent)
+        self.master = master
+        self.log = log
+        self.type = type
+        self.state = state
+        self.busy = False
+        self.editState = '查看'
+        self.data = []
+        self.processList=self.master.processList
+        self.colWidthList = [80, 65, 65, 65, 50,100]
+        self.colLabelValueList = ['图纸号', '构件宽度', '构件厚度', '重量','状态','']
+        _, dataList = GetAllConstructionList(self.log, 1, self.type,state=self.state)
+        self.dataArray = np.array(dataList)
+        self.constructionIDSearch = ''
+        self.widthSearch = ''
+        self.thicknessSearch = ''
+        self.weightSearch = ''
+        hbox = wx.BoxSizer()
+        self.leftPanel = wx.Panel(self, size=(490, -1))
+        hbox.Add(self.leftPanel, 0, wx.EXPAND)
+        self.middlePanel=wx.Panel(self, size=(300, -1))
+        hbox.Add(self.middlePanel, 0, wx.EXPAND)
+        self.rightPanel = wx.Panel(self, size=(550, 450))
+        hbox.Add(self.rightPanel, 1, wx.EXPAND)
+        self.SetSizer(hbox)
+        self.CreateLeftPanel()
+        # self.CreateRightPanel()
+        self.Bind(gridlib.EVT_GRID_CELL_LEFT_CLICK, self.OnCellLeftClick)
+        self.Bind(gridlib.EVT_GRID_CELL_LEFT_DCLICK, self.OnCellLeftDClick)
+
+    def OnCellLeftDClick(self, evt):
+        if self.busy == False:
+            col=evt.GetCol()
+            if col == 6:
+                    self.busy = True
+                    row = evt.GetRow()
+                    self.data = self.dataArray[row]
+                    index = self.data[0].split('.')[1]
+                    filename = bluePrintDir + 'Stena 生产图纸 %s/' % index + self.data[32] + '.pdf'
+                    self.editState = '编辑'
+                    self.ReCreateMiddlePanel(self.type, self.editState)
+                    self.ReCreateRightPanel(filename)
+            evt.Skip()
+        else:
+            wx.MessageBox("请先结束当前编辑工作后，再进行新的编辑操作！", "信息提示")
+
+
+    def OnCellLeftClick(self, evt):
+        if self.busy == False:
+            row = evt.GetRow()
+            self.constructionGrid.SetSelectionMode(wx.grid.Grid.GridSelectRows)
+            self.constructionGrid.SelectRow(row)
+            self.data = self.dataArray[row]
+            self.editState = '查看'
+            self.ReCreateMiddlePanel(self.type, self.editState)
+            self.data[5] = "Stena 生产图纸 构件_页面_001"
+            filename = bluePrintDir+'Stena 生产图纸 %s/'%self.data[6] + "Stena 生产图纸 构件_页面_001.pdf"
+            self.ReCreateRightPanel(filename)
+            evt.Skip()
+        else:
+            wx.MessageBox("请先结束当前编辑工作后，再进行新的编辑操作！", "信息提示")
+
+
+
+    def CreateLeftPanel(self):
+        vvbox = wx.BoxSizer(wx.VERTICAL)
+        self.constructionGrid = ConstructionGrid(self.leftPanel, self, self.log)
+        vvbox.Add(self.constructionGrid, 1, wx.EXPAND)
+        hhbox = wx.BoxSizer()
+        searchPanel = wx.Panel(self.leftPanel, size=(-1, 30), style=wx.BORDER_DOUBLE)
+        vvbox.Add(searchPanel, 0, wx.EXPAND)
+        self.searchResetBTN = wx.Button(searchPanel, label='Rest', size=(48, -1))
+        self.searchResetBTN.Bind(wx.EVT_BUTTON, self.OnResetSearchItem)
+        hhbox.Add(self.searchResetBTN, 0, wx.EXPAND)
+
+        self.bluePrintIDSearchCtrl = wx.TextCtrl(searchPanel, size=(self.colWidthList[0], -1), style=wx.TE_PROCESS_ENTER)
+        self.bluePrintIDSearchCtrl.Bind(wx.EVT_TEXT_ENTER, self.OnBluePrintIDSearch)
+        hhbox.Add(self.bluePrintIDSearchCtrl, 0, wx.EXPAND)
+
+        self.frontDeltaSearchCtrl = wx.TextCtrl(searchPanel, size=(self.colWidthList[1], -1),
+                                                style=wx.TE_PROCESS_ENTER)
+        self.frontDeltaSearchCtrl.Bind(wx.EVT_TEXT_ENTER, self.OnFrontDeltaSearch)
+        hhbox.Add(self.frontDeltaSearchCtrl, 0, wx.EXPAND)
+
+        self.middleDeltaSearchCtrl = wx.TextCtrl(searchPanel, size=(self.colWidthList[2], -1),
+                                                 style=wx.TE_PROCESS_ENTER)
+        self.middleDeltaSearchCtrl.Bind(wx.EVT_TEXT_ENTER, self.OnMiddleDeltaSearch)
+        hhbox.Add(self.middleDeltaSearchCtrl, 0, wx.EXPAND)
+
+        self.rearDeltaSearchCtrl = wx.TextCtrl(searchPanel, size=(self.colWidthList[3], -1),
+                                               style=wx.TE_PROCESS_ENTER)
+        self.rearDeltaSearchCtrl.Bind(wx.EVT_TEXT_ENTER, self.OnRearDeltaSearch)
+        hhbox.Add(self.rearDeltaSearchCtrl, 0, wx.EXPAND)
+
+        self.procedureSearchCtrl = wx.TextCtrl(searchPanel, size=(self.colWidthList[4], -1),
+                                                       style=wx.TE_PROCESS_ENTER)
+        self.procedureSearchCtrl.Bind(wx.EVT_TEXT_ENTER, self.OnProcedureSearch)
+        hhbox.Add(self.procedureSearchCtrl, 0, wx.EXPAND)
+
+        self.createNewBluPrintBTN = wx.Button(searchPanel, label='新建%s图纸' % self.type)
+        self.createNewBluPrintBTN.SetBackgroundColour(wx.Colour(22, 211, 111))
+        self.createNewBluPrintBTN.Bind(wx.EVT_BUTTON, self.OnCreateNewBluePrint)
+        hhbox.Add(self.createNewBluPrintBTN, 1, wx.EXPAND | wx.RIGHT | wx.LEFT, 1)
+
+        self.changeStateBTN = wx.Button(searchPanel, size=(15,-1))
+        self.changeStateBTN.Bind(wx.EVT_BUTTON, self.OnChangeState)
+        if self.state == '在用':
+            self.changeStateBTN.SetBackgroundColour(wx.GREEN)
+        else:
+            self.changeStateBTN.SetBackgroundColour(wx.RED)
+        hhbox.Add(self.changeStateBTN,0,wx.EXPAND)
+        searchPanel.SetSizer(hhbox)
+        self.leftPanel.SetSizer(vvbox)
+
+    def Translate(self, data):
+        result = list(data[:4])
+        processFront = ''
+        processMiddle=''
+        processRear=''
+        processList=["505",'405','409','406','652','100','306','9000']
+        for i,process in enumerate(processList):
+            if 'F' in data[i+4]:
+                processFront += process
+                if i<7:
+                    processFront += '/'
+            if 'R' in data[i+4]:
+                processRear += process
+                if i<7:
+                    processRear += '/'
+            if 'M' in data[i+4]:
+                processMiddle += process
+                if i<7:
+                    processMiddle += '/'
+        return [processFront,processMiddle,processRear]
+
+    def ReCreateRightPanel(self,filename=""):
+        self.rightPanel.DestroyChildren()
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        self.bluePrintShowPanel = BluePrintShowPanel(self.rightPanel, self.log,filename)
+        vbox.Add(self.bluePrintShowPanel, 1, wx.EXPAND)
+        self.rightPanel.SetSizer(vbox)
+        self.rightPanel.Layout()
+
+    def ReCreateMiddlePanel(self, type, state='查看'):
+        self.middlePanel.Freeze()
+        self.middlePanel.DestroyChildren()
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        self.middlePanel.SetSizer(vbox)
+        self.middlePanel.Refresh()
+        self.middlePanel.Layout()
+        self.middlePanel.Thaw()
+
+    def OnEditOkBTN(self,event):
+        if self.editState == '新建':
+            dlg = wx.TextEntryDialog(
+                    self, '请输入图纸编号,目前显示的是系统为您建议的图纸号：',
+                    '信息提示', '')
+            string = "N.%s.%04d"%(self.bluePrintIndexCtrl.GetValue(),self.bluePrintNoSpin.GetValue())
+            dlg.SetValue(string)
+            if dlg.ShowModal() == wx.ID_OK:
+                self.CombineData(dlg.GetValue())
+                SaveBluePrintInDB(self.log, 1, self.data)
+                self.busy = False
+                self.middlePanel.DestroyChildren()
+                self.rightPanel.DestroyChildren()
+                _, dataList = GetAllBluPrintList(self.log, 1, self.type, state=self.state)
+                self.dataArray = np.array(dataList)
+                self.bluePrintGrid.ReCreate()
+            dlg.Destroy()
+        else:
+            self.CombineData(self.data[0])
+            UpdateBluePrintInDB(self.log, 1, self.data)
+            self.busy = False
+            self.middlePanel.DestroyChildren()
+            self.rightPanel.DestroyChildren()
+            _, dataList = GetAllBluPrintList(self.log, 1, self.type, state=self.state)
+            self.dataArray = np.array(dataList)
+            self.bluePrintGrid.ReCreate()
+
+    def CombineData(self,bluePrintNo):
+        """"`图纸号`, `面板增量`, `中板增量`, `背板增量`, `剪板505`, `成型405`, `成型409`, `成型406`, `折弯652`, `热压100`,
+        `热压306`, `冲铣`, `图纸状态`, `创建人`, `中板`, '打包9000', `创建时间`, `备注`, `a使能`, `a`,
+        `b使能`, `b`, `c使能`, `c`, `d使能`, `d`, `e使能`, `e`, `f使能`, `f`,
+        `CY使能`, `CY`, `图纸名`
+        from `图纸信息`"""
+        self.data[0] = bluePrintNo
+        self.data[1] = '%s,%s'%(self.frontLengthDeltaCtrl.GetValue(),self.frontWidthDeltaCtrl.GetValue())
+        if self.data[14]=='1':
+            self.data[2] = '%s,%s,0,0'%(self.middleLengthDeltaCtrl.GetValue(),self.middleWidthDeltaCtrl.GetValue())
+        elif self.data[14]=='2':
+            self.data[2] = '0,0,0,0'
+        self.data[3] = '%s,%s'%(self.rearLengthDeltaCtrl.GetValue(),self.rearWidthDeltaCtrl.GetValue())
+        self.data[4] = 'Y'
+        self.data[5] = 'Y' if self.shapeprocess405Check.GetValue() else 'N'#成型405工序
+        self.data[7] = 'Y' if self.shapeprocess406Check.GetValue() else 'N'#成型406工序
+        self.data[8] = 'Y' if self.bendprocess652Check.GetValue() else 'N'#折弯652工序
+        self.data[9] = 'Y' if self.hotpressprocess100Check.GetValue() else 'N'#热压100工序
+        self.data[10] = 'Y' if self.hotpressprocess306Check.GetValue() else 'N'#特制品306工序
+        self.data[12]='在用'
+        self.data[13]='%s'%self.master.master.master.operatorID
+        self.data[15] = 'Y'
+        self.data[16] = '%s'%str(datetime.date.today())
+        if self.aCheckCtrl.GetValue():
+            self.data[18]='Y'
+            self.data[19]=str(self.aSPIN.GetValue())
+        else:
+            self.data[18]='N'
+            self.data[19]=''
+
+        if self.bCheckCtrl.GetValue():
+            self.data[20]='Y'
+            self.data[21]=str(self.bSPIN.GetValue())
+        else:
+            self.data[20]='N'
+            self.data[21]=''
+
+        if self.cCheckCtrl.GetValue():
+            self.data[22]='Y'
+            self.data[23]=str(self.cSPIN.GetValue())
+        else:
+            self.data[22]='N'
+            self.data[23]=''
+
+        if self.dCheckCtrl.GetValue():
+            self.data[24]='Y'
+            self.data[25]=str(self.dSPIN.GetValue())
+        else:
+            self.data[24]='N'
+            self.data[25]=''
+
+        if self.eCheckCtrl.GetValue():
+            self.data[26]='Y'
+            self.data[27]=str(self.eSPIN.GetValue())
+        else:
+            self.data[26]='N'
+            self.data[27]=''
+
+        if self.fCheckCtrl.GetValue():
+            self.data[28]='Y'
+            self.data[29]=str(self.fSPIN.GetValue())
+        else:
+            self.data[28]='N'
+            self.data[29]=''
+
+        if self.cYCheckCtrl.GetValue():
+            self.data[30]='Y'
+            self.data[31]=str(self.cYSPIN.GetValue())
+        else:
+            self.data[30]='N'
+            self.data[31]=''
+
+    def OnCancel(self,event):
+        self.busy = False
+        self.middlePanel.DestroyChildren()
+        self.rightPanel.DestroyChildren()
+
+    def OnBluePrintTypeChanged(self,event):
+        self.bluePrintType = self.bluePrintTypeCombo.GetValue()
+        key=self.typeBluePrintDict[self.bluePrintType]
+        self.bluePrintIndexCtrl.SetValue(key)
+
+    def OnChangeState(self,event):
+        if self.state == '在用':
+            self.state = '停用'
+            self.changeStateBTN.SetBackgroundColour(wx.RED)
+        elif self.state == '停用':
+            self.state = '全部'
+            self.changeStateBTN.SetBackgroundColour(wx.YELLOW)
+        else:
+            self.state = '在用'
+            self.changeStateBTN.SetBackgroundColour(wx.GREEN)
+        _, dataList = GetAllBluPrintList(self.log, 1, self.type,state=self.state)
+        self.dataArray = np.array(dataList)
+        self.bluePrintGrid.ReCreate()
+        # self.bluePrintGrid.Render()
+
+    def OnCreateNewBluePrint(self, event):
+        if self.busy == False:
+            self.busy = True
+            if len(self.data)==0:
+                if len(self.dataArray)==0:
+                    self.data = ['']*6
+                else:
+                    self.data = self.dataArray[0]
+            self.editState = '新建'
+            self.ReCreateMiddlePanel(self.type,state=self.editState)
+            self.ReCreateRightPanel()
+        else:
+            wx.MessageBox("请先结束当前编辑工作后，再进行新的编辑操作！", "信息提示")
+
+    def OnBluePrintIDSearch(self, event):
+        self.bluePrintIDSearch = self.bluePrintIDSearchCtrl.GetValue()
+        self.ReSearch()
+
+    def OnFrontDeltaSearch(self, event):
+        self.frontDeltaSearch = self.frontDeltaSearchCtrl.GetValue()
+        self.ReSearch()
+
+    def OnMiddleDeltaSearch(self, event):
+        self.middleDeltaSearch = self.middleDeltaSearchCtrl.GetValue()
+        self.ReSearch()
+
+    def OnRearDeltaSearch(self, event):
+        self.rearDeltaSearch = self.rearDeltaSearchCtrl.GetValue()
+        self.ReSearch()
+
+    def OnProcedureSearch(self, event):
+        self.procedureSearch = self.procedureSearchCtrl.GetValue()
+        self.ReSearch()
+
+    def ReSearch(self):
+        _, dataList = GetAllBluPrintList(self.log, 1, self.type,state=self.state)
+        self.dataArray = np.array(dataList)
+        if self.bluePrintIDSearch != '':
+            bluePrintList = []
+            for item in self.dataArray:
+                if self.bluePrintIDSearch in str(item[0]):
+                    bluePrintList.append(item)
+            self.dataArray = np.array(bluePrintList)
+        if self.frontDeltaSearch != '':
+            bluePrintList = []
+            for item in self.dataArray:
+                if self.frontDeltaSearch in str(item[1]):
+                    bluePrintList.append(item)
+            self.dataArray = np.array(bluePrintList)
+        if self.middleDeltaSearch != '':
+            bluePrintList = []
+            for item in self.dataArray:
+                if self.middleDeltaSearch in str(item[2]):
+                    bluePrintList.append(item)
+            self.dataArray = np.array(bluePrintList)
+        if self.rearDeltaSearch != '':
+            bluePrintList = []
+            for item in self.dataArray:
+                if self.rearDeltaSearch in str(item[3]):
+                    bluePrintList.append(item)
+            self.dataArray = np.array(bluePrintList)
+        if self.procedureSearch != '':
+            bluePrintList = []
+            for item in self.dataArray:
+                if self.procedureSearch in str(item[4]):
+                    bluePrintList.append(item)
+            self.dataArray = np.array(bluePrintList)
+        self.bluePrintGrid.ReCreate()
+        # self.bluePrintGrid.Render()
+
+    def OnResetSearchItem(self, event):
+        self.bluePrintIDSearch = ''
+        self.bluePrintIDSearchCtrl.SetValue('')
+        self.frontDeltaSearch = ''
+        self.frontDeltaSearchCtrl.SetValue('')
+        self.middleDeltaSearch = ''
+        self.middleDeltaSearchCtrl.SetValue('')
+        self.rearDeltaSearch = ''
+        self.rearDeltaSearchCtrl.SetValue('')
+        self.procedureSearch = ''
+        self.procedureSearchCtrl.SetValue('')
         self.ReSearch()
 
 class BluePrintManagementPanel(wx.Panel):
@@ -1129,7 +1591,7 @@ class BluePrintManagementPanel(wx.Panel):
         self.notebook.AddPage(self.wallBluePrintManagementPanel, "墙板图纸管理")
         self.galvanizedSheetManagmentPanel = wx.Panel(self.notebook)
         self.notebook.AddPage(self.galvanizedSheetManagmentPanel, "天花板图纸管理")
-        self.colorCoatManagementPanel = wx.Panel(self.notebook)
+        self.colorCoatManagementPanel = ConstructionManagementPanel(self.notebook,self,self.log,'构件')
         self.notebook.AddPage(self.colorCoatManagementPanel, "构件图纸管理")
         self.stainlessSheetManagmentPanel = wx.Panel(self.notebook)
         self.notebook.AddPage(self.stainlessSheetManagmentPanel, "检修门图纸管理")
