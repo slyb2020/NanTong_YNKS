@@ -1235,12 +1235,13 @@ class ConstructionManagementPanel(wx.Panel):
     def OnCellLeftDClick(self, evt):
         if self.busy == False:
             col=evt.GetCol()
-            if col == 6:
+            print(col)
+            if col == 5:
                     self.busy = True
                     row = evt.GetRow()
                     self.data = self.dataArray[row]
-                    index = self.data[0].split('.')[1]
-                    filename = bluePrintDir + 'Stena 生产图纸 %s/' % index + self.data[32] + '.pdf'
+                    self.data[5] = "Stena 生产图纸 构件_页面_001"
+                    filename = bluePrintDir + 'Stena 生产图纸 %s/' % self.data[6] + "Stena 生产图纸 构件_页面_001.pdf"
                     self.editState = '编辑'
                     self.ReCreateMiddlePanel(self.type, self.editState)
                     self.ReCreateRightPanel(filename)
@@ -1264,6 +1265,55 @@ class ConstructionManagementPanel(wx.Panel):
         else:
             wx.MessageBox("请先结束当前编辑工作后，再进行新的编辑操作！", "信息提示")
 
+    def ReCreateMiddlePanel(self, type, state='查看'):
+        self.middlePanel.Freeze()
+        self.middlePanel.DestroyChildren()
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        vbox.Add((-1,10))
+        hhbox = wx.BoxSizer()
+        hhbox.Add((20,-1))
+        hhbox.Add(wx.StaticText(self.middlePanel, label='图纸类别：', size=(60, -1)), 0, wx.TOP, 5)
+        self.constructionTypeTXT = wx.TextCtrl(self.middlePanel, size=(70, 25), style=wx.TE_PROCESS_ENTER)
+        self.constructionTypeTXT.SetValue("构件")
+        self.constructionTypeTXT.Enable(False)
+        self.constructionIndexCtrl=wx.TextCtrl(self.middlePanel,size=(60,-1),style=wx.TE_READONLY)
+        if state=='新建':
+            hhbox.Add(self.constructionTypeTXT, 1)
+            self.constructionNoSpin = wx.SpinCtrl(self.middlePanel,size=(55,-1))
+            self.constructionNoSpin.SetMin(1)
+            self.constructionNoSpin.SetMax(9999)
+            self.constructionNoSpin.SetValue(2)
+            hhbox.Add(self.constructionIndexCtrl, 0)
+            hhbox.Add(self.constructionNoSpin,0,wx.RIGHT,20)
+        else:
+            self.constructionNoTXT = wx.TextCtrl(self.middlePanel,size=(45,-1),style=wx.TE_READONLY)
+            self.constructionNoTXT.SetValue(self.data[0].split('.')[2])
+            hhbox.Add(self.constructionTypeTXT, 1, wx.RIGHT, 10)
+            hhbox.Add(self.constructionIndexCtrl, 0)
+            hhbox.Add(self.constructionNoTXT, 0, wx.RIGHT,20)
+        self.constructionIndexCtrl.SetValue("N.230")
+        vbox.Add(hhbox,0,wx.EXPAND)
+
+        if state != '查看':
+            vbox.Add(wx.Panel(self.middlePanel, size=(10, 10)), 1, wx.EXPAND)
+            hhbox=wx.BoxSizer()
+            hhbox.Add((10,-1))
+            self.editCancelButton=wx.Button(self.middlePanel, label='取消', size=(50, 35))
+            self.editCancelButton.Bind(wx.EVT_BUTTON, self.OnCancel)
+            self.editCancelButton.SetBackgroundColour(wx.RED)
+            self.editOkButton=wx.Button(self.middlePanel, label='确定', size=(50, 35))
+            self.editOkButton.Bind(wx.EVT_BUTTON,self.OnEditOkBTN)
+            self.editOkButton.SetBackgroundColour(wx.GREEN)
+            hhbox.Add(self.editCancelButton,1,wx.EXPAND|wx.RIGHT,10)
+            hhbox.Add((10,-1))
+            hhbox.Add(self.editOkButton,1,wx.EXPAND|wx.RIGHT,10)
+            vbox.Add(hhbox,0,wx.EXPAND|wx.BOTTOM,5)
+            vbox.Add(wx.StaticLine(self.middlePanel, style=wx.HORIZONTAL), 0, wx.EXPAND)
+
+        self.middlePanel.SetSizer(vbox)
+        self.middlePanel.Refresh()
+        self.middlePanel.Layout()
+        self.middlePanel.Thaw()
 
 
     def CreateLeftPanel(self):
@@ -1316,27 +1366,6 @@ class ConstructionManagementPanel(wx.Panel):
         searchPanel.SetSizer(hhbox)
         self.leftPanel.SetSizer(vvbox)
 
-    def Translate(self, data):
-        result = list(data[:4])
-        processFront = ''
-        processMiddle=''
-        processRear=''
-        processList=["505",'405','409','406','652','100','306','9000']
-        for i,process in enumerate(processList):
-            if 'F' in data[i+4]:
-                processFront += process
-                if i<7:
-                    processFront += '/'
-            if 'R' in data[i+4]:
-                processRear += process
-                if i<7:
-                    processRear += '/'
-            if 'M' in data[i+4]:
-                processMiddle += process
-                if i<7:
-                    processMiddle += '/'
-        return [processFront,processMiddle,processRear]
-
     def ReCreateRightPanel(self,filename=""):
         self.rightPanel.DestroyChildren()
         vbox = wx.BoxSizer(wx.VERTICAL)
@@ -1344,15 +1373,6 @@ class ConstructionManagementPanel(wx.Panel):
         vbox.Add(self.bluePrintShowPanel, 1, wx.EXPAND)
         self.rightPanel.SetSizer(vbox)
         self.rightPanel.Layout()
-
-    def ReCreateMiddlePanel(self, type, state='查看'):
-        self.middlePanel.Freeze()
-        self.middlePanel.DestroyChildren()
-        vbox = wx.BoxSizer(wx.VERTICAL)
-        self.middlePanel.SetSizer(vbox)
-        self.middlePanel.Refresh()
-        self.middlePanel.Layout()
-        self.middlePanel.Thaw()
 
     def OnEditOkBTN(self,event):
         if self.editState == '新建':
@@ -1373,85 +1393,16 @@ class ConstructionManagementPanel(wx.Panel):
             dlg.Destroy()
         else:
             self.CombineData(self.data[0])
-            UpdateBluePrintInDB(self.log, 1, self.data)
+            # UpdateBluePrintInDB(self.log, 1, self.data)
             self.busy = False
             self.middlePanel.DestroyChildren()
             self.rightPanel.DestroyChildren()
-            _, dataList = GetAllBluPrintList(self.log, 1, self.type, state=self.state)
+            _, dataList = GetAllConstructionList(self.log, 1, self.type, state=self.state)
             self.dataArray = np.array(dataList)
-            self.bluePrintGrid.ReCreate()
+            self.constructionGrid.ReCreate()
 
     def CombineData(self,bluePrintNo):
-        """"`图纸号`, `面板增量`, `中板增量`, `背板增量`, `剪板505`, `成型405`, `成型409`, `成型406`, `折弯652`, `热压100`,
-        `热压306`, `冲铣`, `图纸状态`, `创建人`, `中板`, '打包9000', `创建时间`, `备注`, `a使能`, `a`,
-        `b使能`, `b`, `c使能`, `c`, `d使能`, `d`, `e使能`, `e`, `f使能`, `f`,
-        `CY使能`, `CY`, `图纸名`
-        from `图纸信息`"""
-        self.data[0] = bluePrintNo
-        self.data[1] = '%s,%s'%(self.frontLengthDeltaCtrl.GetValue(),self.frontWidthDeltaCtrl.GetValue())
-        if self.data[14]=='1':
-            self.data[2] = '%s,%s,0,0'%(self.middleLengthDeltaCtrl.GetValue(),self.middleWidthDeltaCtrl.GetValue())
-        elif self.data[14]=='2':
-            self.data[2] = '0,0,0,0'
-        self.data[3] = '%s,%s'%(self.rearLengthDeltaCtrl.GetValue(),self.rearWidthDeltaCtrl.GetValue())
-        self.data[4] = 'Y'
-        self.data[5] = 'Y' if self.shapeprocess405Check.GetValue() else 'N'#成型405工序
-        self.data[7] = 'Y' if self.shapeprocess406Check.GetValue() else 'N'#成型406工序
-        self.data[8] = 'Y' if self.bendprocess652Check.GetValue() else 'N'#折弯652工序
-        self.data[9] = 'Y' if self.hotpressprocess100Check.GetValue() else 'N'#热压100工序
-        self.data[10] = 'Y' if self.hotpressprocess306Check.GetValue() else 'N'#特制品306工序
-        self.data[12]='在用'
-        self.data[13]='%s'%self.master.master.master.operatorID
-        self.data[15] = 'Y'
-        self.data[16] = '%s'%str(datetime.date.today())
-        if self.aCheckCtrl.GetValue():
-            self.data[18]='Y'
-            self.data[19]=str(self.aSPIN.GetValue())
-        else:
-            self.data[18]='N'
-            self.data[19]=''
-
-        if self.bCheckCtrl.GetValue():
-            self.data[20]='Y'
-            self.data[21]=str(self.bSPIN.GetValue())
-        else:
-            self.data[20]='N'
-            self.data[21]=''
-
-        if self.cCheckCtrl.GetValue():
-            self.data[22]='Y'
-            self.data[23]=str(self.cSPIN.GetValue())
-        else:
-            self.data[22]='N'
-            self.data[23]=''
-
-        if self.dCheckCtrl.GetValue():
-            self.data[24]='Y'
-            self.data[25]=str(self.dSPIN.GetValue())
-        else:
-            self.data[24]='N'
-            self.data[25]=''
-
-        if self.eCheckCtrl.GetValue():
-            self.data[26]='Y'
-            self.data[27]=str(self.eSPIN.GetValue())
-        else:
-            self.data[26]='N'
-            self.data[27]=''
-
-        if self.fCheckCtrl.GetValue():
-            self.data[28]='Y'
-            self.data[29]=str(self.fSPIN.GetValue())
-        else:
-            self.data[28]='N'
-            self.data[29]=''
-
-        if self.cYCheckCtrl.GetValue():
-            self.data[30]='Y'
-            self.data[31]=str(self.cYSPIN.GetValue())
-        else:
-            self.data[30]='N'
-            self.data[31]=''
+        pass
 
     def OnCancel(self,event):
         self.busy = False

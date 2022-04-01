@@ -278,6 +278,7 @@ class MainPanel(wx.Panel):
         self.Bind(wx.adv.EVT_SASH_DRAGGED_RANGE, self.OnSashDrag, id=ID_WINDOW_LEFT,
                   id2=ID_WINDOW_BOTTOM)  # BOTTOM和LEFT顺序不能换，要想更改哪个先分，只需更改上面窗口定义的顺序
         self._pnl.Bind(fpb.EVT_CAPTIONBAR, self.OnPressCaption)
+        self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,self.OnNoteBookPageChanged)
 
     def CreateBottomWindow(self):
         self.bottomWindow = wx.adv.SashLayoutWindow(self, ID_WINDOW_BOTTOM, style=wx.NO_BORDER | wx.adv.SW_3D)
@@ -315,6 +316,7 @@ class MainPanel(wx.Panel):
         if self.parent.operatorCharacter in ["技术员","管理员"]:
             item = self._pnl.AddFoldPanel("基材操作面板", collapsed=False,
                                           foldIcons=Images)
+            item.SetLabel("基材操作面板")
             panel = wx.Panel(item, -1, size=(300, 300))
             bitmap = wx.Bitmap("bitmaps/aquabutton.png",
                                wx.BITMAP_TYPE_PNG)
@@ -337,6 +339,7 @@ class MainPanel(wx.Panel):
         if self.parent.operatorCharacter in ["技术员","管理员"]:
             item = self._pnl.AddFoldPanel("图纸操作面板", collapsed=False,
                                           foldIcons=Images)
+            item.SetLabel("图纸操作面板")
             panel = wx.Panel(item, -1, size=(300, 300))
             bitmap = wx.Bitmap("bitmaps/aquabutton.png",
                                wx.BITMAP_TYPE_PNG)
@@ -356,6 +359,7 @@ class MainPanel(wx.Panel):
         if self.parent.operatorCharacter in ["技术员","下单员","管理员"]:
             item = self._pnl.AddFoldPanel("订单操作面板", collapsed=False,
                                           foldIcons=Images)
+            item.SetLabel("订单操作面板")
             panel = wx.Panel(item, -1, size=(300, 600))
             bitmap = wx.Bitmap("bitmaps/aquabutton.png",
                                wx.BITMAP_TYPE_PNG)
@@ -386,6 +390,7 @@ class MainPanel(wx.Panel):
             cs.SetSecondColour(wx.Colour(123,0,0))
             item = self._pnl.AddFoldPanel("标签/胶水单操作面板", collapsed=False,
                                           foldIcons=Images, cbstyle=cs)
+            item.SetLabel("标签/胶水单操作面板")
             panel = wx.Panel(item, -1, size=(300, 300))
             bitmap = wx.Bitmap("bitmaps/aquabutton.png",
                                wx.BITMAP_TYPE_PNG)
@@ -411,6 +416,7 @@ class MainPanel(wx.Panel):
             cs.SetCaptionStyle(fpb.CAPTIONBAR_RECTANGLE)
             item = self._pnl.AddFoldPanel("货盘单操作面板", collapsed=False,
                                           foldIcons=Images, cbstyle=cs)
+            item.SetLabel("货盘单操作面板")
             panel = wx.Panel(item, -1, size=(300, 300))
             bitmap = wx.Bitmap("bitmaps/aquabutton.png",
                                wx.BITMAP_TYPE_PNG)
@@ -602,11 +608,23 @@ class MainPanel(wx.Panel):
                 self.work_zone_Panel.orderManagmentPanel.dataArray = np.array(boardList)
                 self.work_zone_Panel.orderManagmentPanel.orderGrid.ReCreate()
             dlg.Destroy()
-
     def OnPressCaption(self,event):
         for i in range(0, self._pnl.GetCount()):
             item = self._pnl.GetFoldPanel(i)
             self._pnl.Collapse(item)
+        event.Skip()
+
+
+    def OnNoteBookPageChanged(self,event):
+        obj = event.GetEventObject()
+        page = obj.GetSelection()
+        Title = ["","基材操作面板","图纸操作面板","订单操作面板","标签/胶水单操作面板","货盘单操作面板"]
+        for i in range(0, self._pnl.GetCount()):
+            item = self._pnl.GetFoldPanel(i)
+            self._pnl.Collapse(item)
+            # print(item.GetItemPos())
+            if item.GetLabel()==Title[page]:
+                self._pnl.Expand(item)
         event.Skip()
 
 
