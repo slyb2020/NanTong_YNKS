@@ -42,6 +42,7 @@ from BoardManagementPanel import BoardManagementPanel
 from BluePrintManagementPanel import BluePrintManagementPanel
 from ExcelImport import XLSGridFrame
 from DBOperation import CreateNewOrderSheet,InsertNewOrderRecord,GetAllOrderList
+from ProductionScheduleAlgorithm import ProductionScheduleAlgorithm
 from ImportOrderDialog import ImportOrderFromExcelDialog
 from ProductionScheduleDialog import ProductionScheduleDialog
 from PackageDialog import PackageDialog
@@ -331,10 +332,7 @@ class MainPanel(wx.Panel):
             vbox.Add(static, 0, wx.EXPAND | wx.TOP | wx.BOTTOM, 5)
             panel.SetSizer(vbox)
             self._pnl.AddFoldPanelWindow(item, panel, fpb.FPB_ALIGN_WIDTH, 0, 0)
-            if self.parent.operatorCharacter == "技术员":
-                item.Expand()
-            else:
-                item.Collapse()
+            item.Collapse()
 
         if self.parent.operatorCharacter in ["技术员","管理员"]:
             item = self._pnl.AddFoldPanel("图纸操作面板", collapsed=False,
@@ -354,7 +352,10 @@ class MainPanel(wx.Panel):
             vbox.Add(static, 0, wx.EXPAND | wx.TOP | wx.BOTTOM, 5)
             panel.SetSizer(vbox)
             self._pnl.AddFoldPanelWindow(item, panel, fpb.FPB_ALIGN_WIDTH, 5, 0)
-            item.Collapse()
+            if self.parent.operatorCharacter == "技术员":
+                item.Expand()
+            else:
+                item.Collapse()
 
         if self.parent.operatorCharacter in ["技术员","下单员","管理员"]:
             item = self._pnl.AddFoldPanel("订单操作面板", collapsed=False,
@@ -540,6 +541,7 @@ class MainPanel(wx.Panel):
                                # wx.YES_NO | wx.NO_DEFAULT | wx.CANCEL | wx.ICON_INFORMATION
                                )
         if dlg.ShowModal()==wx.ID_OK:
+            self.productionSchedule = ProductionScheduleAlgorithm(self.log, self.work_zone_Panel.orderManagmentPanel.data[0])
             dlg.Destroy()
             self.work_zone_Panel.orderManagmentPanel.data[7] = "已排产"  # 这个之前应该增加一个数据库更新操作
             self.work_zone_Panel.orderManagmentPanel.orderGrid.ReCreate()
@@ -667,5 +669,5 @@ class WorkZonePanel(wx.Panel):
         if self.master.operatorCharacter == '下单员':
             self.notebook.SetSelection(1)
         elif self.master.operatorCharacter in ["技术员","管理员"]:
-            self.notebook.SetSelection(3)
+            self.notebook.SetSelection(2)
 

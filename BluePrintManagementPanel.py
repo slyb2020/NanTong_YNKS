@@ -40,7 +40,6 @@ class BluePrintGrid(gridlib.Grid):  ##, mixins.GridAutoEditMixin):
             self.SetColLabelValue(i,title)
         for i, width in enumerate(self.master.colWidthList):
             self.SetColSize(i, width)
-
         for i, temp in enumerate(self.master.dataArray):
             self.SetRowSize(i, 25)
             data = self.Translate(temp)

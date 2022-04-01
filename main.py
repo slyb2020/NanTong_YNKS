@@ -109,7 +109,9 @@ class FlatMenuFrame(wx.Frame):
 
         if self.check_in_flag:
             self._mb.AddTool(MENU_NEW_FILE, u"新建订单", view1Bmp)
-            self._mb.AddTool(MENU_CHECK_OUT, u"注销...", view2Bmp)
+            self._mb.AddTool(MENU_CHECK_OUT, u"注销...", order2Bmp)
+        else:
+            self._mb.AddTool(MENU_CHECK_IN, u"&R 登录系统...\tCtrl+R", order1Bmp)
         self._mb.AddSeparator()  # Separator
 
         self._mb.AddRadioTool(wx.ID_ANY, "View Details", view3Bmp)
