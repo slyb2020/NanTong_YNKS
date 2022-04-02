@@ -11,7 +11,11 @@ class ProductionScheduleAlgorithm(object):
         self.wrongNumber = 0
         self.materialBoardList=[]
         self.missDrawingList=[]
-        for record in self.orderDetailData:
+        self.wallOrderData=[]
+        self.ceilingOrderData=[]
+        self.constructionOrderData=[]
+        self.DisassembleOrderData()
+        for record in self.wallOrderData:
             errorCode,delta = self.CalculateMeterailBoardNeeded(record)
             if errorCode:
                 self.missDrawingList.append(record[6])
@@ -28,7 +32,26 @@ class ProductionScheduleAlgorithm(object):
                 if record[15] != 'None':
                     temp[12] = [record[8],int(record[10])+delta[4],int(record[11])+delta[5]]
             self.materialBoardList.append(temp)
+        for record in self.constructionOrderData:
+            pass
+        for record in self.ceilingOrderData:
+            pass
         print("wrong Number",self.wrongNumber)
+
+    def DisassembleOrderData(self):
+        # self.wallOrderData=[]
+        # self.ceilingOrderData=[]
+        # self.constructionOrderData=[]
+        for data in self.orderDetailData:
+            temp = str(data[6])
+            index = temp[0]+'.'+temp[1:4]+'.'+temp[4:]
+            temp = index.split('.')
+            if str(temp[1]).isdigit():
+                self.constructionOrderData.append(data)
+            elif temp[1][0]=='C':
+                self.ceilingOrderData.append(data)
+            else:
+                self.wallOrderData.append(data)
 
     def CalculateMeterailBoardNeeded(self,orderRecord):
         delta = self.GetDeltaWithBluePrintNo(orderRecord[6])
