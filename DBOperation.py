@@ -221,19 +221,44 @@ def SaveBluePrintInDB(log,whichDB,data):
         return -1, []
     cursor = db.cursor()
     sql = "INSERT INTO 图纸信息(`图纸号`,`面板增量`,`中板增量`,`背板增量`,`剪板505`,`成型405`,`成型409`,`成型406`,`折弯652`,`热压100`," \
-          "`热压306`,`冲铣`,`图纸状态`,`创建人`,`中板`,'打包9000',`创建时间`,`备注`,`a使能`,`a`," \
+          "`热压306`,`冲铣`,`图纸状态`,`创建人`,`中板`,`打包9000`,`创建时间`,`备注`,`a使能`,`a`," \
           "`b使能`,`b`,`c使能`,`c`,`d使能`,`d`,`e使能`,`e`,`f使能`,`f`," \
           "`CY使能`,`CY`,`图纸名`)" \
-          "VALUES ('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s'" \
-          "'%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')"\
+          "VALUES ('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s'," \
+          "'%s','%s','%s','%s','%s','%s','%s','%s','%s',%s," \
+          "'%s',%s,'%s',%s,'%s',%s,'%s',%s,'%s',%s," \
+          "'%s',%s,'%s')"\
           % (data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],
-             data[10],data[11],data[12],data[13],data[14],data[15],data[16],data[17],data[18],data[19],
-             data[20],data[21],data[22],data[23],data[24],data[25],data[26],data[27],data[28],data[29],data[30],data[31],data[32])
+             data[10],data[11],data[12],data[13],data[14],data[15],datetime.date.today(),data[17],data[18],int(data[19]),
+             data[20],int(data[21]),data[22],int(data[23]),data[24],int(data[25]),data[26],int(data[27]),data[28],int(data[29]),
+             data[30],int(data[31]),data[32])
     try:
         cursor.execute(sql)
         db.commit()  # 必须有，没有的话插入语句不会执行
     except:
         db.rollback()
+        print("error")
+    db.close()
+
+def SaveConstructionInDB(log,whichDB,data):
+    try:
+        db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
+                             passwd='%s' % dbPassword[whichDB], db='%s' % dbName[whichDB], charset='utf8')
+    except:
+        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        if log:
+            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+        return -1, []
+    cursor = db.cursor()
+    sql = "INSERT INTO 构件图纸信息表 (`图纸号`,`宽度`,`厚度`,`重量`,`图纸状态`,`图纸文件名`,`图纸大类`)" \
+          "VALUES ('%s','%s','%s','%s','%s','%s','%s')"\
+          % (data[0],data[1],data[2],data[3],data[4],data[5],data[6])
+    try:
+        cursor.execute(sql)
+        db.commit()  # 必须有，没有的话插入语句不会执行
+    except:
+        db.rollback()
+        print("error")
     db.close()
 
 def UpdateBluePrintInDB(log,whichDB,data):

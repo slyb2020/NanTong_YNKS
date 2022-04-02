@@ -541,15 +541,20 @@ class MainPanel(wx.Panel):
                                # wx.YES_NO | wx.NO_DEFAULT | wx.CANCEL | wx.ICON_INFORMATION
                                )
         if dlg.ShowModal()==wx.ID_OK:
+            dlg.Destroy()
             self.productionSchedule = ProductionScheduleAlgorithm(self.log, self.work_zone_Panel.orderManagmentPanel.data[0])
-            dlg.Destroy()
-            self.work_zone_Panel.orderManagmentPanel.data[7] = "已排产"  # 这个之前应该增加一个数据库更新操作
-            self.work_zone_Panel.orderManagmentPanel.orderGrid.ReCreate()
-            dlg = ProductionScheduleDialog(self,self.log, self.work_zone_Panel.orderManagmentPanel.data[0])
-            dlg.CenterOnScreen()
-            if dlg.ShowModal()==wx.ID_OK:
-                pass
-            dlg.Destroy()
+            if self.productionSchedule.wrongNumber==0:
+                self.work_zone_Panel.orderManagmentPanel.data[7] = "已排产"  # 这个之前应该增加一个数据库更新操作
+                self.work_zone_Panel.orderManagmentPanel.orderGrid.ReCreate()
+                dlg = ProductionScheduleDialog(self,self.log, self.work_zone_Panel.orderManagmentPanel.data[0])
+                dlg.CenterOnScreen()
+                if dlg.ShowModal()==wx.ID_OK:
+                    pass
+                dlg.Destroy()
+            else:
+                self.productionSchedule.missDrawingList = list(set(self.productionSchedule.missDrawingList))
+                self.productionSchedule.wrongNumber = len(self.productionSchedule.missDrawingList)
+                wx.MessageBox("缺少如下%s张图纸：\r\n%s,\r\n无法进行排产，请补全图纸后再试！"%(self.productionSchedule.wrongNumber,str(self.productionSchedule.missDrawingList)),"提示信息")
         else:
             dlg.Destroy()
         self.ReCreateOrderInfoPanel()

@@ -8,14 +8,27 @@ class ProductionScheduleAlgorithm(object):
         self.log = log
         self.orderID = orderID
         _, self.orderDetailData = GetOrderDetailRecord(self.log, 1, orderID)
-        wrongNumber = 0
+        self.wrongNumber = 0
+        self.materialBoardList=[]
+        self.missDrawingList=[]
         for record in self.orderDetailData:
             errorCode,delta = self.CalculateMeterailBoardNeeded(record)
             if errorCode:
-                wrongNumber += 1
+                self.missDrawingList.append(record[6])
+                self.wrongNumber += 1
+                temp = [record[0],record[1],record[2],record[3],record[4],record[5],record[6],record[12],record[13],[record[8],int(record[10]),int(record[11])],[record[9],int(record[10]),int(record[11])],[],[]]
+                if record[14] != 'None':
+                    temp[11] = [record[8],int(record[10]),int(record[11])]
+                if record[15] != 'None':
+                    temp[12] = [record[8],int(record[10]),int(record[11])]
             else:
-                print(delta)
-        print("WrongNumber is", wrongNumber)
+                temp = [record[0],record[1],record[2],record[3],record[4],record[5],record[6],record[12],record[13],[record[8],int(record[10])+delta[0],int(record[11])+delta[0]],[record[9],int(record[10])+delta[6],int(record[11])+delta[7]],[],[]]
+                if record[14] != 'None':
+                    temp[11] = [record[8],int(record[10])+delta[2],int(record[11])+delta[3]]
+                if record[15] != 'None':
+                    temp[12] = [record[8],int(record[10])+delta[4],int(record[11])+delta[5]]
+            self.materialBoardList.append(temp)
+        print("wrong Number",self.wrongNumber)
 
     def CalculateMeterailBoardNeeded(self,orderRecord):
         delta = self.GetDeltaWithBluePrintNo(orderRecord[6])

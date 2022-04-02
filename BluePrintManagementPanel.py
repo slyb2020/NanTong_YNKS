@@ -2,7 +2,7 @@ import os
 
 import wx
 import wx.grid as gridlib
-from DBOperation import GetAllBluPrintList, GetRGBWithRalID,GetAllColor,SaveBluePrintInDB,UpdateBluePrintInDB,GetAllConstructionList
+from DBOperation import GetAllBluPrintList, GetRGBWithRalID,GetAllColor,SaveBluePrintInDB,UpdateBluePrintInDB,GetAllConstructionList,SaveConstructionInDB
 import wx.grid as gridlib
 import numpy as np
 import images
@@ -453,6 +453,7 @@ class SpecificBluePrintManagementPanel(wx.Panel):
         self.frontDeltaSearch = ''
         self.middleDeltaSearch = ''
         self.rearDeltaSearch = ''
+        self.procedureSearch=''
         self.busy = False
         hbox = wx.BoxSizer()
         self.leftPanel = wx.Panel(self, size=(590, -1))
@@ -1047,49 +1048,49 @@ class SpecificBluePrintManagementPanel(wx.Panel):
             self.data[19]=str(self.aSPIN.GetValue())
         else:
             self.data[18]='N'
-            self.data[19]=''
+            self.data[19]='0'
 
         if self.bCheckCtrl.GetValue():
             self.data[20]='Y'
             self.data[21]=str(self.bSPIN.GetValue())
         else:
             self.data[20]='N'
-            self.data[21]=''
+            self.data[21]='0'
 
         if self.cCheckCtrl.GetValue():
             self.data[22]='Y'
             self.data[23]=str(self.cSPIN.GetValue())
         else:
             self.data[22]='N'
-            self.data[23]=''
+            self.data[23]='0'
 
         if self.dCheckCtrl.GetValue():
             self.data[24]='Y'
             self.data[25]=str(self.dSPIN.GetValue())
         else:
             self.data[24]='N'
-            self.data[25]=''
+            self.data[25]='0'
 
         if self.eCheckCtrl.GetValue():
             self.data[26]='Y'
             self.data[27]=str(self.eSPIN.GetValue())
         else:
             self.data[26]='N'
-            self.data[27]=''
+            self.data[27]='0'
 
         if self.fCheckCtrl.GetValue():
             self.data[28]='Y'
             self.data[29]=str(self.fSPIN.GetValue())
         else:
             self.data[28]='N'
-            self.data[29]=''
+            self.data[29]='0'
 
         if self.cYCheckCtrl.GetValue():
             self.data[30]='Y'
             self.data[31]=str(self.cYSPIN.GetValue())
         else:
             self.data[30]='N'
-            self.data[31]=''
+            self.data[31]='0'
 
     def OnCancel(self,event):
         self.busy = False
@@ -1234,7 +1235,6 @@ class ConstructionManagementPanel(wx.Panel):
     def OnCellLeftDClick(self, evt):
         if self.busy == False:
             col=evt.GetCol()
-            print(col)
             if col == 5:
                     self.busy = True
                     row = evt.GetRow()
@@ -1275,8 +1275,9 @@ class ConstructionManagementPanel(wx.Panel):
         self.constructionTypeTXT = wx.TextCtrl(self.middlePanel, size=(70, 25), style=wx.TE_PROCESS_ENTER)
         self.constructionTypeTXT.SetValue("构件")
         self.constructionTypeTXT.Enable(False)
-        self.constructionIndexCtrl=wx.TextCtrl(self.middlePanel,size=(60,-1),style=wx.TE_READONLY)
+        self.constructionIndexCtrl=wx.TextCtrl(self.middlePanel,size=(60,-1))
         if state=='新建':
+            self.constructionIndexCtrl.Enable(True)
             hhbox.Add(self.constructionTypeTXT, 1)
             self.constructionNoSpin = wx.SpinCtrl(self.middlePanel,size=(55,-1))
             self.constructionNoSpin.SetMin(1)
@@ -1285,12 +1286,41 @@ class ConstructionManagementPanel(wx.Panel):
             hhbox.Add(self.constructionIndexCtrl, 0)
             hhbox.Add(self.constructionNoSpin,0,wx.RIGHT,20)
         else:
+            self.constructionIndexCtrl.Enable(False)
             self.constructionNoTXT = wx.TextCtrl(self.middlePanel,size=(45,-1),style=wx.TE_READONLY)
             self.constructionNoTXT.SetValue(self.data[0].split('.')[2])
             hhbox.Add(self.constructionTypeTXT, 1, wx.RIGHT, 10)
             hhbox.Add(self.constructionIndexCtrl, 0)
             hhbox.Add(self.constructionNoTXT, 0, wx.RIGHT,20)
-        self.constructionIndexCtrl.SetValue("N.230")
+        index = self.data[0].split('.')[0]+'.'+self.data[0].split('.')[1]
+        self.constructionIndexCtrl.SetValue(index)
+        vbox.Add(hhbox,0,wx.EXPAND)
+
+        vbox.Add((-1,10))
+        hhbox = wx.BoxSizer()
+        hhbox.Add((20,-1))
+        hhbox.Add(wx.StaticText(self.middlePanel,label="构件板材宽度:",size=(80,-1)),0,wx.TOP,5)
+        self.constructionWidthTXT=wx.TextCtrl(self.middlePanel,size=(50,25))
+        self.constructionWidthTXT.SetValue(self.data[1])
+        hhbox.Add(self.constructionWidthTXT,1,wx.RIGHT,20)
+        vbox.Add(hhbox,0,wx.EXPAND)
+
+        vbox.Add((-1,10))
+        hhbox = wx.BoxSizer()
+        hhbox.Add((20,-1))
+        hhbox.Add(wx.StaticText(self.middlePanel,label="构件板材厚度:",size=(80,-1)),0,wx.TOP,5)
+        self.constructionThicknessTXT=wx.TextCtrl(self.middlePanel,size=(50,25))
+        self.constructionThicknessTXT.SetValue(self.data[2])
+        hhbox.Add(self.constructionThicknessTXT,1,wx.RIGHT,20)
+        vbox.Add(hhbox,0,wx.EXPAND)
+
+        vbox.Add((-1,10))
+        hhbox = wx.BoxSizer()
+        hhbox.Add((20,-1))
+        hhbox.Add(wx.StaticText(self.middlePanel,label="构件板材重量:",size=(80,-1)),0,wx.TOP,5)
+        self.constructionWeightTXT=wx.TextCtrl(self.middlePanel,size=(50,25))
+        self.constructionWeightTXT.SetValue(self.data[3])
+        hhbox.Add(self.constructionWeightTXT,1,wx.RIGHT,20)
         vbox.Add(hhbox,0,wx.EXPAND)
 
         if state != '查看':
@@ -1378,17 +1408,17 @@ class ConstructionManagementPanel(wx.Panel):
             dlg = wx.TextEntryDialog(
                     self, '请输入图纸编号,目前显示的是系统为您建议的图纸号：',
                     '信息提示', '')
-            string = "N.%s.%04d"%(self.bluePrintIndexCtrl.GetValue(),self.bluePrintNoSpin.GetValue())
+            string = "%s.%04d"%(self.constructionIndexCtrl.GetValue(),self.constructionNoSpin.GetValue())
             dlg.SetValue(string)
             if dlg.ShowModal() == wx.ID_OK:
                 self.CombineData(dlg.GetValue())
-                SaveBluePrintInDB(self.log, 1, self.data)
+                SaveConstructionInDB(self.log, 1, self.data)
                 self.busy = False
                 self.middlePanel.DestroyChildren()
                 self.rightPanel.DestroyChildren()
-                _, dataList = GetAllBluPrintList(self.log, 1, self.type, state=self.state)
+                _, dataList = GetAllConstructionList(self.log, 1, self.type, state=self.state)
                 self.dataArray = np.array(dataList)
-                self.bluePrintGrid.ReCreate()
+                self.constructionGrid.ReCreate()
             dlg.Destroy()
         else:
             self.CombineData(self.data[0])
@@ -1400,8 +1430,16 @@ class ConstructionManagementPanel(wx.Panel):
             self.dataArray = np.array(dataList)
             self.constructionGrid.ReCreate()
 
-    def CombineData(self,bluePrintNo):
-        pass
+    def CombineData(self,constructionNo):
+        """`图纸号`,`宽度`,`厚度`,`重量`,`图纸状态`,`图纸文件名`,`图纸大类`"""
+        temp = constructionNo.split('.')
+        self.data[0] = temp[0]+'.'+temp[1]+'.'+'%04d'%int(temp[2])
+        self.data[1] = self.constructionWidthTXT.GetValue()
+        self.data[2] = self.constructionThicknessTXT.GetValue()
+        self.data[3] = self.constructionWeightTXT.GetValue()
+        self.data[4] = '在用'
+        self.data[5] = "Stena 生产图纸 构件_页面_179.pdf"
+        self.data[6] = "构件"
 
     def OnCancel(self,event):
         self.busy = False
@@ -1433,7 +1471,7 @@ class ConstructionManagementPanel(wx.Panel):
             self.busy = True
             if len(self.data)==0:
                 if len(self.dataArray)==0:
-                    self.data = ['']*6
+                    self.data = ['']*7
                 else:
                     self.data = self.dataArray[0]
             self.editState = '新建'
