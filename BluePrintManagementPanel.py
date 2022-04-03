@@ -2,7 +2,7 @@ import os
 
 import wx
 import wx.grid as gridlib
-from DBOperation import GetAllBluPrintList, GetRGBWithRalID,GetAllColor,SaveBluePrintInDB,UpdateBluePrintInDB,GetAllConstructionList,SaveConstructionInDB
+from DBOperation import GetAllBluPrintList, GetRGBWithRalID,GetAllColor,SaveBluePrintInDB,UpdateBluePrintInDB,GetAllConstructionList,SaveConstructionInDB,UpdateConstructionInDB
 import wx.grid as gridlib
 import numpy as np
 import images
@@ -11,6 +11,75 @@ from ID_DEFINE import *
 from ProductionScheduleDialog import PDFViewerPanel
 import datetime
 
+def ContructionGridDataTranslate(data):
+    return data[:-2]
+
+def WallGridDataTranslate(data):
+    result = list(data[:4])
+    processFront = ''
+    processList = ["505", '405', '409', '406', '652', '100', '306']
+    for i, process in enumerate(processList):
+        if 'Y' == data[i + 4]:
+            processFront += process
+            processFront += '/'
+    processFront += '9000'
+    result.append(processFront)
+    result.append(data[12])
+    return result
+
+class BluePrintGrid(gridlib.Grid):  ##, mixins.GridAutoEditMixin):
+    def __init__(self, parent, master, log,TranslateFUN):
+        gridlib.Grid.__init__(self, parent, -1)
+        self.log = log
+        self.master = master
+        self.Translate = TranslateFUN
+        self.moveTo = None
+        self.Bind(wx.EVT_IDLE, self.OnIdle)
+        self.CreateGrid(self.master.dataArray.shape[0], len(self.master.colLabelValueList))  # , gridlib.Grid.SelectRows)
+        self.EnableEditing(False)
+        self.SetColLabelAlignment(wx.ALIGN_CENTRE, wx.ALIGN_CENTRE_VERTICAL)
+        self.SetRowLabelSize(50)
+        self.SetColLabelSize(25)
+        for i, title in enumerate(self.master.colLabelValueList):
+            self.SetColLabelValue(i,title)
+        for i, width in enumerate(self.master.colWidthList):
+            self.SetColSize(i, width)
+        for i, data in enumerate(self.master.dataArray):
+            self.SetRowSize(i, 25)
+            data = self.Translate(data)
+            for j, item in enumerate(data):
+                self.SetCellAlignment(i, j, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
+                self.SetCellValue(i, j, str(item))
+
+    def ReCreate(self):
+        if self.GetNumberRows()<self.master.dataArray.shape[0]:
+            self.InsertRows(numRows=self.master.dataArray.shape[0]-self.GetNumberRows())
+        self.ClearGrid()
+        self.EnableEditing(False)
+        self.SetColLabelAlignment(wx.ALIGN_CENTRE, wx.ALIGN_CENTRE_VERTICAL)
+
+        self.SetRowLabelSize(50)
+        self.SetColLabelSize(25)
+
+        for i, title in enumerate(self.master.colLabelValueList):
+            self.SetColLabelValue(i,title)
+        for i, width in enumerate(self.master.colWidthList):
+            self.SetColSize(i, width)
+
+        for i, temp in enumerate(self.master.dataArray):
+            self.SetRowSize(i, 25)
+            data = self.Translate(temp)
+            for j, item in enumerate(data):
+                # self.SetCellBackgroundColour(i,j,wx.Colour(250, 250, 250))
+                self.SetCellAlignment(i, j, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
+                self.SetCellValue(i, j, str(item))
+
+    def OnIdle(self, evt):
+        if self.moveTo is not None:
+            self.SetGridCursor(self.moveTo[0], self.moveTo[1])
+            self.moveTo = None
+
+        evt.Skip()
 
 class BluePrintShowPanel(PDFViewerPanel):
     def __init__(self, parent, log,filename=""):
@@ -18,421 +87,6 @@ class BluePrintShowPanel(PDFViewerPanel):
         if filename!="":
             self.filename = filename
             self.viewer.LoadFile(self.filename)
-
-
-class BluePrintGrid(gridlib.Grid):  ##, mixins.GridAutoEditMixin):
-    def __init__(self, parent, master, log):
-        gridlib.Grid.__init__(self, parent, -1)
-        self.log = log
-        self.master = master
-        self.moveTo = None
-
-        self.Bind(wx.EVT_IDLE, self.OnIdle)
-        self.CreateGrid(self.master.dataArray.shape[0], len(self.master.colLabelValueList))  # , gridlib.Grid.SelectRows)
-        self.EnableEditing(False)
-
-        self.SetColLabelAlignment(wx.ALIGN_CENTRE, wx.ALIGN_CENTRE_VERTICAL)
-
-        self.SetRowLabelSize(50)
-        self.SetColLabelSize(25)
-
-        for i, title in enumerate(self.master.colLabelValueList):
-            self.SetColLabelValue(i,title)
-        for i, width in enumerate(self.master.colWidthList):
-            self.SetColSize(i, width)
-        for i, temp in enumerate(self.master.dataArray):
-            self.SetRowSize(i, 25)
-            data = self.Translate(temp)
-            for j, item in enumerate(data):
-                # self.SetCellBackgroundColour(i,j,wx.Colour(250, 250, 250))
-                self.SetCellAlignment(i, j, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
-                self.SetCellValue(i, j, str(item))
-
-        # self.Bind(gridlib.EVT_GRID_CELL_LEFT_CLICK, self.OnCellLeftClick)
-        self.Bind(gridlib.EVT_GRID_CELL_RIGHT_CLICK, self.OnCellRightClick)
-        # self.Bind(gridlib.EVT_GRID_CELL_LEFT_DCLICK, self.OnCellLeftDClick)
-        self.Bind(gridlib.EVT_GRID_CELL_RIGHT_DCLICK, self.OnCellRightDClick)
-
-        self.Bind(gridlib.EVT_GRID_LABEL_LEFT_CLICK, self.OnLabelLeftClick)
-        self.Bind(gridlib.EVT_GRID_LABEL_RIGHT_CLICK, self.OnLabelRightClick)
-        self.Bind(gridlib.EVT_GRID_LABEL_LEFT_DCLICK, self.OnLabelLeftDClick)
-        self.Bind(gridlib.EVT_GRID_LABEL_RIGHT_DCLICK, self.OnLabelRightDClick)
-
-        self.Bind(gridlib.EVT_GRID_COL_SORT, self.OnGridColSort)
-
-        self.Bind(gridlib.EVT_GRID_ROW_SIZE, self.OnRowSize)
-        self.Bind(gridlib.EVT_GRID_COL_SIZE, self.OnColSize)
-
-        self.Bind(gridlib.EVT_GRID_RANGE_SELECT, self.OnRangeSelect)
-        self.Bind(gridlib.EVT_GRID_CELL_CHANGED, self.OnCellChange)
-        self.Bind(gridlib.EVT_GRID_SELECT_CELL, self.OnSelectCell)
-
-        self.Bind(gridlib.EVT_GRID_EDITOR_SHOWN, self.OnEditorShown)
-        self.Bind(gridlib.EVT_GRID_EDITOR_HIDDEN, self.OnEditorHidden)
-        self.Bind(gridlib.EVT_GRID_EDITOR_CREATED, self.OnEditorCreated)
-
-    def Translate(self, data):
-        result = list(data[:4])
-        processFront = ''
-        processList=["505",'405','409','406','652','100','306']
-        for i,process in enumerate(processList):
-            if 'Y' == data[i+4]:
-                processFront += process
-                processFront += '/'
-        processFront += '9000'
-        result.append(processFront)
-        result.append(data[12])
-        return result
-
-    def ReCreate(self):
-        if self.GetNumberRows()<self.master.dataArray.shape[0]:
-            self.InsertRows(numRows=self.master.dataArray.shape[0]-self.GetNumberRows())
-        self.ClearGrid()
-        self.EnableEditing(False)
-        self.SetColLabelAlignment(wx.ALIGN_CENTRE, wx.ALIGN_CENTRE_VERTICAL)
-
-        self.SetRowLabelSize(50)
-        self.SetColLabelSize(25)
-
-        for i, title in enumerate(self.master.colLabelValueList):
-            self.SetColLabelValue(i,title)
-        for i, width in enumerate(self.master.colWidthList):
-            self.SetColSize(i, width)
-
-        for i, temp in enumerate(self.master.dataArray):
-            self.SetRowSize(i, 25)
-            data = self.Translate(temp)
-            for j, item in enumerate(data):
-                # self.SetCellBackgroundColour(i,j,wx.Colour(250, 250, 250))
-                self.SetCellAlignment(i, j, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
-                self.SetCellValue(i, j, str(item))
-
-    # def OnCellLeftClick(self, evt):
-    #     self.log.write("OnCellLeftClick: (%d,%d) %s\n" %
-    #                    (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
-    #     evt.Skip()
-
-    def OnCellRightClick(self, evt):
-        self.log.write("OnCellRightClick: (%d,%d) %s\n" %
-                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
-        evt.Skip()
-
-    def OnCellLeftDClick(self, evt):
-        self.log.write("OnCellLeftDClick: (%d,%d) %s\n" %
-                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
-        evt.Skip()
-
-    def OnCellRightDClick(self, evt):
-        self.log.write("OnCellRightDClick: (%d,%d) %s\n" %
-                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
-        evt.Skip()
-
-    def OnLabelLeftClick(self, evt):
-        self.log.write("OnLabelLeftClick: (%d,%d) %s\n" %
-                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
-        evt.Skip()
-
-    def OnLabelRightClick(self, evt):
-        self.log.write("OnLabelRightClick: (%d,%d) %s\n" %
-                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
-        evt.Skip()
-
-    def OnLabelLeftDClick(self, evt):
-        self.log.write("OnLabelLeftDClick: (%d,%d) %s\n" %
-                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
-        evt.Skip()
-
-    def OnLabelRightDClick(self, evt):
-        self.log.write("OnLabelRightDClick: (%d,%d) %s\n" %
-                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
-        evt.Skip()
-
-    def OnGridColSort(self, evt):
-        self.log.write("OnGridColSort: %s %s" % (evt.GetCol(), self.GetSortingColumn()))
-        self.SetSortingColumn(evt.GetCol())
-
-    def OnRowSize(self, evt):
-        self.log.write("OnRowSize: row %d, %s\n" %
-                       (evt.GetRowOrCol(), evt.GetPosition()))
-        evt.Skip()
-
-    def OnColSize(self, evt):
-        self.log.write("OnColSize: col %d, %s\n" %
-                       (evt.GetRowOrCol(), evt.GetPosition()))
-        evt.Skip()
-
-    def OnRangeSelect(self, evt):
-        if evt.Selecting():
-            msg = 'Selected'
-        else:
-            msg = 'Deselected'
-        self.log.write("OnRangeSelect: %s  top-left %s, bottom-right %s\n" %
-                       (msg, evt.GetTopLeftCoords(), evt.GetBottomRightCoords()))
-        evt.Skip()
-
-    def OnCellChange(self, evt):
-        self.log.write("OnCellChange: (%d,%d) %s\n" %
-                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
-
-        # Show how to stay in a cell that has bad data.  We can't just
-        # call SetGridCursor here since we are nested inside one so it
-        # won't have any effect.  Instead, set coordinates to move to in
-        # idle time.
-        value = self.GetCellValue(evt.GetRow(), evt.GetCol())
-
-        if value == 'no good':
-            self.moveTo = evt.GetRow(), evt.GetCol()
-
-    def OnIdle(self, evt):
-        if self.moveTo is not None:
-            self.SetGridCursor(self.moveTo[0], self.moveTo[1])
-            self.moveTo = None
-
-        evt.Skip()
-
-    def OnSelectCell(self, evt):
-        if evt.Selecting():
-            msg = 'Selected'
-        else:
-            msg = 'Deselected'
-        self.log.write("OnSelectCell: %s (%d,%d) %s\n" %
-                       (msg, evt.GetRow(), evt.GetCol(), evt.GetPosition()))
-
-        # Another way to stay in a cell that has a bad value...
-        row = self.GetGridCursorRow()
-        col = self.GetGridCursorCol()
-
-        if self.IsCellEditControlEnabled():
-            self.HideCellEditControl()
-            self.DisableCellEditControl()
-
-        value = self.GetCellValue(row, col)
-
-        if value == 'no good 2':
-            return  # cancels the cell selection
-
-        evt.Skip()
-
-    def OnEditorShown(self, evt):
-        if evt.GetRow() == 6 and evt.GetCol() == 3 and \
-                wx.MessageBox("Are you sure you wish to edit this cell?",
-                              "Checking", wx.YES_NO) == wx.NO:
-            evt.Veto()
-            return
-
-        self.log.write("OnEditorShown: (%d,%d) %s\n" %
-                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
-        evt.Skip()
-
-    def OnEditorHidden(self, evt):
-        if evt.GetRow() == 6 and evt.GetCol() == 3 and \
-                wx.MessageBox("Are you sure you wish to  finish editing this cell?",
-                              "Checking", wx.YES_NO) == wx.NO:
-            evt.Veto()
-            return
-
-        self.log.write("OnEditorHidden: (%d,%d) %s\n" %
-                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
-        evt.Skip()
-
-    def OnEditorCreated(self, evt):
-        self.log.write("OnEditorCreated: (%d, %d) %s\n" %
-                       (evt.GetRow(), evt.GetCol(), evt.GetControl()))
-class ConstructionGrid(gridlib.Grid):  ##, mixins.GridAutoEditMixin):
-    def __init__(self, parent, master, log):
-        gridlib.Grid.__init__(self, parent, -1)
-        self.log = log
-        self.master = master
-        self.moveTo = None
-
-        self.Bind(wx.EVT_IDLE, self.OnIdle)
-        self.CreateGrid(self.master.dataArray.shape[0], len(self.master.colLabelValueList))  # , gridlib.Grid.SelectRows)
-        self.EnableEditing(False)
-
-        self.SetColLabelAlignment(wx.ALIGN_CENTRE, wx.ALIGN_CENTRE_VERTICAL)
-
-        self.SetRowLabelSize(50)
-        self.SetColLabelSize(25)
-
-        for i, title in enumerate(self.master.colLabelValueList):
-            self.SetColLabelValue(i,title)
-        for i, width in enumerate(self.master.colWidthList):
-            self.SetColSize(i, width)
-
-        for i, data in enumerate(self.master.dataArray):
-            self.SetRowSize(i, 25)
-            for j, item in enumerate(data[:-2]):
-                # self.SetCellBackgroundColour(i,j,wx.Colour(250, 250, 250))
-                self.SetCellAlignment(i, j, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
-                self.SetCellValue(i, j, str(item))
-
-        # self.Bind(gridlib.EVT_GRID_CELL_LEFT_CLICK, self.OnCellLeftClick)
-        self.Bind(gridlib.EVT_GRID_CELL_RIGHT_CLICK, self.OnCellRightClick)
-        # self.Bind(gridlib.EVT_GRID_CELL_LEFT_DCLICK, self.OnCellLeftDClick)
-        self.Bind(gridlib.EVT_GRID_CELL_RIGHT_DCLICK, self.OnCellRightDClick)
-
-        self.Bind(gridlib.EVT_GRID_LABEL_LEFT_CLICK, self.OnLabelLeftClick)
-        self.Bind(gridlib.EVT_GRID_LABEL_RIGHT_CLICK, self.OnLabelRightClick)
-        self.Bind(gridlib.EVT_GRID_LABEL_LEFT_DCLICK, self.OnLabelLeftDClick)
-        self.Bind(gridlib.EVT_GRID_LABEL_RIGHT_DCLICK, self.OnLabelRightDClick)
-
-        self.Bind(gridlib.EVT_GRID_COL_SORT, self.OnGridColSort)
-
-        self.Bind(gridlib.EVT_GRID_ROW_SIZE, self.OnRowSize)
-        self.Bind(gridlib.EVT_GRID_COL_SIZE, self.OnColSize)
-
-        self.Bind(gridlib.EVT_GRID_RANGE_SELECT, self.OnRangeSelect)
-        self.Bind(gridlib.EVT_GRID_CELL_CHANGED, self.OnCellChange)
-        self.Bind(gridlib.EVT_GRID_SELECT_CELL, self.OnSelectCell)
-
-        self.Bind(gridlib.EVT_GRID_EDITOR_SHOWN, self.OnEditorShown)
-        self.Bind(gridlib.EVT_GRID_EDITOR_HIDDEN, self.OnEditorHidden)
-        self.Bind(gridlib.EVT_GRID_EDITOR_CREATED, self.OnEditorCreated)
-
-    def ReCreate(self):
-        if self.GetNumberRows()<self.master.dataArray.shape[0]:
-            self.InsertRows(numRows=self.master.dataArray.shape[0]-self.GetNumberRows())
-        self.ClearGrid()
-        self.EnableEditing(False)
-        self.SetColLabelAlignment(wx.ALIGN_CENTRE, wx.ALIGN_CENTRE_VERTICAL)
-
-        self.SetRowLabelSize(50)
-        self.SetColLabelSize(25)
-
-        for i, title in enumerate(self.master.colLabelValueList):
-            self.SetColLabelValue(i,title)
-        for i, width in enumerate(self.master.colWidthList):
-            self.SetColSize(i, width)
-
-        for i, data in enumerate(self.master.dataArray):
-            self.SetRowSize(i, 25)
-            for j, item in enumerate(data[:-1]):
-                # self.SetCellBackgroundColour(i,j,wx.Colour(250, 250, 250))
-                self.SetCellAlignment(i, j, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
-                self.SetCellValue(i, j, str(item))
-
-    def OnCellRightClick(self, evt):
-        self.log.write("OnCellRightClick: (%d,%d) %s\n" %
-                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
-        evt.Skip()
-
-    def OnCellLeftDClick(self, evt):
-        self.log.write("OnCellLeftDClick: (%d,%d) %s\n" %
-                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
-        evt.Skip()
-
-    def OnCellRightDClick(self, evt):
-        self.log.write("OnCellRightDClick: (%d,%d) %s\n" %
-                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
-        evt.Skip()
-
-    def OnLabelLeftClick(self, evt):
-        self.log.write("OnLabelLeftClick: (%d,%d) %s\n" %
-                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
-        evt.Skip()
-
-    def OnLabelRightClick(self, evt):
-        self.log.write("OnLabelRightClick: (%d,%d) %s\n" %
-                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
-        evt.Skip()
-
-    def OnLabelLeftDClick(self, evt):
-        self.log.write("OnLabelLeftDClick: (%d,%d) %s\n" %
-                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
-        evt.Skip()
-
-    def OnLabelRightDClick(self, evt):
-        self.log.write("OnLabelRightDClick: (%d,%d) %s\n" %
-                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
-        evt.Skip()
-
-    def OnGridColSort(self, evt):
-        self.log.write("OnGridColSort: %s %s" % (evt.GetCol(), self.GetSortingColumn()))
-        self.SetSortingColumn(evt.GetCol())
-
-    def OnRowSize(self, evt):
-        self.log.write("OnRowSize: row %d, %s\n" %
-                       (evt.GetRowOrCol(), evt.GetPosition()))
-        evt.Skip()
-
-    def OnColSize(self, evt):
-        self.log.write("OnColSize: col %d, %s\n" %
-                       (evt.GetRowOrCol(), evt.GetPosition()))
-        evt.Skip()
-
-    def OnRangeSelect(self, evt):
-        if evt.Selecting():
-            msg = 'Selected'
-        else:
-            msg = 'Deselected'
-        self.log.write("OnRangeSelect: %s  top-left %s, bottom-right %s\n" %
-                       (msg, evt.GetTopLeftCoords(), evt.GetBottomRightCoords()))
-        evt.Skip()
-
-    def OnCellChange(self, evt):
-        self.log.write("OnCellChange: (%d,%d) %s\n" %
-                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
-
-        value = self.GetCellValue(evt.GetRow(), evt.GetCol())
-
-        if value == 'no good':
-            self.moveTo = evt.GetRow(), evt.GetCol()
-
-    def OnIdle(self, evt):
-        if self.moveTo is not None:
-            self.SetGridCursor(self.moveTo[0], self.moveTo[1])
-            self.moveTo = None
-
-        evt.Skip()
-
-    def OnSelectCell(self, evt):
-        if evt.Selecting():
-            msg = 'Selected'
-        else:
-            msg = 'Deselected'
-        self.log.write("OnSelectCell: %s (%d,%d) %s\n" %
-                       (msg, evt.GetRow(), evt.GetCol(), evt.GetPosition()))
-
-        # Another way to stay in a cell that has a bad value...
-        row = self.GetGridCursorRow()
-        col = self.GetGridCursorCol()
-
-        if self.IsCellEditControlEnabled():
-            self.HideCellEditControl()
-            self.DisableCellEditControl()
-
-        value = self.GetCellValue(row, col)
-
-        if value == 'no good 2':
-            return  # cancels the cell selection
-
-        evt.Skip()
-
-    def OnEditorShown(self, evt):
-        if evt.GetRow() == 6 and evt.GetCol() == 3 and \
-                wx.MessageBox("Are you sure you wish to edit this cell?",
-                              "Checking", wx.YES_NO) == wx.NO:
-            evt.Veto()
-            return
-
-        self.log.write("OnEditorShown: (%d,%d) %s\n" %
-                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
-        evt.Skip()
-
-    def OnEditorHidden(self, evt):
-        if evt.GetRow() == 6 and evt.GetCol() == 3 and \
-                wx.MessageBox("Are you sure you wish to  finish editing this cell?",
-                              "Checking", wx.YES_NO) == wx.NO:
-            evt.Veto()
-            return
-
-        self.log.write("OnEditorHidden: (%d,%d) %s\n" %
-                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
-        evt.Skip()
-
-    def OnEditorCreated(self, evt):
-        self.log.write("OnEditorCreated: (%d, %d) %s\n" %
-                       (evt.GetRow(), evt.GetCol(), evt.GetControl()))
 
 class SpecificBluePrintManagementPanel(wx.Panel):
     def __init__(self, parent, master, log, type,state='在用'):
@@ -504,7 +158,7 @@ class SpecificBluePrintManagementPanel(wx.Panel):
 
     def CreateLeftPanel(self):
         vvbox = wx.BoxSizer(wx.VERTICAL)
-        self.bluePrintGrid = BluePrintGrid(self.leftPanel, self, self.log)
+        self.bluePrintGrid = BluePrintGrid(self.leftPanel, self, self.log, WallGridDataTranslate)
         vvbox.Add(self.bluePrintGrid, 1, wx.EXPAND)
         hhbox = wx.BoxSizer()
         searchPanel = wx.Panel(self.leftPanel, size=(-1, 30), style=wx.BORDER_DOUBLE)
@@ -1128,7 +782,8 @@ class SpecificBluePrintManagementPanel(wx.Panel):
             self.data[14]='0'
             self.editState = '新建'
             self.ReCreateMiddlePanel(self.type,state=self.editState)
-            self.ReCreateRightPanel()
+            filename = bluePrintDir+'墙板图纸.pdf'
+            self.ReCreateRightPanel(filename)
         else:
             wx.MessageBox("请先结束当前编辑工作后，再进行新的编辑操作！", "信息提示")
 
@@ -1200,6 +855,7 @@ class SpecificBluePrintManagementPanel(wx.Panel):
         self.procedureSearch = ''
         self.procedureSearchCtrl.SetValue('')
         self.ReSearch()
+
 class ConstructionManagementPanel(wx.Panel):
     def __init__(self, parent, master, log, type,state='在用'):
         wx.Panel.__init__(self, parent)
@@ -1211,8 +867,8 @@ class ConstructionManagementPanel(wx.Panel):
         self.editState = '查看'
         self.data = []
         self.processList=self.master.processList
-        self.colWidthList = [80, 65, 65, 65, 50,100]
-        self.colLabelValueList = ['图纸号', '构件宽度', '构件厚度', '重量','状态','']
+        self.colWidthList = [80, 65, 65, 65, 65, 50,50]
+        self.colLabelValueList = ['图纸号', '构件宽度', '构件长度', '构件厚度', '重量','状态','']
         _, dataList = GetAllConstructionList(self.log, 1, self.type,state=self.state)
         self.dataArray = np.array(dataList)
         self.constructionIDSearch = ''
@@ -1220,9 +876,9 @@ class ConstructionManagementPanel(wx.Panel):
         self.thicknessSearch = ''
         self.weightSearch = ''
         hbox = wx.BoxSizer()
-        self.leftPanel = wx.Panel(self, size=(490, -1))
+        self.leftPanel = wx.Panel(self, size=(490+15, -1))
         hbox.Add(self.leftPanel, 0, wx.EXPAND)
-        self.middlePanel=wx.Panel(self, size=(300, -1))
+        self.middlePanel=wx.Panel(self, size=(300-65, -1))
         hbox.Add(self.middlePanel, 0, wx.EXPAND)
         self.rightPanel = wx.Panel(self, size=(550, 450))
         hbox.Add(self.rightPanel, 1, wx.EXPAND)
@@ -1235,12 +891,11 @@ class ConstructionManagementPanel(wx.Panel):
     def OnCellLeftDClick(self, evt):
         if self.busy == False:
             col=evt.GetCol()
-            if col == 5:
+            if col == 6:
                     self.busy = True
                     row = evt.GetRow()
                     self.data = self.dataArray[row]
-                    self.data[5] = "Stena 生产图纸 构件_页面_001"
-                    filename = bluePrintDir + 'Stena 生产图纸 %s/' % self.data[6] + "Stena 生产图纸 构件_页面_001.pdf"
+                    filename = bluePrintDir + 'Stena 生产图纸 %s/' % self.data[7] + self.data[6]+".pdf"
                     self.editState = '编辑'
                     self.ReCreateMiddlePanel(self.type, self.editState)
                     self.ReCreateRightPanel(filename)
@@ -1257,8 +912,7 @@ class ConstructionManagementPanel(wx.Panel):
             self.data = self.dataArray[row]
             self.editState = '查看'
             self.ReCreateMiddlePanel(self.type, self.editState)
-            self.data[5] = "Stena 生产图纸 构件_页面_001"
-            filename = bluePrintDir+'Stena 生产图纸 %s/'%self.data[6] + "Stena 生产图纸 构件_页面_001.pdf"
+            filename = bluePrintDir+'%s/'%self.data[7] + self.data[6]+'.pdf'
             self.ReCreateRightPanel(filename)
             evt.Skip()
         else:
@@ -1272,24 +926,24 @@ class ConstructionManagementPanel(wx.Panel):
         hhbox = wx.BoxSizer()
         hhbox.Add((20,-1))
         hhbox.Add(wx.StaticText(self.middlePanel, label='图纸类别：', size=(60, -1)), 0, wx.TOP, 5)
-        self.constructionTypeTXT = wx.TextCtrl(self.middlePanel, size=(70, 25), style=wx.TE_PROCESS_ENTER)
+        self.constructionTypeTXT = wx.TextCtrl(self.middlePanel, size=(60, 25), style=wx.TE_PROCESS_ENTER)
         self.constructionTypeTXT.SetValue("构件")
         self.constructionTypeTXT.Enable(False)
-        self.constructionIndexCtrl=wx.TextCtrl(self.middlePanel,size=(60,-1))
+        self.constructionIndexCtrl=wx.TextCtrl(self.middlePanel,size=(50,-1))
         if state=='新建':
             self.constructionIndexCtrl.Enable(True)
             hhbox.Add(self.constructionTypeTXT, 1)
-            self.constructionNoSpin = wx.SpinCtrl(self.middlePanel,size=(55,-1))
-            self.constructionNoSpin.SetMin(1)
+            self.constructionNoSpin = wx.SpinCtrl(self.middlePanel,size=(40,-1))
+            self.constructionNoSpin.SetMin(0)
             self.constructionNoSpin.SetMax(9999)
             self.constructionNoSpin.SetValue(2)
             hhbox.Add(self.constructionIndexCtrl, 0)
             hhbox.Add(self.constructionNoSpin,0,wx.RIGHT,20)
         else:
             self.constructionIndexCtrl.Enable(False)
-            self.constructionNoTXT = wx.TextCtrl(self.middlePanel,size=(45,-1),style=wx.TE_READONLY)
+            self.constructionNoTXT = wx.TextCtrl(self.middlePanel,size=(40,-1),style=wx.TE_READONLY)
             self.constructionNoTXT.SetValue(self.data[0].split('.')[2])
-            hhbox.Add(self.constructionTypeTXT, 1, wx.RIGHT, 10)
+            hhbox.Add(self.constructionTypeTXT, 1)
             hhbox.Add(self.constructionIndexCtrl, 0)
             hhbox.Add(self.constructionNoTXT, 0, wx.RIGHT,20)
         index = self.data[0].split('.')[0]+'.'+self.data[0].split('.')[1]
@@ -1308,9 +962,18 @@ class ConstructionManagementPanel(wx.Panel):
         vbox.Add((-1,10))
         hhbox = wx.BoxSizer()
         hhbox.Add((20,-1))
+        hhbox.Add(wx.StaticText(self.middlePanel,label="构件板材长度:",size=(80,-1)),0,wx.TOP,5)
+        self.constructionLengthTXT=wx.TextCtrl(self.middlePanel,size=(50,25))
+        self.constructionLengthTXT.SetValue(self.data[2])
+        hhbox.Add(self.constructionLengthTXT,1,wx.RIGHT,20)
+        vbox.Add(hhbox,0,wx.EXPAND)
+
+        vbox.Add((-1,10))
+        hhbox = wx.BoxSizer()
+        hhbox.Add((20,-1))
         hhbox.Add(wx.StaticText(self.middlePanel,label="构件板材厚度:",size=(80,-1)),0,wx.TOP,5)
         self.constructionThicknessTXT=wx.TextCtrl(self.middlePanel,size=(50,25))
-        self.constructionThicknessTXT.SetValue(self.data[2])
+        self.constructionThicknessTXT.SetValue(self.data[3])
         hhbox.Add(self.constructionThicknessTXT,1,wx.RIGHT,20)
         vbox.Add(hhbox,0,wx.EXPAND)
 
@@ -1319,7 +982,7 @@ class ConstructionManagementPanel(wx.Panel):
         hhbox.Add((20,-1))
         hhbox.Add(wx.StaticText(self.middlePanel,label="构件板材重量:",size=(80,-1)),0,wx.TOP,5)
         self.constructionWeightTXT=wx.TextCtrl(self.middlePanel,size=(50,25))
-        self.constructionWeightTXT.SetValue(self.data[3])
+        self.constructionWeightTXT.SetValue(self.data[4])
         hhbox.Add(self.constructionWeightTXT,1,wx.RIGHT,20)
         vbox.Add(hhbox,0,wx.EXPAND)
 
@@ -1338,16 +1001,20 @@ class ConstructionManagementPanel(wx.Panel):
             hhbox.Add(self.editOkButton,1,wx.EXPAND|wx.RIGHT,10)
             vbox.Add(hhbox,0,wx.EXPAND|wx.BOTTOM,5)
             vbox.Add(wx.StaticLine(self.middlePanel, style=wx.HORIZONTAL), 0, wx.EXPAND)
+        else:
+            self.constructionWidthTXT.Enable(False)
+            self.constructionLengthTXT.Enable(False)
+            self.constructionThicknessTXT.Enable(False)
+            self.constructionWeightTXT.Enable(False)
 
         self.middlePanel.SetSizer(vbox)
         self.middlePanel.Refresh()
         self.middlePanel.Layout()
         self.middlePanel.Thaw()
 
-
     def CreateLeftPanel(self):
         vvbox = wx.BoxSizer(wx.VERTICAL)
-        self.constructionGrid = ConstructionGrid(self.leftPanel, self, self.log)
+        self.constructionGrid = BluePrintGrid(self.leftPanel, self, self.log, ContructionGridDataTranslate)
         vvbox.Add(self.constructionGrid, 1, wx.EXPAND)
         hhbox = wx.BoxSizer()
         searchPanel = wx.Panel(self.leftPanel, size=(-1, 30), style=wx.BORDER_DOUBLE)
@@ -1411,35 +1078,36 @@ class ConstructionManagementPanel(wx.Panel):
             string = "%s.%04d"%(self.constructionIndexCtrl.GetValue(),self.constructionNoSpin.GetValue())
             dlg.SetValue(string)
             if dlg.ShowModal() == wx.ID_OK:
+                self.data[6] = "构件_页面_%03d" % self.bluePrintShowPanel.buttonpanel.pageno
                 self.CombineData(dlg.GetValue())
                 SaveConstructionInDB(self.log, 1, self.data)
-                self.busy = False
-                self.middlePanel.DestroyChildren()
-                self.rightPanel.DestroyChildren()
-                _, dataList = GetAllConstructionList(self.log, 1, self.type, state=self.state)
-                self.dataArray = np.array(dataList)
-                self.constructionGrid.ReCreate()
+                # self.busy = False
+                # self.middlePanel.DestroyChildren()
+                # self.rightPanel.DestroyChildren()
+                # _, dataList = GetAllConstructionList(self.log, 1, self.type, state=self.state)
+                # self.dataArray = np.array(dataList)
+                # self.constructionGrid.ReCreate()
             dlg.Destroy()
         else:
             self.CombineData(self.data[0])
-            # UpdateBluePrintInDB(self.log, 1, self.data)
-            self.busy = False
-            self.middlePanel.DestroyChildren()
-            self.rightPanel.DestroyChildren()
-            _, dataList = GetAllConstructionList(self.log, 1, self.type, state=self.state)
-            self.dataArray = np.array(dataList)
-            self.constructionGrid.ReCreate()
+            UpdateConstructionInDB(self.log, 1, self.data)
+        self.busy = False
+        self.middlePanel.DestroyChildren()
+        self.rightPanel.DestroyChildren()
+        _, dataList = GetAllConstructionList(self.log, 1, self.type, state=self.state)
+        self.dataArray = np.array(dataList)
+        self.constructionGrid.ReCreate()
 
     def CombineData(self,constructionNo):
         """`图纸号`,`宽度`,`厚度`,`重量`,`图纸状态`,`图纸文件名`,`图纸大类`"""
         temp = constructionNo.split('.')
         self.data[0] = temp[0]+'.'+temp[1]+'.'+'%04d'%int(temp[2])
         self.data[1] = self.constructionWidthTXT.GetValue()
-        self.data[2] = self.constructionThicknessTXT.GetValue()
-        self.data[3] = self.constructionWeightTXT.GetValue()
-        self.data[4] = '在用'
-        self.data[5] = "Stena 生产图纸 构件_页面_179.pdf"
-        self.data[6] = "构件"
+        self.data[2] = self.constructionLengthTXT.GetValue()
+        self.data[3] = self.constructionThicknessTXT.GetValue()
+        self.data[4] = self.constructionWeightTXT.GetValue()
+        self.data[5] = '在用'
+        self.data[7] = "构件"
 
     def OnCancel(self,event):
         self.busy = False
@@ -1461,9 +1129,9 @@ class ConstructionManagementPanel(wx.Panel):
         else:
             self.state = '在用'
             self.changeStateBTN.SetBackgroundColour(wx.GREEN)
-        _, dataList = GetAllBluPrintList(self.log, 1, self.type,state=self.state)
+        _, dataList = GetAllConstructionList(self.log, 1, self.type,state=self.state)
         self.dataArray = np.array(dataList)
-        self.bluePrintGrid.ReCreate()
+        self.constructionGrid.ReCreate()
         # self.bluePrintGrid.Render()
 
     def OnCreateNewBluePrint(self, event):
@@ -1471,12 +1139,13 @@ class ConstructionManagementPanel(wx.Panel):
             self.busy = True
             if len(self.data)==0:
                 if len(self.dataArray)==0:
-                    self.data = ['']*7
+                    self.data = ['']*8
+                    self.data[0]='N.100.0000'
                 else:
                     self.data = self.dataArray[0]
             self.editState = '新建'
             self.ReCreateMiddlePanel(self.type,state=self.editState)
-            self.ReCreateRightPanel()
+            self.ReCreateRightPanel(bluePrintDir+"构件图纸.pdf")
         else:
             wx.MessageBox("请先结束当前编辑工作后，再进行新的编辑操作！", "信息提示")
 

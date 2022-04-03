@@ -98,6 +98,29 @@ def UpdateOrderInfo(log, whichDB,data):
         db.rollback()
     db.close()
 
+def UpdateConstructionInDB(log, whichDB,data):
+    try:
+        db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
+                             passwd='%s' % dbPassword[whichDB], db='%s' % dbName[whichDB], charset='utf8')
+    except:
+        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        if log:
+            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+        return -1, []
+    cursor = db.cursor()  #`图纸号`,`宽度`,`厚度`,`重量`,`图纸状态`,`图纸文件名`,`图纸大类`
+    sql = "UPDATE 构件图纸信息表 SET `宽度`='%s',`长度`='%s',`厚度`='%s',`重量`='%s',`图纸状态`='%s',`图纸文件名`='%s',`图纸大类`='%s' WHERE `图纸号` = '%s'" \
+          % (str(data[1]),str(data[2]),str(data[3]),str(data[4]),str(data[5]),str(data[6]),str(data[7]),str(data[0]))
+    # sql = "INSERT INTO 图纸信息(`图纸号`,`面板增量`,`中板增量`,`背板增量`,`剪板505`,`成型405`,`成型409`,`成型406`,`折弯652`," \
+    #       "`热压100`,`热压306`,`冲铣`,`图纸状态`,`创建人`,`中板`,`打包9000`,`图纸大类`,`创建时间`,`备注`)" \
+    #       "VALUES ('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')"\
+    #       % (data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],data[12],data[13],data[14],data[15],data[16],datetime.date.today(),data[17])
+    try:
+        cursor.execute(sql)
+        db.commit()  # 必须有，没有的话插入语句不会执行
+    except:
+        db.rollback()
+    db.close()
+
 def GetAllBoardList(log, whichDB,whichBoard,state='在用'):
     try:
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
@@ -191,6 +214,7 @@ def GetAllBluPrintList(log,whichDB, type,state='在用'):
     temp = cursor.fetchall()  # 获得压条信息
     db.close()
     return 0, temp
+
 def GetAllConstructionList(log,whichDB, type,state='在用'):
     try:
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
@@ -202,11 +226,27 @@ def GetAllConstructionList(log,whichDB, type,state='在用'):
         return -1, []
     cursor = db.cursor()
     if state == '全部':
-        sql = """SELECT `图纸号`,`宽度`,`厚度`,`重量`,`图纸状态`,`图纸文件名`,`图纸大类` from `构件图纸信息表` """
+        sql = """SELECT `图纸号`,`宽度`,`长度`,`厚度`,`重量`,`图纸状态`,`图纸文件名`,`图纸大类` from `构件图纸信息表` """
     else:
-        sql = """SELECT `图纸号`,`宽度`,`厚度`,`重量`,`图纸状态`,`图纸文件名`,`图纸大类` from `构件图纸信息表` where `图纸状态`='%s'"""%state
+        sql = """SELECT `图纸号`,`宽度`,`长度`,`厚度`,`重量`,`图纸状态`,`图纸文件名`,`图纸大类` from `构件图纸信息表` where `图纸状态`='%s'"""%state
     cursor.execute(sql)
     temp = cursor.fetchall()  # 获得压条信息
+    db.close()
+    return 0, temp
+
+def GetConstructionDetailWithDrawingNo(log,whichDB,drawingNo):
+    try:
+        db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
+                             passwd='%s' % dbPassword[whichDB], db='%s' % dbName[whichDB], charset='utf8')
+    except:
+        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        if log:
+            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+        return -1, []
+    cursor = db.cursor()
+    sql = """SELECT `图纸号`,`宽度`,`长度`,`厚度`,`重量`,`图纸状态`,`图纸文件名`,`图纸大类` from `构件图纸信息表` where `图纸号`='%s'""" % drawingNo
+    cursor.execute(sql)
+    temp = cursor.fetchone()  # 获得压条信息
     db.close()
     return 0, temp
 
@@ -250,9 +290,9 @@ def SaveConstructionInDB(log,whichDB,data):
             log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
         return -1, []
     cursor = db.cursor()
-    sql = "INSERT INTO 构件图纸信息表 (`图纸号`,`宽度`,`厚度`,`重量`,`图纸状态`,`图纸文件名`,`图纸大类`)" \
+    sql = "INSERT INTO 构件图纸信息表 (`图纸号`,`宽度`,`长度`,`厚度`,`重量`,`图纸状态`,`图纸文件名`,`图纸大类`)" \
           "VALUES ('%s','%s','%s','%s','%s','%s','%s')"\
-          % (data[0],data[1],data[2],data[3],data[4],data[5],data[6])
+          % (data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7])
     try:
         cursor.execute(sql)
         db.commit()  # 必须有，没有的话插入语句不会执行

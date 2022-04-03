@@ -543,7 +543,7 @@ class MainPanel(wx.Panel):
         if dlg.ShowModal()==wx.ID_OK:
             dlg.Destroy()
             self.productionSchedule = ProductionScheduleAlgorithm(self.log, self.work_zone_Panel.orderManagmentPanel.data[0])
-            if self.productionSchedule.wrongNumber==0:
+            if self.productionSchedule.wrongWallNumber==0:
                 self.work_zone_Panel.orderManagmentPanel.data[7] = "已排产"  # 这个之前应该增加一个数据库更新操作
                 self.work_zone_Panel.orderManagmentPanel.orderGrid.ReCreate()
                 dlg = ProductionScheduleDialog(self,self.log, self.work_zone_Panel.orderManagmentPanel.data[0])
@@ -552,9 +552,9 @@ class MainPanel(wx.Panel):
                     pass
                 dlg.Destroy()
             else:
-                self.productionSchedule.missDrawingList = list(set(self.productionSchedule.missDrawingList))
-                self.productionSchedule.wrongNumber = len(self.productionSchedule.missDrawingList)
-                wx.MessageBox("缺少如下%s张图纸：\r\n%s,\r\n无法进行排产，请补全图纸后再试！"%(self.productionSchedule.wrongNumber,str(self.productionSchedule.missDrawingList)),"提示信息")
+                self.productionSchedule.missWallList = list(set(self.productionSchedule.missWallList))
+                self.productionSchedule.wrongWallNumber = len(self.productionSchedule.missWallList)
+                wx.MessageBox("缺少如下%s张图纸：\r\n%s,\r\n无法进行排产，请补全图纸后再试！" % (self.productionSchedule.wrongWallNumber, str(self.productionSchedule.missWallList)), "提示信息")
         else:
             dlg.Destroy()
         self.ReCreateOrderInfoPanel()
