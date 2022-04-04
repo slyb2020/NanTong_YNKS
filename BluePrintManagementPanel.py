@@ -277,6 +277,7 @@ class SpecificBluePrintManagementPanel(wx.Panel):
         hhbox = wx.BoxSizer()
         hhbox.Add((20,-1))
         self.middleNumberSPIN = wx.SpinCtrl(self.middlePanel, size=(60, -1), style=wx.TE_READONLY)
+        self.middleNumberSPIN.Bind(wx.EVT_SPINCTRL,self.OnMiddleNumberChange)
         self.middleNumberSPIN.SetRange(0, 2)
         self.middleNumberSPIN.SetValue(int(self.data[14]))
         hhbox.Add(self.middleNumberSPIN, 0)
@@ -303,20 +304,33 @@ class SpecificBluePrintManagementPanel(wx.Panel):
         vbox.Add(hhbox,0,wx.EXPAND)
         vbox.Add((-1,5))
 
-        if int(self.data[14])>0:
-            for i in range(int(self.data[14])):
-                hhbox = wx.BoxSizer()
-                hhbox.Add((20,-1))
-                hhbox.Add(wx.StaticText(self.middlePanel, label='中板增量%d:'%i, size=(60, -1)), 0, wx.TOP, 5)
-                self.middleLengthDeltaCtrl=wx.SpinCtrl(self.middlePanel, -1, "", (70, 50))
-                self.middleLengthDeltaCtrl.SetRange(-100, 100)
-                hhbox.Add(self.middleLengthDeltaCtrl,1,wx.RIGHT,10)
-                # hhbox.Add((10,-1))
-                self.middleWidthDeltaCtrl=wx.SpinCtrl(self.middlePanel, -1, "", (70, 50))
-                self.middleWidthDeltaCtrl.SetRange(-100, 100)
-                hhbox.Add(self.middleWidthDeltaCtrl,1,wx.RIGHT,20)
-                vbox.Add(hhbox,0,wx.EXPAND)
-                vbox.Add((-1,5))
+        if int(self.data[14]) > 0:
+            hhbox = wx.BoxSizer()
+            hhbox.Add((20,-1))
+            hhbox.Add(wx.StaticText(self.middlePanel, label='中板增量1:', size=(60, -1)), 0, wx.TOP, 5)
+            self.middleLengthDeltaCtrl1=wx.SpinCtrl(self.middlePanel, -1, "", (70, 50))
+            self.middleLengthDeltaCtrl1.SetRange(-100, 100)
+            hhbox.Add(self.middleLengthDeltaCtrl1,1,wx.RIGHT,10)
+            # hhbox.Add((10,-1))
+            self.middleWidthDeltaCtrl1=wx.SpinCtrl(self.middlePanel, -1, "", (70, 50))
+            self.middleWidthDeltaCtrl1.SetRange(-100, 100)
+            hhbox.Add(self.middleWidthDeltaCtrl1,1,wx.RIGHT,20)
+            vbox.Add(hhbox,0,wx.EXPAND)
+            vbox.Add((-1,5))
+
+        if int(self.data[14]) == 2:
+            hhbox = wx.BoxSizer()
+            hhbox.Add((20,-1))
+            hhbox.Add(wx.StaticText(self.middlePanel, label='中板增量2:', size=(60, -1)), 0, wx.TOP, 5)
+            self.middleLengthDeltaCtrl2=wx.SpinCtrl(self.middlePanel, -1, "", (70, 50))
+            self.middleLengthDeltaCtrl2.SetRange(-100, 100)
+            hhbox.Add(self.middleLengthDeltaCtrl2,1,wx.RIGHT,10)
+            # hhbox.Add((10,-1))
+            self.middleWidthDeltaCtrl2=wx.SpinCtrl(self.middlePanel, -1, "", (70, 50))
+            self.middleWidthDeltaCtrl2.SetRange(-100, 100)
+            hhbox.Add(self.middleWidthDeltaCtrl2,1,wx.RIGHT,20)
+            vbox.Add(hhbox,0,wx.EXPAND)
+            vbox.Add((-1,5))
 
         hhbox = wx.BoxSizer()
         hhbox.Add((20,-1))
@@ -425,7 +439,7 @@ class SpecificBluePrintManagementPanel(wx.Panel):
         else:
             hhbox = wx.BoxSizer()
             hhbox.Add(20, -1)
-            self.aCheckCtrl = wx.CheckBox(self.middlePanel)
+            self.aCheckCtrl = wx.CheckBox(self.middlePanel,name='a')
             hhbox.Add(self.aCheckCtrl, 0, wx.TOP, 5)
             hhbox.Add(wx.StaticText(self.middlePanel, label="a: "), 0, wx.TOP, 5)
             self.aSPIN = wx.SpinCtrl(self.middlePanel, size=(35, -1), style=wx.TE_READONLY)
@@ -443,7 +457,7 @@ class SpecificBluePrintManagementPanel(wx.Panel):
 
             hhbox = wx.BoxSizer()
             hhbox.Add(20, -1)
-            self.bCheckCtrl = wx.CheckBox(self.middlePanel)
+            self.bCheckCtrl = wx.CheckBox(self.middlePanel,name='b')
             hhbox.Add(self.bCheckCtrl, 0, wx.TOP, 5)
             hhbox.Add(wx.StaticText(self.middlePanel, label="b: "), 0, wx.TOP, 5)
             self.bSPIN = wx.SpinCtrl(self.middlePanel, size=(35, -1), style=wx.TE_READONLY)
@@ -461,7 +475,7 @@ class SpecificBluePrintManagementPanel(wx.Panel):
 
             hhbox = wx.BoxSizer()
             hhbox.Add(20, -1)
-            self.cCheckCtrl = wx.CheckBox(self.middlePanel)
+            self.cCheckCtrl = wx.CheckBox(self.middlePanel,name='c')
             hhbox.Add(self.cCheckCtrl, 0, wx.TOP, 5)
             hhbox.Add(wx.StaticText(self.middlePanel, label="c: "), 0, wx.TOP, 5)
             self.cSPIN = wx.SpinCtrl(self.middlePanel, size=(35, -1), style=wx.TE_READONLY)
@@ -479,7 +493,7 @@ class SpecificBluePrintManagementPanel(wx.Panel):
 
             hhbox = wx.BoxSizer()
             hhbox.Add(20, -1)
-            self.dCheckCtrl = wx.CheckBox(self.middlePanel)
+            self.dCheckCtrl = wx.CheckBox(self.middlePanel,name='d')
             hhbox.Add(self.dCheckCtrl, 0, wx.TOP, 5)
             hhbox.Add(wx.StaticText(self.middlePanel, label="d: "), 0, wx.TOP, 5)
             self.dSPIN = wx.SpinCtrl(self.middlePanel, size=(35, -1), style=wx.TE_READONLY)
@@ -497,7 +511,7 @@ class SpecificBluePrintManagementPanel(wx.Panel):
 
             hhbox = wx.BoxSizer()
             hhbox.Add(20, -1)
-            self.eCheckCtrl = wx.CheckBox(self.middlePanel)
+            self.eCheckCtrl = wx.CheckBox(self.middlePanel,name='e')
             hhbox.Add(self.eCheckCtrl, 0, wx.TOP, 5)
             hhbox.Add(wx.StaticText(self.middlePanel, label="e: "), 0, wx.TOP, 5)
             self.eSPIN = wx.SpinCtrl(self.middlePanel, size=(35, -1), style=wx.TE_READONLY)
@@ -515,7 +529,7 @@ class SpecificBluePrintManagementPanel(wx.Panel):
 
             hhbox = wx.BoxSizer()
             hhbox.Add(20, -1)
-            self.fCheckCtrl = wx.CheckBox(self.middlePanel)
+            self.fCheckCtrl = wx.CheckBox(self.middlePanel,name='f')
             hhbox.Add(self.fCheckCtrl, 0, wx.TOP, 5)
             hhbox.Add(wx.StaticText(self.middlePanel, label="f: "), 0, wx.TOP, 5)
             self.fSPIN = wx.SpinCtrl(self.middlePanel, size=(35, -1), style=wx.TE_READONLY)
@@ -533,7 +547,7 @@ class SpecificBluePrintManagementPanel(wx.Panel):
 
             hhbox = wx.BoxSizer()
             hhbox.Add(20, -1)
-            self.cYCheckCtrl = wx.CheckBox(self.middlePanel)
+            self.cYCheckCtrl = wx.CheckBox(self.middlePanel,name='cy')
             hhbox.Add(self.cYCheckCtrl, 0, wx.TOP, 5)
             hhbox.Add(wx.StaticText(self.middlePanel, label="cY: "), 0, wx.TOP, 5)
             self.cYSPIN = wx.SpinCtrl(self.middlePanel, size=(35, -1), style=wx.TE_READONLY)
@@ -548,6 +562,7 @@ class SpecificBluePrintManagementPanel(wx.Panel):
             hhbox.Add(self.cYSPIN, 1)
             vbox.Add(hhbox, 0, wx.EXPAND | wx.RIGHT, 20)
             vbox.Add((-1, 5))
+        self.Bind(wx.EVT_CHECKBOX,self.OnCheck)
 
         vbox.Add((-1,20))
 
@@ -596,12 +611,18 @@ class SpecificBluePrintManagementPanel(wx.Panel):
         self.frontWidthDelta = temp[1]
         self.frontLengthDeltaCtrl.SetValue(self.frontLengthDelta)
         self.frontWidthDeltaCtrl.SetValue(self.frontWidthDelta)
-        if self.data[14]=='Y':
+        if int(self.data[14])>0:
             temp = self.data[2].split(',')
-            self.middleLengthDelta = temp[0]
-            self.middleWidthDelta = temp[1]
-            self.middleLengthDeltaCtrl.SetValue(self.middleLengthDelta)
-            self.middleWidthDeltaCtrl.SetValue(self.middleWidthDelta)
+            self.middleLengthDelta1 = temp[0]
+            self.middleWidthDelta1 = temp[1]
+            self.middleLengthDeltaCtrl1.SetValue(self.middleLengthDelta1)
+            self.middleWidthDeltaCtrl1.SetValue(self.middleWidthDelta1)
+        if int(self.data[14])==2:
+            temp = self.data[2].split(',')
+            self.middleLengthDelta2 = temp[2]
+            self.middleWidthDelta2 = temp[3]
+            self.middleLengthDeltaCtrl2.SetValue(self.middleLengthDelta2)
+            self.middleWidthDeltaCtrl2.SetValue(self.middleWidthDelta2)
             # self.middleWidthDeltaCtrl.SetEditable(False)
         temp = self.data[3].split(',')
         self.rearLengthDelta = temp[0]
@@ -638,14 +659,39 @@ class SpecificBluePrintManagementPanel(wx.Panel):
             self.bendprocess652Check.Enable(False)
             self.hotpressprocess100Check.Enable(False)
             self.hotpressprocess306Check.Enable(False)
-            if self.data[14]=='Y':
-                self.middleLengthDeltaCtrl.Enable(False)
-                self.middleWidthDeltaCtrl.Enable(False)
+            if int(self.data[14]) > 0:
+                self.middleLengthDeltaCtrl1.Enable(False)
+                self.middleWidthDeltaCtrl1.Enable(False)
+            if int(self.data[14]) == 2:
+                self.middleLengthDeltaCtrl2.Enable(False)
+                self.middleWidthDeltaCtrl2.Enable(False)
 
         self.middlePanel.SetSizer(vbox)
         self.middlePanel.Refresh()
         self.middlePanel.Layout()
         self.middlePanel.Thaw()
+
+    def OnCheck(self,event):
+        obj = event.GetEventObject()
+        name = obj.GetName()
+        if name=='a':
+            self.aSPIN.Enable(obj.GetValue())
+        if name=='b':
+            self.bSPIN.Enable(obj.GetValue())
+        if name=='c':
+            self.cSPIN.Enable(obj.GetValue())
+        if name=='d':
+            self.dSPIN.Enable(obj.GetValue())
+        if name=='e':
+            self.eSPIN.Enable(obj.GetValue())
+        if name=='f':
+            self.fSPIN.Enable(obj.GetValue())
+        if name=='cy':
+            self.cYSPIN.Enable(obj.GetValue())
+
+    def OnMiddleNumberChange(self,event):
+        self.data[14]=self.middleNumberSPIN.GetValue()
+        self.ReCreateMiddlePanel(self.type, self.state)
 
     def OnEditOkBTN(self,event):
         if self.editState == '新建':
@@ -926,14 +972,14 @@ class ConstructionManagementPanel(wx.Panel):
         hhbox = wx.BoxSizer()
         hhbox.Add((20,-1))
         hhbox.Add(wx.StaticText(self.middlePanel, label='图纸类别：', size=(60, -1)), 0, wx.TOP, 5)
-        self.constructionTypeTXT = wx.TextCtrl(self.middlePanel, size=(60, 25), style=wx.TE_PROCESS_ENTER)
+        self.constructionTypeTXT = wx.TextCtrl(self.middlePanel, size=(40, 25), style=wx.TE_PROCESS_ENTER)
         self.constructionTypeTXT.SetValue("构件")
         self.constructionTypeTXT.Enable(False)
         self.constructionIndexCtrl=wx.TextCtrl(self.middlePanel,size=(50,-1))
         if state=='新建':
             self.constructionIndexCtrl.Enable(True)
             hhbox.Add(self.constructionTypeTXT, 1)
-            self.constructionNoSpin = wx.SpinCtrl(self.middlePanel,size=(40,-1))
+            self.constructionNoSpin = wx.SpinCtrl(self.middlePanel,size=(50,-1))
             self.constructionNoSpin.SetMin(0)
             self.constructionNoSpin.SetMax(9999)
             self.constructionNoSpin.SetValue(2)
@@ -941,7 +987,7 @@ class ConstructionManagementPanel(wx.Panel):
             hhbox.Add(self.constructionNoSpin,0,wx.RIGHT,20)
         else:
             self.constructionIndexCtrl.Enable(False)
-            self.constructionNoTXT = wx.TextCtrl(self.middlePanel,size=(40,-1),style=wx.TE_READONLY)
+            self.constructionNoTXT = wx.TextCtrl(self.middlePanel,size=(50,-1),style=wx.TE_READONLY)
             self.constructionNoTXT.SetValue(self.data[0].split('.')[2])
             hhbox.Add(self.constructionTypeTXT, 1)
             hhbox.Add(self.constructionIndexCtrl, 0)

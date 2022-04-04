@@ -543,7 +543,7 @@ class MainPanel(wx.Panel):
         if dlg.ShowModal()==wx.ID_OK:
             dlg.Destroy()
             self.productionSchedule = ProductionScheduleAlgorithm(self.log, self.work_zone_Panel.orderManagmentPanel.data[0])
-            if self.productionSchedule.wrongWallNumber==0:
+            if self.productionSchedule.wrongNumber==0:
                 self.work_zone_Panel.orderManagmentPanel.data[7] = "已排产"  # 这个之前应该增加一个数据库更新操作
                 self.work_zone_Panel.orderManagmentPanel.orderGrid.ReCreate()
                 dlg = ProductionScheduleDialog(self,self.log, self.work_zone_Panel.orderManagmentPanel.data[0])
@@ -552,9 +552,9 @@ class MainPanel(wx.Panel):
                     pass
                 dlg.Destroy()
             else:
-                self.productionSchedule.missWallList = list(set(self.productionSchedule.missWallList))
-                self.productionSchedule.wrongWallNumber = len(self.productionSchedule.missWallList)
-                wx.MessageBox("缺少如下%s张图纸：\r\n%s,\r\n无法进行排产，请补全图纸后再试！" % (self.productionSchedule.wrongWallNumber, str(self.productionSchedule.missWallList)), "提示信息")
+                self.productionSchedule.missList = list(set(self.productionSchedule.missList))
+                self.productionSchedule.wrongNumber = len(self.productionSchedule.missList)
+                wx.MessageBox("缺少如下%s张图纸：\r\n%s,\r\n无法进行排产，请补全图纸后再试！" % (self.productionSchedule.wrongNumber, str(self.productionSchedule.missList)), "提示信息")
         else:
             dlg.Destroy()
         self.ReCreateOrderInfoPanel()
@@ -624,14 +624,15 @@ class MainPanel(wx.Panel):
 
     def OnNoteBookPageChanged(self,event):
         obj = event.GetEventObject()
-        page = obj.GetSelection()
-        Title = ["","基材操作面板","图纸操作面板","订单操作面板","标签/胶水单操作面板","货盘单操作面板"]
-        for i in range(0, self._pnl.GetCount()):
-            item = self._pnl.GetFoldPanel(i)
-            self._pnl.Collapse(item)
-            # print(item.GetItemPos())
-            if item.GetLabel()==Title[page]:
-                self._pnl.Expand(item)
+        if obj.GetName()=='MainNoteBook':
+            page = obj.GetSelection()
+            Title = ["","基材操作面板","图纸操作面板","订单操作面板","标签/胶水单操作面板","货盘单操作面板"]
+            for i in range(0, self._pnl.GetCount()):
+                item = self._pnl.GetFoldPanel(i)
+                self._pnl.Collapse(item)
+                # print(item.GetItemPos())
+                if item.GetLabel()==Title[page]:
+                    self._pnl.Expand(item)
         event.Skip()
 
 
@@ -647,7 +648,7 @@ class WorkZonePanel(wx.Panel):
                                     # wx.BK_LEFT
                                     # wx.BK_RIGHT
                                     # | wx.NB_MULTILINE
-                                    )
+                                    ,name="MainNoteBook")
         il = wx.ImageList(16, 16)
         idx1 = il.Add(images._rt_smiley.GetBitmap())
         self.total_page_num = 0

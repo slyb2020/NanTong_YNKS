@@ -291,7 +291,7 @@ def SaveConstructionInDB(log,whichDB,data):
         return -1, []
     cursor = db.cursor()
     sql = "INSERT INTO 构件图纸信息表 (`图纸号`,`宽度`,`长度`,`厚度`,`重量`,`图纸状态`,`图纸文件名`,`图纸大类`)" \
-          "VALUES ('%s','%s','%s','%s','%s','%s','%s')"\
+          "VALUES ('%s','%s','%s','%s','%s','%s','%s','%s')"\
           % (data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7])
     try:
         cursor.execute(sql)
