@@ -407,7 +407,6 @@ class Extended(wx.Frame):
         for i in range(0, self._pnl.GetCount()):
             item = self._pnl.GetFoldPanel(i)
             self._pnl.Collapse(item)
-            print(item.GetItemPos())
 
 
     def OnExpandMe(self, event):

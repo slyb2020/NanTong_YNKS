@@ -19,6 +19,6 @@ class BackgroundPanel(wx.Panel):
         dc.SetBackground(wx.Brush("WHITE"))
         dc.Clear()
         x,y = self.GetClientSize()
-        bmp = wx.Image('bitmaps/BackgroundPIC.jpg').Scale(width=x, height=y,
+        bmp = wx.Image(bitmapDir+'/BackgroundPIC.jpg').Scale(width=x, height=y,
                                                   quality=wx.IMAGE_QUALITY_BOX_AVERAGE).ConvertToBitmap()
         dc.DrawBitmap(bmp, 0, 0, True)

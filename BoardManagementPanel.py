@@ -5,6 +5,7 @@ from OrderManagementPanel import OrderGrid
 import numpy as np
 import images
 import wx.lib.scrolledpanel as scrolled
+from ID_DEFINE import *
 
 
 class ColorPalettePanel(scrolled.ScrolledPanel):
@@ -45,7 +46,7 @@ class PicShowPanel(wx.Panel):
         dc.SetBackground(wx.Brush("WHITE"))
         dc.Clear()
         x,y = self.GetClientSize()
-        bmp = wx.Image('bitmaps/%s.jpg'%self.boardType).Scale(width=x, height=y,
+        bmp = wx.Image(bitmapDir+'/%s.jpg'%self.boardType).Scale(width=x, height=y,
                                                   quality=wx.IMAGE_QUALITY_BOX_AVERAGE).ConvertToBitmap()
         dc.DrawBitmap(bmp, 0, 0, True)
 

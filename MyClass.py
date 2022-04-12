@@ -41,16 +41,13 @@ from OrderManagementPanel import OrderManagementPanel
 from BoardManagementPanel import BoardManagementPanel
 from BluePrintManagementPanel import BluePrintManagementPanel
 from ExcelImport import XLSGridFrame
-from DBOperation import CreateNewOrderSheet,InsertNewOrderRecord,GetAllOrderList
+from DBOperation import CreateNewOrderSheet,InsertNewOrderRecord,GetAllOrderList,GetOrderByOrderID
 from ProductionScheduleAlgorithm import ProductionScheduleAlgorithm
 from ImportOrderDialog import ImportOrderFromExcelDialog
 from ProductionScheduleDialog import ProductionScheduleDialog
 from PackageDialog import PackageDialog
-
-dirName = os.path.dirname(os.path.abspath(__file__))
-bitmapDir = os.path.join(dirName, 'bitmaps')
-scheduleDir = os.path.join(dirName, '工单/')
-
+from ExcelOperation import GetOrderIDFromExcelFile
+from xls2xlsx import xls2xlsx
 
 def switchRGBtoBGR(colour):
     return wx.Colour(colour.Blue(), colour.Green(), colour.Red())
@@ -319,7 +316,7 @@ class MainPanel(wx.Panel):
                                           foldIcons=Images)
             item.SetLabel("基材操作面板")
             panel = wx.Panel(item, -1, size=(300, 300))
-            bitmap = wx.Bitmap("bitmaps/aquabutton.png",
+            bitmap = wx.Bitmap(bitmapDir+"/aquabutton.png",
                                wx.BITMAP_TYPE_PNG)
             self.newBoardBTN = AB.AquaButton(panel, wx.ID_ANY, bitmap, "  新建基材", size=(100, 50))
             self.newBoardBTN.SetForegroundColour(wx.BLACK)
@@ -339,7 +336,7 @@ class MainPanel(wx.Panel):
                                           foldIcons=Images)
             item.SetLabel("图纸操作面板")
             panel = wx.Panel(item, -1, size=(300, 300))
-            bitmap = wx.Bitmap("bitmaps/aquabutton.png",
+            bitmap = wx.Bitmap(bitmapDir+"/aquabutton.png",
                                wx.BITMAP_TYPE_PNG)
             self.newSchematicBTN = AB.AquaButton(panel, wx.ID_ANY, bitmap, "  新建图纸", size=(100, 50))
             self.newSchematicBTN.SetForegroundColour(wx.BLACK)
@@ -362,7 +359,7 @@ class MainPanel(wx.Panel):
                                           foldIcons=Images)
             item.SetLabel("订单操作面板")
             panel = wx.Panel(item, -1, size=(300, 600))
-            bitmap = wx.Bitmap("bitmaps/aquabutton.png",
+            bitmap = wx.Bitmap(bitmapDir+"/aquabutton.png",
                                wx.BITMAP_TYPE_PNG)
             self.newOrderBTN = AB.AquaButton(panel, wx.ID_ANY, bitmap, "  新建订单", size=(100, 50))
             self.newOrderBTN.Bind(wx.EVT_BUTTON,self.OnNewOrderBTN)
@@ -393,7 +390,7 @@ class MainPanel(wx.Panel):
                                           foldIcons=Images, cbstyle=cs)
             item.SetLabel("标签/胶水单操作面板")
             panel = wx.Panel(item, -1, size=(300, 300))
-            bitmap = wx.Bitmap("bitmaps/aquabutton.png",
+            bitmap = wx.Bitmap(bitmapDir+"/aquabutton.png",
                                wx.BITMAP_TYPE_PNG)
             self.newGlueBTN = AB.AquaButton(panel, wx.ID_ANY, bitmap, " 新建标签/胶水单", size=(100, 50))
             self.newGlueBTN.SetForegroundColour(wx.BLACK)
@@ -419,7 +416,7 @@ class MainPanel(wx.Panel):
                                           foldIcons=Images, cbstyle=cs)
             item.SetLabel("货盘单操作面板")
             panel = wx.Panel(item, -1, size=(300, 300))
-            bitmap = wx.Bitmap("bitmaps/aquabutton.png",
+            bitmap = wx.Bitmap(bitmapDir+"/aquabutton.png",
                                wx.BITMAP_TYPE_PNG)
             self.newDockerBTN = AB.AquaButton(panel, wx.ID_ANY, bitmap, " 新建货盘", size=(100, 50))
             self.newDockerBTN.SetForegroundColour(wx.BLACK)
@@ -575,8 +572,8 @@ class MainPanel(wx.Panel):
         value = dlg.ShowModal()
         dlg.Destroy()
         if value == wx.ID_OK:
-            wildcard = "Excel文件 (*.xls)|*.xlsx|" \
-                       "Compiled Python (*.pyc)|*.pyc|" \
+            wildcard = "Excel文件 (*.xlsx)|*.xlsx|" \
+                       "Excel文件 (*.xls)|*.xls|" \
                        "All files (*.*)|*.*"
             dlg = wx.FileDialog(
                 self, message="请选择Excel文件",
@@ -589,16 +586,25 @@ class MainPanel(wx.Panel):
             )
             if dlg.ShowModal() == wx.ID_OK:
                 self.excelFileName = dlg.GetPaths()[0]
+                temp = self.excelFileName.split('.')[-1]
+                if temp == 'xls':
+                    xls2xlsx(self.excelFileName)
+                    self.excelFileName += 'x'
                 dlg.Destroy()
-                dlg = ImportOrderFromExcelDialog(self, self.newOrderID)
-                dlg.CenterOnScreen()
-                if dlg.ShowModal() == wx.ID_OK:
-                    # InsertNewOrderRecord(self.log, 1, self.newOrderID)
-                    # CreateNewOrderSheet(self.log, 1, self.newOrderID)
-                    _, boardList = GetAllOrderList(self.log, 1)
-                    self.work_zone_Panel.orderManagmentPanel.dataArray = np.array(boardList)
-                    self.work_zone_Panel.orderManagmentPanel.orderGrid.ReCreate()
-                dlg.Destroy()
+                orderID = GetOrderIDFromExcelFile(self.excelFileName)
+                _,orderInfor = GetOrderByOrderID(self.log, 1, orderID)
+                if len(orderInfor)>0:
+                    wx.MessageBox("此订单已存在，请修改Excel文件中的订单编号，然后重试！","错误提示：")
+                else:
+                    dlg = ImportOrderFromExcelDialog(self, self.newOrderID)
+                    dlg.CenterOnScreen()
+                    if dlg.ShowModal() == wx.ID_OK:
+                        # InsertNewOrderRecord(self.log, 1, self.newOrderID)
+                        # CreateNewOrderSheet(self.log, 1, self.newOrderID)
+                        _, boardList = GetAllOrderList(self.log, 1)
+                        self.work_zone_Panel.orderManagmentPanel.dataArray = np.array(boardList)
+                        self.work_zone_Panel.orderManagmentPanel.orderGrid.ReCreate()
+                    dlg.Destroy()
 
                 # _, boardList = GetAllOrderList(self.log, 1)
                 # self.work_zone_Panel.orderManagmentPanel.dataArray = np.array(boardList)
@@ -615,6 +621,7 @@ class MainPanel(wx.Panel):
                 self.work_zone_Panel.orderManagmentPanel.dataArray = np.array(boardList)
                 self.work_zone_Panel.orderManagmentPanel.orderGrid.ReCreate()
             dlg.Destroy()
+
     def OnPressCaption(self,event):
         for i in range(0, self._pnl.GetCount()):
             item = self._pnl.GetFoldPanel(i)

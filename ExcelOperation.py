@@ -4,6 +4,18 @@ import wx
 import wx.grid as gridlib
 import numpy as np
 
+def GetOrderIDFromExcelFile(fileName):
+    sheetName = GetSheetNameListFromExcelFileName(fileName)[0]
+    data = GetSheetDataFromExcelFileName(fileName,sheetName)
+    for i, row in enumerate(data):
+        if "Project" in row:
+            row = list(row)
+            col = row.index("Project")
+            for j, item in enumerate(row[col + 1:]):
+                if item:
+                    return int(item)
+    return -1
+
 def GetSheetNameListFromExcelFileName(fileName):
     wb = openpyxl.load_workbook(fileName)
     sheets = wb.worksheets

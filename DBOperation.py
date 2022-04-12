@@ -75,6 +75,22 @@ def GetAllOrderList(log, whichDB):
     db.close()
     return 0, temp
 
+def GetOrderByOrderID(log, whichDB, orderID):
+    try:
+        db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
+                             passwd='%s' % dbPassword[whichDB], db='%s' % dbName[whichDB], charset='utf8')
+    except:
+        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        if log:
+            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+        return -1, []
+    cursor = db.cursor()
+    sql = """SELECT `订单编号`,`订单名称`,`总价`,`产品数量`,`订单交货日期`,`下单时间`,`下单员ID`,`状态`  from `订单信息` where `订单编号` = %s"""%int(orderID)
+    cursor.execute(sql)
+    temp = cursor.fetchall()  # 获得压条信息
+    db.close()
+    return 0, temp
+
 def UpdateOrderInfo(log, whichDB,data):
     try:
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],

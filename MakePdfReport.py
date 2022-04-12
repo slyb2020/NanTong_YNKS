@@ -12,7 +12,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
-
+from ID_DEFINE import *
 
 
 pdfmetrics.registerFont(TTFont('SimSun', 'Font/SimSun.ttf'))  #注册字体
@@ -48,7 +48,7 @@ def coord(x, y, height, unit=1):
 #     print("here")
 
 def DrawMaterialSchedule(c):
-    I = Image("D:\\WorkSpace\\Python\\NanTong_YNKS\\bitmaps\\PVC.jpg")
+    I = Image(bitmapDir+"/PVC.jpg")
     styleSheet = getSampleStyleSheet()
     I.drawHeight = 1.25 * inch * I.drawHeight / I.drawWidth
     I.drawWidth = 1.25 * inch
