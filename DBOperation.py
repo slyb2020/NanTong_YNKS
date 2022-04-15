@@ -206,6 +206,31 @@ def GetDeltaWithBluePrintNo(log,whichDB,bluePrintNo):
     db.close()
     return 0, temp
 
+def GetAllCeilingList(log,whichDB, type,state='在用'):
+    try:
+        db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
+                             passwd='%s' % dbPassword[whichDB], db='%s' % dbName[whichDB], charset='utf8')
+    except:
+        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        if log:
+            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+        return -1, []
+    cursor = db.cursor()
+    if state == '全部':
+        sql = """SELECT `图纸号`,`面板增量`,`中板增量`,`背板增量`,`剪板505`,`成型405`,`成型409`,`成型406`,`折弯652`,`热压100`,
+                    `热压306`,`冲铣`,`图纸状态`,`创建人`,`中板`,'打包9000',`创建时间`,`备注` 
+                    ,`a使能`,`a`,`b使能`,`b`,`c使能`,`c`,`d使能`,`d`,`e使能`,`e`,`f使能`,`f`,`CY使能`,`CY`,`图纸名` 
+                    from `图纸信息` where `图纸大类`= '天花板'"""
+    else:
+        sql = """SELECT `图纸号`,`面板增量`,`中板增量`,`背板增量`,`剪板505`,`成型405`,`成型409`,`成型406`,`折弯652`,`热压100`,
+                    `热压306`,`冲铣`,`图纸状态`,`创建人`,`中板`,'打包9000',`创建时间`,`备注` 
+                    ,`a使能`,`a`,`b使能`,`b`,`c使能`,`c`,`d使能`,`d`,`e使能`,`e`,`f使能`,`f`,`CY使能`,`CY`,`图纸名`
+                    from `图纸信息` where `图纸大类`= '天花板' and `图纸状态`='%s'"""%state
+    cursor.execute(sql)
+    temp = cursor.fetchall()  # 获得压条信息
+    db.close()
+    return 0, temp
+
 def GetAllBluPrintList(log,whichDB, type,state='在用'):
     try:
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
@@ -220,12 +245,12 @@ def GetAllBluPrintList(log,whichDB, type,state='在用'):
         sql = """SELECT `图纸号`,`面板增量`,`中板增量`,`背板增量`,`剪板505`,`成型405`,`成型409`,`成型406`,`折弯652`,`热压100`,
                     `热压306`,`冲铣`,`图纸状态`,`创建人`,`中板`,'打包9000',`创建时间`,`备注` 
                     ,`a使能`,`a`,`b使能`,`b`,`c使能`,`c`,`d使能`,`d`,`e使能`,`e`,`f使能`,`f`,`CY使能`,`CY`,`图纸名` 
-                    from `图纸信息` """
+                    from `图纸信息` where `图纸大类`= '墙板'"""
     else:
         sql = """SELECT `图纸号`,`面板增量`,`中板增量`,`背板增量`,`剪板505`,`成型405`,`成型409`,`成型406`,`折弯652`,`热压100`,
                     `热压306`,`冲铣`,`图纸状态`,`创建人`,`中板`,'打包9000',`创建时间`,`备注` 
                     ,`a使能`,`a`,`b使能`,`b`,`c使能`,`c`,`d使能`,`d`,`e使能`,`e`,`f使能`,`f`,`CY使能`,`CY`,`图纸名`
-                    from `图纸信息` where `图纸状态`='%s'"""%state
+                    from `图纸信息` where `图纸大类`= '墙板' and `图纸状态`='%s'"""%state
     cursor.execute(sql)
     temp = cursor.fetchall()  # 获得压条信息
     db.close()
@@ -279,15 +304,45 @@ def SaveBluePrintInDB(log,whichDB,data):
     sql = "INSERT INTO 图纸信息(`图纸号`,`面板增量`,`中板增量`,`背板增量`,`剪板505`,`成型405`,`成型409`,`成型406`,`折弯652`,`热压100`," \
           "`热压306`,`冲铣`,`图纸状态`,`创建人`,`中板`,`打包9000`,`创建时间`,`备注`,`a使能`,`a`," \
           "`b使能`,`b`,`c使能`,`c`,`d使能`,`d`,`e使能`,`e`,`f使能`,`f`," \
-          "`CY使能`,`CY`,`图纸名`)" \
+          "`CY使能`,`CY`,`图纸名`,`图纸大类`)" \
           "VALUES ('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s'," \
           "'%s','%s','%s','%s','%s','%s','%s','%s','%s',%s," \
           "'%s',%s,'%s',%s,'%s',%s,'%s',%s,'%s',%s," \
-          "'%s',%s,'%s')"\
+          "'%s',%s,'%s','%s')"\
           % (data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],
              data[10],data[11],data[12],data[13],data[14],data[15],datetime.date.today(),data[17],data[18],int(data[19]),
              data[20],int(data[21]),data[22],int(data[23]),data[24],int(data[25]),data[26],int(data[27]),data[28],int(data[29]),
-             data[30],int(data[31]),data[32])
+             data[30],int(data[31]),data[32],'墙板')
+    try:
+        cursor.execute(sql)
+        db.commit()  # 必须有，没有的话插入语句不会执行
+    except:
+        db.rollback()
+        print("error")
+    db.close()
+
+def SaveCeilingInDB(log,whichDB,data):
+    try:
+        db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
+                             passwd='%s' % dbPassword[whichDB], db='%s' % dbName[whichDB], charset='utf8')
+    except:
+        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        if log:
+            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+        return -1, []
+    cursor = db.cursor()
+    sql = "INSERT INTO 图纸信息(`图纸号`,`面板增量`,`中板增量`,`背板增量`,`剪板505`,`成型405`,`成型409`,`成型406`,`折弯652`,`热压100`," \
+          "`热压306`,`冲铣`,`图纸状态`,`创建人`,`中板`,`打包9000`,`创建时间`,`备注`,`a使能`,`a`," \
+          "`b使能`,`b`,`c使能`,`c`,`d使能`,`d`,`e使能`,`e`,`f使能`,`f`," \
+          "`CY使能`,`CY`,`图纸名`,`图纸大类`)" \
+          "VALUES ('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s'," \
+          "'%s','%s','%s','%s','%s','%s','%s','%s','%s',%s," \
+          "'%s',%s,'%s',%s,'%s',%s,'%s',%s,'%s',%s," \
+          "'%s',%s,'%s','%s')"\
+          % (data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],
+             data[10],data[11],data[12],data[13],data[14],data[15],datetime.date.today(),data[17],data[18],int(data[19]),
+             data[20],int(data[21]),data[22],int(data[23]),data[24],int(data[25]),data[26],int(data[27]),data[28],int(data[29]),
+             data[30],int(data[31]),data[32],'天花板')
     try:
         cursor.execute(sql)
         db.commit()  # 必须有，没有的话插入语句不会执行
@@ -329,7 +384,7 @@ def UpdateBluePrintInDB(log,whichDB,data):
     cursor = db.cursor()
     sql = "UPDATE 图纸信息 SET `面板增量`='%s',`中板增量`='%s',`背板增量`='%s',`剪板505`='%s',`成型405`='%s'," \
           "`成型409`='%s',`成型406`='%s',`折弯652`='%s',`热压100`='%s',`热压306`='%s',`冲铣`='%s',`图纸状态`='%s',`创建人`='%s'," \
-          "`中板`='%s',`打包9000`='%s',`图纸大类`='%s',`创建时间`='%s',`备注`='%s' WHERE `图纸号` = '%s'" \
+          "`中板`='%s',`打包9000`='%s',`图纸大类`='%s',`创建时间`='%s',`备注`='%s', `图纸大类`='墙板' WHERE `图纸号` = '%s'" \
           % (data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],data[12],
              data[13],data[14],data[15],data[16],datetime.date.today(),data[17],data[0])
     # sql = "INSERT INTO 图纸信息(`图纸号`,`面板增量`,`中板增量`,`背板增量`,`剪板505`,`成型405`,`成型409`,`成型406`,`折弯652`," \
@@ -341,6 +396,33 @@ def UpdateBluePrintInDB(log,whichDB,data):
         db.commit()  # 必须有，没有的话插入语句不会执行
     except:
         db.rollback()
+    db.close()
+
+def UpdateCeilingInDB(log,whichDB,data):
+    try:
+        db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
+                             passwd='%s' % dbPassword[whichDB], db='%s' % dbName[whichDB], charset='utf8')
+    except:
+        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        if log:
+            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+        return -1, []
+    cursor = db.cursor()
+    sql = "UPDATE 图纸信息 SET `面板增量`='%s',`中板增量`='%s',`背板增量`='%s',`剪板505`='%s',`成型405`='%s'," \
+          "`成型409`='%s',`成型406`='%s',`折弯652`='%s',`热压100`='%s',`热压306`='%s',`冲铣`='%s',`图纸状态`='%s',`创建人`='%s'," \
+          "`中板`='%s',`打包9000`='%s',`图纸大类`='%s',`创建时间`='%s',`备注`='%s', `图纸大类`='天花板' WHERE `图纸号` = '%s'" \
+          % (data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],data[12],
+             data[13],data[14],data[15],data[16],datetime.date.today(),data[17],data[0])
+    # sql = "INSERT INTO 图纸信息(`图纸号`,`面板增量`,`中板增量`,`背板增量`,`剪板505`,`成型405`,`成型409`,`成型406`,`折弯652`," \
+    #       "`热压100`,`热压306`,`冲铣`,`图纸状态`,`创建人`,`中板`,`打包9000`,`图纸大类`,`创建时间`,`备注`)" \
+    #       "VALUES ('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')"\
+    #       % (data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],data[12],data[13],data[14],data[15],data[16],datetime.date.today(),data[17])
+    try:
+        cursor.execute(sql)
+        db.commit()  # 必须有，没有的话插入语句不会执行
+    except:
+        db.rollback()
+        print("error")
     db.close()
 
 def GetTableListFromDB(log,whichDB):
@@ -378,7 +460,7 @@ def CreateNewOrderSheet(log,whichDB,newOrderID):
     sql = """CREATE TABLE `%d` (
             `Index` INT(11) NOT NULL AUTO_INCREMENT,
             `订单号` INT(11) NOT NULL,
-            `子订单号` INT(11) NOT NULL,
+            `子订单号` VARCHAR(50) NOT NULL DEFAULT '' COLLATE 'utf8_general_ci',
             `甲板` VARCHAR(50) NOT NULL COLLATE 'utf8_general_ci',
             `区域` VARCHAR(50) NOT NULL COLLATE 'utf8_general_ci',
             `房间` VARCHAR(50) NOT NULL COLLATE 'utf8_general_ci',
@@ -386,9 +468,9 @@ def CreateNewOrderSheet(log,whichDB,newOrderID):
             `产品类型` VARCHAR(50) NOT NULL COLLATE 'utf8_general_ci',
             `面板代码` VARCHAR(50) NOT NULL COLLATE 'utf8_general_ci',
             `数量` INT(11) NOT NULL,
-            `宽度` INT(11) NOT NULL,
-            `高度` INT(11) NOT NULL,
-            `厚度` INT(11) NOT NULL,
+            `宽度` VARCHAR(50) NOT NULL DEFAULT '' COLLATE 'utf8_general_ci',
+            `高度` VARCHAR(50) NOT NULL DEFAULT '' COLLATE 'utf8_general_ci',
+            `厚度` VARCHAR(50) NOT NULL DEFAULT '' COLLATE 'utf8_general_ci',
             `X面材质` VARCHAR(50) NOT NULL COLLATE 'utf8_general_ci',
             `X面颜色` VARCHAR(50) NOT NULL COLLATE 'utf8_general_ci',
             `Y面材质` VARCHAR(50) NOT NULL COLLATE 'utf8_general_ci',
@@ -489,13 +571,29 @@ def InsertBatchOrderDataIntoDB(log, whichDB, orderTabelName, orderDataList):
         return -1, []
     cursor = db.cursor()
     for data in orderDataList:
-        if data[10]==None:
-            data[10]=0
-        if data[11]==None:
-            data[11]=0
-        sql="""INSERT INTO `%d`(`订单号`,`子订单号`,`产品类型`,`图纸`,`面板代码`,`X面颜色`,`Y面颜色`,`Z面颜色`,`V面颜色`,`高度`,`宽度`,`厚度`,`甲板`,`区域`,`房间`,`数量`)
-        VALUES (%d,%d,'%s','%s','%s','%s','%s','%s','%s',%d,%d,%d,'%s','%s','%s',%d)"""\
-            %(int(orderTabelName),int(orderTabelName),int(data[0]),data[1],data[3],data[4],data[5],data[6],data[7],data[8],int(data[9]),int(data[10]),int(data[11]),data[12],data[13],data[14],int(data[15]))
+        if '.' in data[4]:
+            temp = data[4].split('.')
+        else:
+            temp=[0]*3
+            temp[0]=data[4][0]
+            temp[1]=data[4][1:4]
+            temp[2]=data[4][4:]
+        if not temp[2].isdigit():
+            string1=temp[2]
+            num = ord(string1[0].upper()) - ord('A')
+            num += 10
+            string1 = str(num) + string1[1:]
+            string1 = int(string1)
+        else:
+            string1=int(temp[2])
+        data[4]="%s.%s.%04d"%(temp[0],temp[1],string1)
+        # if data[10]==None:
+        #     data[10]=0
+        # if data[11]==None:
+        #     data[11]=0
+        sql="""INSERT INTO `%d`(`订单号`,`子订单号`,`甲板`,`区域`,`房间`,`图纸`,`宽度`,`高度`,`厚度`,`X面颜色`,`Y面颜色`,`Z面颜色`,`V面颜色`,`数量`,`面板代码`)
+        VALUES (%d,%d,'%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s',%d,'%s')"""\
+            %(int(orderTabelName),int(orderTabelName),int(data[0]),data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],int(data[12]),data[13])
         cursor.execute(sql)
         try:
             db.commit()  # 必须有，没有的话插入语句不会执行

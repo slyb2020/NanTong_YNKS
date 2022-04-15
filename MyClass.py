@@ -551,7 +551,7 @@ class MainPanel(wx.Panel):
             else:
                 self.productionSchedule.missList = list(set(self.productionSchedule.missList))
                 self.productionSchedule.wrongNumber = len(self.productionSchedule.missList)
-                wx.MessageBox("缺少如下%s张图纸：\r\n%s,\r\n无法进行排产，请补全图纸后再试！" % (self.productionSchedule.wrongNumber, str(self.productionSchedule.missList)), "提示信息")
+                wx.MessageBox("缺少如下%s张图纸：\r\n%s,\r\n  无法完成排产，请补全图纸后再试！" % (self.productionSchedule.wrongNumber, str(self.productionSchedule.missList)), "提示信息")
         else:
             dlg.Destroy()
         self.ReCreateOrderInfoPanel()

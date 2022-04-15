@@ -151,8 +151,13 @@ class ImportOrderFromExcelDialog(wx.Dialog):
         orderDataList = []
         for pageNum, page in enumerate(self.sheetPage):
             (rowStart,rowEnd) = self.keyDataColPostion[pageNum][0]
+            col = self.keyDataColPostion[pageNum][1]
             for data in page.data[rowStart:rowEnd,:]:
-                orderDataList.append(data)
+                temp = [0]*16
+                for i in range(len(col)):
+                    if col[i]>0:
+                        temp[i]=data[col[i]]
+                orderDataList.append(temp)
         InsertBatchOrderDataIntoDB(self.parent.log, 1, self.newOrderID, orderDataList)
         event.Skip()
 
@@ -262,9 +267,9 @@ class ImportOrderFromExcelDialog(wx.Dialog):
         return -1
     def GetMainOrderName(self):
         for i, row in enumerate(self.sheetPage[0].data):
-            if "Project name" in row:
+            if "Project Name" in row:
                 row = list(row)
-                col = row.index("Project name")
+                col = row.index("Project Name")
                 for j, item in enumerate(row[col+1:]):
                     if item:
                         self.sheetPage[0].SetCellBackgroundColour(i,j+col+1,wx.YELLOW)
@@ -302,16 +307,32 @@ class ImportOrderFromExcelDialog(wx.Dialog):
                     deckColNum = rowData.index("DECK")
                     areaColNum = rowData.index("AREA")
                     roomColNum = rowData.index("ROOM")
+                    drawingNoColNum = rowData.index("Drawing No.")
+                    widthColNum = rowData.index("Width")
+                    heightColNum = rowData.index("Height")
+                    thicknessColNum = rowData.index("Thickness")
+                    xColourColNum = rowData.index("X-Colour")
+                    yColourColNum = rowData.index("Y-Colour")
+                    if "Z-Colour" in rowData:
+                        zColourColNum = rowData.index("Z-Colour")
+                    else:
+                        zColourColNum = -1
+                    if "V-Colour" in rowData:
+                        vColourColNum = rowData.index("V-Colour")
+                    else:
+                        vColourColNum = -1
+                    amountColNum = rowData.index("Pcs")
+                    codeColNum = rowData.index("Code")
                     break
             for i, row in enumerate(page.data[rowNum+1:]):
-                if row[suborderColNum]==self.subOrderIDList[pageNum]:
+                if int(row[suborderColNum])==int(self.subOrderIDList[pageNum]):
                     rowNumStart = i+rowNum+1
                     break
             for i, row in enumerate(page.data[rowNumStart+1:]):
                 if  row[suborderColNum]==None and row[deckColNum]==None and row[areaColNum]==None and row[roomColNum]==None:
-                    rowNumEnd = i+rowNumStart
                     break
-            result.append([[rowNumStart,rowNumEnd],[suborderColNum,deckColNum,areaColNum,roomColNum]])
+            rowNumEnd = i + rowNumStart
+            result.append([[rowNumStart,rowNumEnd],[suborderColNum,deckColNum,areaColNum,roomColNum,drawingNoColNum,widthColNum,heightColNum,thicknessColNum,xColourColNum,yColourColNum,zColourColNum,vColourColNum,amountColNum,codeColNum]])
         return result
 
     def GetDeckItemList(self,pageNum,subOrderID):
@@ -321,7 +342,7 @@ class ImportOrderFromExcelDialog(wx.Dialog):
         dataRowEnd = self.keyDataColPostion[pageNum][0][1]
         result= []
         for data in self.sheetPage[pageNum].data[dataRowStart:dataRowEnd+1,:]:
-            if str(data[subOrderCol]) == subOrderID:
+            if str(int(data[subOrderCol])) == str(int(subOrderID)):
                 result.append(str(data[deckCol]))
         result = list(set(result))
         result.sort()
@@ -335,7 +356,7 @@ class ImportOrderFromExcelDialog(wx.Dialog):
         dataRowEnd = self.keyDataColPostion[pageNum][0][1]
         result= []
         for data in self.sheetPage[pageNum].data[dataRowStart:dataRowEnd+1,:]:
-            if str(data[subOrderCol]) == subOrderID and str(data[deckCol])==deckID:
+            if str(int(data[subOrderCol])) == str(int(subOrderID)) and str(int(data[deckCol]))==str(int(deckID)):
                 result.append(str(data[zoneCol]))
         result = list(set(result))
         result.sort()
@@ -350,7 +371,7 @@ class ImportOrderFromExcelDialog(wx.Dialog):
         dataRowEnd = self.keyDataColPostion[pageNum][0][1]
         result= []
         for data in self.sheetPage[pageNum].data[dataRowStart:dataRowEnd+1,:]:
-            if str(data[subOrderCol]) == subOrderID and str(data[deckCol])==deckID and str(data[zoneCol])==zoneID:
+            if str(int(data[subOrderCol])) == str(int(subOrderID)) and str(int(data[deckCol]))==str(int(deckID)) and str(data[zoneCol])==zoneID:
                 result.append(str(data[roomCol]))
         result = list(set(result))
         result.sort()

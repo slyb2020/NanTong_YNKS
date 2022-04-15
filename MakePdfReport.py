@@ -116,7 +116,7 @@ def MakeMaterialScheduleTemplate(filename,data=[]):
     myCanvas = canvas.Canvas(filename, pagesize=letter)
     myCanvas.setFont("SimSun", 18)
     myCanvas.drawCentredString(width/2,730, text="伊纳克赛(南通)精致内饰材料有限公司出料单")
-    myCanvas.drawImage("bitmaps/python_logo.png", 30, 710,
+    myCanvas.drawImage(bitmapDir+"/logo.jpg", 30, 710,
                         width=40, height=40)
     myCanvas.setFont("SimSun", 12)
     myCanvas.drawCentredString(width/2,710, text="Inexa (NanTong) Interiors Co.Ltd Meterial Requisition")
@@ -213,7 +213,7 @@ def MakeCutScheduleTemplate(filename,data=[]):
     myCanvas = canvas.Canvas(filename, pagesize=letter)
     myCanvas.setFont("SimSun", 18)
     myCanvas.drawCentredString(width/2,730, text="伊纳克赛(南通)精致内饰材料有限公司剪切任务单")
-    myCanvas.drawImage("bitmaps/python_logo.png", 30, 710,
+    myCanvas.drawImage(bitmapDir+"/logo.jpg", 30, 710,
                         width=40, height=40)
     myCanvas.setFont("SimSun", 12)
     myCanvas.drawCentredString(width/2,710, text="Inexa (NanTong) Interiors Co.Ltd Plate Shear Schedule")
@@ -282,7 +282,7 @@ def MakeBendScheduleTemplate(filename,data=[]):
     myCanvas = canvas.Canvas(filename, pagesize=letter)
     myCanvas.setFont("SimSun", 18)
     myCanvas.drawCentredString(width/2,730, text="伊纳克赛(南通)精致内饰材料有限公司折弯任务单")
-    myCanvas.drawImage("bitmaps/python_logo.png", 30, 710,
+    myCanvas.drawImage(bitmapDir+"/logo.jpg", 30, 710,
                         width=40, height=40)
     myCanvas.setFont("SimSun", 12)
     myCanvas.drawCentredString(width/2,710, text="Inexa (NanTong) Interiors Co.Ltd Bending Schedule")
@@ -354,7 +354,7 @@ def MakeFormingScheduleTemplate(filename,data=[]):
     myCanvas = canvas.Canvas(filename, pagesize=letter)
     myCanvas.setFont("SimSun", 18)
     myCanvas.drawCentredString(width/2,730, text="伊纳克赛(南通)精致内饰材料有限公司成型任务单")
-    myCanvas.drawImage("bitmaps/python_logo.png", 30, 710,
+    myCanvas.drawImage(bitmapDir+"/python_logo.png", 30, 710,
                         width=40, height=40)
     myCanvas.setFont("SimSun", 12)
     myCanvas.drawCentredString(width/2,710, text="Inexa (NanTong) Interiors Co.Ltd Forming Schedule")
@@ -374,7 +374,7 @@ def MakeFormingScheduleTemplate(filename,data=[]):
 #                             topMargin=72,
 #                             bottomMargin=18)
 #     flowables = []
-#     logo = "bitmaps/python_logo.png"
+#     logo = bitmapDir+"/python_logo.png"
 #     magName = "Pythonista"
 #     issueNum = 12
 #     subPrice = "99.00"

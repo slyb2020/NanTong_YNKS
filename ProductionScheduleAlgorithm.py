@@ -38,7 +38,7 @@ class ProductionScheduleAlgorithm(object):
                             record[15], int(record[10]) + delta[4], int(record[11]) + delta[5], int(record[12]),int(record[13]),'墙板']
                     self.materialBoardList.append(temp)
         for record in self.constructionOrderData:
-            drawingNo = record[6][0] + '.' + record[6][1:4] + '.' + '%04d' % (int(record[6][4:]))
+            drawingNo = record[6]
             errorCode,data = self.CalculateConstructionBoardNeeded(drawingNo)
             if errorCode:
                 self.wrongNumber += 1
@@ -63,7 +63,10 @@ class ProductionScheduleAlgorithm(object):
     def DisassembleOrderData(self):
         for data in self.orderDetailData:
             temp = str(data[6])
-            index = temp[0]+'.'+temp[1:4]+'.'+temp[4:]
+            if '.' not in temp:
+                index = temp[0]+'.'+temp[1:4]+'.'+temp[4:]
+            else:
+                index = temp
             temp = index.split('.')
             if str(temp[1]).isdigit():
                 self.constructionOrderData.append(data)

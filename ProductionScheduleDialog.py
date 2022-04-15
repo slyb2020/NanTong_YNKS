@@ -44,6 +44,9 @@ class ProductionScheduleDialog(wx.Dialog):
         self.parent = parent
         self.log = log
         # self.log.WriteText("操作员：'%s' 开始执行库存参数设置操作。。。\r\n"%(self.parent.operator_name))
+        dirName = scheduleDir + '%s/' % self.orderID
+        if not os.path.exists(dirName):
+            os.makedirs(dirName)
         self.SetExtraStyle(wx.DIALOG_EX_METAL)
         self.Create(parent, -1, "排产操作对话框", pos, size, style)
         sizer = wx.BoxSizer(wx.VERTICAL)
