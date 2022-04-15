@@ -729,10 +729,12 @@ class SpecificBluePrintManagementPanel(wx.Panel):
         from `图纸信息`"""
         self.data[0] = bluePrintNo
         self.data[1] = '%s,%s'%(self.frontLengthDeltaCtrl.GetValue(),self.frontWidthDeltaCtrl.GetValue())
+        self.data[2] = '0,0,0,0'
         if self.data[14]=='1':
-            self.data[2] = '%s,%s,0,0'%(self.middleLengthDeltaCtrl.GetValue(),self.middleWidthDeltaCtrl.GetValue())
+            self.data[2] = '%s,%s,0,0'%(self.middleLengthDeltaCtrl1.GetValue(),self.middleWidthDeltaCtrl1.GetValue())
         elif self.data[14]=='2':
-            self.data[2] = '0,0,0,0'
+            self.data[2] = '%s,%s,%s,%s'%(self.middleLengthDeltaCtrl1.GetValue(),self.middleWidthDeltaCtrl1.GetValue(),
+                                          self.middleLengthDeltaCtrl2.GetValue(),self.middleWidthDeltaCtrl2.GetValue())
         self.data[3] = '%s,%s'%(self.rearLengthDeltaCtrl.GetValue(),self.rearWidthDeltaCtrl.GetValue())
         self.data[4] = 'Y'
         self.data[5] = 'Y' if self.shapeprocess405Check.GetValue() else 'N'#成型405工序
@@ -1544,10 +1546,12 @@ class CeilingPrintManagementPanel(wx.Panel):
         from `图纸信息`"""
         self.data[0] = bluePrintNo
         self.data[1] = '%s,%s'%(self.frontLengthDeltaCtrl.GetValue(),self.frontWidthDeltaCtrl.GetValue())
+        self.data[2] = '0,0,0,0'
         if self.data[14]=='1':
-            self.data[2] = '%s,%s,0,0'%(self.middleLengthDeltaCtrl.GetValue(),self.middleWidthDeltaCtrl.GetValue())
+            self.data[2] = '%s,%s,0,0'%(self.middleLengthDeltaCtrl1.GetValue(),self.middleWidthDeltaCtrl1.GetValue())
         elif self.data[14]=='2':
-            self.data[2] = '0,0,0,0'
+            self.data[2] = '%s,%s,%s,%s'%(self.middleLengthDeltaCtrl1.GetValue(),self.middleWidthDeltaCtrl1.GetValue(),
+                                          self.middleLengthDeltaCtrl2.GetValue(),self.middleWidthDeltaCtrl2.GetValue())
         self.data[3] = '%s,%s'%(self.rearLengthDeltaCtrl.GetValue(),self.rearWidthDeltaCtrl.GetValue())
         self.data[4] = 'Y'
         self.data[5] = 'Y' if self.shapeprocess405Check.GetValue() else 'N'#成型405工序

@@ -52,7 +52,26 @@ class ProductionScheduleAlgorithm(object):
                             record[8], int(record[10]), int(data[1]), float(data[3]), int(record[13]), '构件']
                 self.materialBoardList.append(temp)
         for record in self.ceilingOrderData:
-            print("ceiling:",record)
+            #record->0:ID,1:订单号,2:子订单号,3:甲板号,4:区域,5:房间,6:图纸号,7:胶水单号,8:X面颜色,9:Y面颜色,10:长,11:宽,12:厚,13:数量,14:Z面颜色,15:V面颜色
+            errorCode,delta = self.GetCeilingDelta(record)
+            if errorCode:
+                self.missList.append(record[6])
+                self.wrongNumber += 1
+            else:
+                temp = [record[0],record[1],record[2],record[3],record[4],record[5],record[6],record[7],'X',record[8],
+                        int(record[10])+delta[0],int(record[11])+delta[1],int(record[12]),int(record[13]),'天花板']#现在的record[12]还是墙板厚，而不是基材厚
+                self.materialBoardList.append(temp)
+                temp = [record[0],record[1],record[2],record[3],record[4],record[5],record[6],record[7],'Y',record[9],
+                        int(record[10])+delta[6],int(record[11])+delta[7],int(record[12]),int(record[13]),'天花板']
+                self.materialBoardList.append(temp)
+                if record[14] != 'None':
+                    temp = [record[0], record[1], record[2], record[3], record[4], record[5], record[6],record[7], 'Z',
+                            record[14], int(record[10]) + delta[2], int(record[11]) + delta[3], int(record[12]),int(record[13]),'天花板']
+                    self.materialBoardList.append(temp)
+                if record[15] != 'None':
+                    temp = [record[0], record[1], record[2], record[3], record[4], record[5], record[6],record[7], 'V',
+                            record[15], int(record[10]) + delta[4], int(record[11]) + delta[5], int(record[12]),int(record[13]),'天花板']
+                    self.materialBoardList.append(temp)
         for i in self.materialBoardList:
             print(i)
         print("wrong Number", self.wrongNumber)
@@ -90,6 +109,21 @@ class ProductionScheduleAlgorithm(object):
         else:
             return 1,[]
 
+    def GetCeilingDelta(self, orderRecord):
+        delta = self.GetDeltaWithBluePrintNo(orderRecord[6])
+        if delta!=None:#说明返回了有效的增减量
+            frontLengthDelta = int(delta[0].split(',')[0])
+            frontWidthDelta = int(delta[0].split(',')[1])
+            m1LengthDelta = int(delta[1].split(',')[0])
+            m1WidthDelta = int(delta[1].split(',')[1])
+            m2LengthDelta = int(delta[1].split(',')[2])
+            m2WidthDelta = int(delta[1].split(',')[3])
+            rearLengthDelta = int(delta[2].split(',')[0])
+            rearWidthDelta = int(delta[2].split(',')[1])
+            return 0,[frontLengthDelta,frontWidthDelta,m1LengthDelta,m1WidthDelta,m2LengthDelta,m2WidthDelta,rearLengthDelta,rearWidthDelta]
+        else:
+            return 1,[]
+
     def CalculateConstructionBoardNeeded(self, drawingNo):
         """record[0], record[1], record[2], record[3], record[4], record[5], record[6], record[7], 'V',
         record[15], int(record[10]) + delta[4], int(record[11]) + delta[5], int(record[12])]"""
@@ -99,11 +133,12 @@ class ProductionScheduleAlgorithm(object):
         return True,data
 
     def GetDeltaWithBluePrintNo(self,bluePrintNo):
-        if len(bluePrintNo)<10:
-            try:
-                index = int(bluePrintNo[4:])
-            except:
-                index = int(bluePrintNo[5:])
-            bluePrintNo = bluePrintNo[0]+'.'+bluePrintNo[1:4]+'.%04d'%index
+        if '.' not in bluePrintNo:
+            if len(bluePrintNo)<10:
+                try:
+                    index = int(bluePrintNo[4:])
+                except:
+                    index = int(bluePrintNo[5:])
+                bluePrintNo = bluePrintNo[0]+'.'+bluePrintNo[1:4]+'.%04d'%index
         _,delta = GetDeltaWithBluePrintNo(self.log,1,bluePrintNo)
         return delta
