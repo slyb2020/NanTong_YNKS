@@ -587,10 +587,18 @@ def InsertBatchOrderDataIntoDB(log, whichDB, orderTabelName, orderDataList):
         else:
             string1=int(temp[2])
         data[4]="%s.%s.%04d"%(temp[0],temp[1],string1)
-        # if data[10]==None:
-        #     data[10]=0
-        # if data[11]==None:
-        #     data[11]=0
+        if data[8]!=None:
+            data[8]=str(data[8]).replace('-','')
+            data[8]=data[8].strip().upper()
+        if data[9]!=None:
+            data[9]=str(data[9]).replace('-','')
+            data[9]=data[9].strip().upper()
+        if data[10]!=None:
+            data[10]=str(data[10]).replace('-','')
+            data[10]=data[10].strip().upper()
+        if data[11]!=None:
+            data[11]=str(data[11]).replace('-','')
+            data[11]=data[11].strip().upper()
         sql="""INSERT INTO `%d`(`订单号`,`子订单号`,`甲板`,`区域`,`房间`,`图纸`,`宽度`,`高度`,`厚度`,`X面颜色`,`Y面颜色`,`Z面颜色`,`V面颜色`,`数量`,`面板代码`)
         VALUES (%d,%d,'%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s',%d,'%s')"""\
             %(int(orderTabelName),int(orderTabelName),int(data[0]),data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],int(data[12]),data[13])

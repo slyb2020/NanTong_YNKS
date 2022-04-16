@@ -153,7 +153,10 @@ class ImportOrderFromExcelDialog(wx.Dialog):
             (rowStart,rowEnd) = self.keyDataColPostion[pageNum][0]
             col = self.keyDataColPostion[pageNum][1]
             for data in page.data[rowStart:rowEnd,:]:
+                # `子订单号`, `甲板`, `区域`, `房间`, `图纸`, `宽度`, `高度`, `厚度`, `X面颜色`, `Y面颜色`, `Z面颜色`, `V面颜色`, `数量`, `面板代码`
                 temp = [0]*16
+                temp[10] = None
+                temp[11] = None
                 for i in range(len(col)):
                     if col[i]>0:
                         temp[i]=data[col[i]]
