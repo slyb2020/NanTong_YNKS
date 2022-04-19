@@ -127,7 +127,7 @@ def MakeMaterialScheduleTemplate(filename,data=[]):
     DrawMaterialSchedule(myCanvas)
     myCanvas.save()
 
-def DrawCutSchedule(c):
+def DrawCutSchedule(c,record):
     I = Image("D:\\WorkSpace\\Python\\NanTong_YNKS\\bitmaps\\PVC.jpg")
     styleSheet = getSampleStyleSheet()
     I.drawHeight = 1.25 * inch * I.drawHeight / I.drawWidth
@@ -142,32 +142,70 @@ def DrawCutSchedule(c):
          Image</para>''',
                   styleSheet["BodyText"])
     Title1 = Paragraph('<font name="SimSun">序号</font>')
-    Title2 = Paragraph('<font name="SimSun">原材颜色</font>')
-    Title3 = Paragraph('<font name="SimSun">原材厚度</font>')
-    Title4 = Paragraph('<font name="SimSun">原材宽度mm</font>')
-    Title5 = Paragraph('<font name="SimSun">横切长度mm</font>')
-    Title6 = Paragraph('<font name="SimSun">横切数量</font>')
-    Title7 = Paragraph('<font name="SimSun">纵切宽度mm</font>')
-    Title8 = Paragraph('<font name="SimSun">纵切数量</font>')
-    Title9 = Paragraph('<font name="SimSun">图纸号</font>')
-    data = [
-            [Title1, Title2, Title3, Title4, Title5, Title6, Title7, Title8, Title9],
-            ['0', '9GLAV', '0.56', '1234', '2400', '37', '110', '30','N.2SF.0001'],
-            ['1', '9GLAV', '0.56', '1234', '2400', '37', '111', '20','N.2SF.0002'],
-            ['2', '9GLAV', '0.56', '1234', '2400', '37', '112', '50','N.2SF.0001'],
-            ['3', '9GLAV', '0.56', '1234', '2400', '37', '113', '20','N.2SA.0001'],
-            ['4', '9GLAV', '0.56', '1234', '2400', '37', '114', '30','N.2SF.0003'],
-            ['5', '9GLAV', '0.56', '1234', '2400', '37', '115', '35','N.2SF.0001'],
-            ['6', 'G', '0.56', '1234', '2400', '37', '110', '10','N.2SF.0001'],
-            ['7', 'G', '0.56', '1234', '2400', '37', '111', '20','N.2SF.0001'],
-            ['8', 'G', '0.56', '1234', '2400', '37', '112', '30','N.2SF.0001'],
-            ['9', 'G', '0.56', '1234', '2400', '37', '113', '40','N.2SF.0001'],
-            ['10', 'G', '0.56', '1234', '2400', '37', '114', '50','N.2SF.0001'],
-            ['11', 'G', '0.56', '1234', '2400', '37', '115', '15','N.2SF.0001'],
-            ['12', 'G', '0.56', '1234', '2400', '37', '116', '5','N.2SF.0001'],
-            ['13', 'G', '0.56', '1234', '2400', '37', '117', '5','N.2SF.0001'],
-            ['14', 'G', '0.56', '1234', '2400', '37', '118', '10','N.2SF.0001'],
-        ]
+    Title2 = Paragraph('<font name="SimSun">板材颜色</font>')
+    Title3 = Paragraph('<font name="SimSun">板厚</font>')
+    Title4 = Paragraph('<font name="SimSun">板宽</font>')
+    Title5 = Paragraph('<font name="SimSun">横切长</font>')
+    Title6 = Paragraph('<font name="SimSun">数量</font>')
+    Title7 = Paragraph('<font name="SimSun">纵切1</font>')
+    Title8 = Paragraph('<font name="SimSun">纵切2</font>')
+    Title9 = Paragraph('<font name="SimSun">纵切3</font>')
+    Title10 = Paragraph('<font name="SimSun">纵切4</font>')
+    Title11 = Paragraph('<font name="SimSun">纵切5</font>')
+    Title12 = Paragraph('<font name="SimSun">纵切6</font>')
+    Title13 = Paragraph('<font name="SimSun">纵切7</font>')
+    Title14 = Paragraph('<font name="SimSun">数量</font>')
+    num=1
+    pages = []
+    pageDivision = []
+    pageMaxList = []
+    data = [[Title1, Title2, Title3, Title4, Title5, Title6, Title7, Title8, Title9, Title10, Title11, Title12, Title13, Title14],]
+    seperation = []
+    pageMaxvCuttingCol=0
+    for type in record:
+        for board in type:
+            seperation.append(num)
+            for item in board[1]:
+                print("board=",board)
+                print("item=",item)
+                temp=[num,board[0][0],board[0][1],board[0][2],board[0][3],board[0][4]]
+                for vCutting in item[0]:
+                    temp.append(vCutting)
+                temp.append(item[1])
+                data.append(temp)
+                if len(item[0])>pageMaxvCuttingCol:
+                    pageMaxvCuttingCol=len(item[0])
+                num+=1
+                if num>30:
+                    num = 1
+                    pages.append(data)
+                    pageDivision.append(seperation)
+                    pageMaxList.append(pageMaxvCuttingCol)
+                    pageMaxvCuttingCol = 1
+                    seperation=[1]
+                    data=[[Title1, Title2, Title3, Title4, Title5, Title6, Title7, Title8, Title9, Title10, Title11, Title12, Title13, Title14],]
+    for page in pages:
+        print(page)
+
+    # data = [
+    #         [Title1, Title2, Title3, Title4, Title5, Title6, Title7, Title8, Title9, Title10, Title11, Title12, Title13, Title14],
+    #         ['0', '9GLAV', '0.56', '1234', '2400', '37', '110', '110', '110', '110', '110', '110', '30','100'],
+    #         ['1', '9GLAV', '0.56', '1234', '2400', '37', '111', '111', '111', '110', '110', '110', '20','100'],
+    #         ['2', '9GLAV', '0.56', '1234', '2400', '37', '112', '112', '112', '110', '110', '110', '50','100'],
+    #         ['3', '9GLAV', '0.56', '1234', '2400', '37', '113', '113', '113', '110', '110', '110', '20','100'],
+    #         ['4', '9GLAV', '0.56', '1234', '2400', '37', '114', '114', '114', '110', '110', '110', '30','100'],
+    #         ['5', '9GLAV', '0.56', '1234', '2400', '37', '115', '115', '115', '110', '110', '110', '35','100'],
+    #         ['6', 'G', '0.56', '1234', '2400', '37', '110', '110', '110', '110', '110', '110', '10','100'],
+    #         ['7', 'G', '0.56', '1234', '2400', '37', '111', '111', '111', '110', '110', '110', '20','100'],
+    #         ['8', 'G', '0.56', '1234', '2400', '37', '112', '112', '112', '110', '110', '110', '30','100'],
+    #         ['9', 'G', '0.56', '1234', '2400', '37', '113', '113', '113', '110', '110', '110', '40','100'],
+    #         ['10', 'G', '0.56', '1234', '2400', '37', '114', '114', '114', '110', '110', '110', '50','100'],
+    #         ['11', 'G', '0.56', '1234', '2400', '37', '115', '115', '115', '110', '110', '110', '15','100'],
+    #         ['12', 'G', '0.56', '1234', '2400', '37', '116', '116', '116', '110', '110', '110', '5','100'],
+    #         ['13', 'G', '0.56', '1234', '2400', '37', '117', '117', '117', '110', '110', '110', '5','100'],
+    #         ['14', 'G', '0.56', '1234', '2400', '37', '118', '118', '118', '110', '110', '110', '10','100'],
+    #     ]
+    data = pages[0]
     t = Table(data, style=[
                            ('ALIGN', (0, 1), (-1, -1), 'CENTER'),
                            ('GRID', (0, 0), (-1, -1), 0.5, colors.black),       #   类别，(起始列，起始行）,(结束列，结束行)，线宽，颜色  #GRID是内外都有线   #BOX是只有外框，内部没线
@@ -176,11 +214,11 @@ def DrawCutSchedule(c):
                            # ('BOX', (3, 0), (4, -1), 2, colors.black),
                            ('BACKGROUND', (0, 0), (-1, 0), colors.khaki),
                            ('BACKGROUND', (4, 1), (5, -1), colors.beige),
-                           ('BACKGROUND', (6, 1), (7, -1), colors.lavender),
+                           ('BACKGROUND', (6, 1), (13, -1), colors.lavender),
                            ('LINEABOVE', (0, 1), (-1, 1), 2, colors.black),
                            ('LINEBEFORE', (4, 0), (4, -1), 2, colors.black),
                            ('LINEBEFORE', (6, 0), (6, -1), 2, colors.black),
-                           ('LINEBEFORE', (8, 0), (8, -1), 2, colors.black),
+                           ('LINEBEFORE', (-1, 0), (-1, -1), 2, colors.black),
                            ('SPAN',(1,1),(1,6)),
                            ('SPAN',(1,7),(1,-1)),
                            ('SPAN',(2,1),(2,6)),
@@ -203,12 +241,15 @@ def DrawCutSchedule(c):
                            # # ('ALIGN', (3, 1), (3, 1), 'CENTER'),
                            # ('BACKGROUND', (3, 2), (3, 2), colors.beige),
                            # # ('ALIGN', (3, 2), (3, 2), 'LEFT'),
-                           ],colWidths=[12.0*mm,20*mm,20*mm,23*mm,23*mm,20*mm,23*mm,20*mm,25.0*mm])
+                           ],colWidths=[12.0*mm,19*mm,12*mm,12*mm,16*mm,12*mm,13.5*mm,13.5*mm,13.5*mm,13.5*mm,13.5*mm,13.5*mm,13.5*mm,12*mm])
     # Table(data, colWidths=[1.9 * inch] * 5)
     # t._argW[3] = 1.5 * inch
     t.wrapOn(c, 186.5 * mm, 800 * mm)
-    t.drawOn(c, 12.5 * mm, 130 * mm)
+    t.drawOn(c, 12.5 * mm, 30 * mm)
 def MakeCutScheduleTemplate(filename,data=[]):
+    for board in data:
+        for schedule in board:
+            print(schedule)
     width, height = letter
     myCanvas = canvas.Canvas(filename, pagesize=letter)
     myCanvas.setFont("SimSun", 18)
@@ -221,7 +262,7 @@ def MakeCutScheduleTemplate(filename,data=[]):
     myCanvas.drawString(40,670, text="订单号；%s"%'64757-001')
     myCanvas.drawRightString(width-50, 670, '出单日期：%s'%(datetime.date.today()))
     # simple_table_with_style(filename)
-    DrawCutSchedule(myCanvas)
+    DrawCutSchedule(myCanvas,data)
     myCanvas.save()
 
 def DrawBendSchedule(c):

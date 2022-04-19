@@ -629,7 +629,7 @@ class OrderManagementPanel(wx.Panel):
         self.orderExcelPanel = wx.Panel(self.notebook)
         self.notebook.AddPage(self.orderExcelPanel,"订单原始Excel")
         self.rightPanel.Layout()
-        self.orderDetailTreePanel=wx.Panel(self.orderDetailPanel,size=(200,-1))
+        self.orderDetailTreePanel=wx.Panel(self.orderDetailPanel,size=(260,-1))
         self.orderDetailGridPanel=wx.Panel(self.orderDetailPanel,size=(100,-1),style=wx.BORDER_THEME)
         hbox = wx.BoxSizer()
         hbox.Add(self.orderDetailTreePanel,0,wx.EXPAND)

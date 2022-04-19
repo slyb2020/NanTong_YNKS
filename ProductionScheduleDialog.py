@@ -168,9 +168,9 @@ class ProductionScheduleDialog(wx.Dialog):
         filename = scheduleDir+'%s/CutSchedule.pdf'%self.orderID
         if not os.path.exists(filename):
             print("filename:%sdoes not exist!"%filename)
-            MakeCutScheduleTemplate(filename)
+            MakeCutScheduleTemplate(filename,self.parent.productionSchedule.cuttingScheduleList)
         else:
-            MakeCutScheduleTemplate(filename)
+            MakeCutScheduleTemplate(filename,self.parent.productionSchedule.cuttingScheduleList)
         self.pdfViewerPanel.viewer.LoadFile(filename)
 
     def OnBendScheduleBTN(self, event):
