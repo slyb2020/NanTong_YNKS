@@ -127,6 +127,8 @@ def MakeMaterialScheduleTemplate(filename,data=[]):
     myCanvas.save()
 
 def DrawCutSchedule(c,record,colNum,pageDivision):
+    # if pageDivision[0] == pageDivision[1]:
+
     I = Image("D:\\WorkSpace\\Python\\NanTong_YNKS\\bitmaps\\PVC.jpg")
     styleSheet = getSampleStyleSheet()
     I.drawHeight = 1.25 * inch * I.drawHeight / I.drawWidth
@@ -158,8 +160,8 @@ def DrawCutSchedule(c,record,colNum,pageDivision):
     if colNum>7:
         colNum=7
     colWidth = 13.5*7/colNum
-    tableColWidthsList = [12.0 * mm, 19 * mm, 12 * mm, 12 * mm, 16 * mm, 12 * mm, colWidth * mm, colWidth * mm, colWidth * mm,
-                          colWidth * mm, colWidth * mm, colWidth * mm, colWidth * mm, 12 * mm]
+    tableColWidthsList = [12.0 * mm, 19.0 * mm, 12.0 * mm, 12.0 * mm, 16.0 * mm, 12.0 * mm, colWidth * mm, colWidth * mm, colWidth * mm,
+                          colWidth * mm, colWidth * mm, colWidth * mm, colWidth * mm, 12.0 * mm]
     title = TitleList[:colNum+6]
     title.append(Title14)
     tableColWidths = tableColWidthsList[:colNum+6]
@@ -194,17 +196,18 @@ def DrawCutSchedule(c,record,colNum,pageDivision):
                ]
     exSeper = pageDivision[0]
     for seperation in pageDivision[1:]:
-        sepeTemp=('SPAN',(1,exSeper),(1,seperation-1))
-        tableStyle.append(sepeTemp)
-        sepeTemp=('SPAN',(2,exSeper),(2,seperation-1))
-        tableStyle.append(sepeTemp)
-        sepeTemp=('SPAN',(3,exSeper),(3,seperation-1))
-        tableStyle.append(sepeTemp)
-        sepeTemp=('SPAN',(4,exSeper),(4,seperation-1))
-        tableStyle.append(sepeTemp)
-        sepeTemp=('SPAN',(5,exSeper),(5,seperation-1))
-        tableStyle.append(sepeTemp)
-        exSeper = seperation
+        if seperation>1:
+            sepeTemp=('SPAN',(1,exSeper),(1,seperation-1))
+            tableStyle.append(sepeTemp)
+            sepeTemp=('SPAN',(2,exSeper),(2,seperation-1))
+            tableStyle.append(sepeTemp)
+            sepeTemp=('SPAN',(3,exSeper),(3,seperation-1))
+            tableStyle.append(sepeTemp)
+            sepeTemp=('SPAN',(4,exSeper),(4,seperation-1))
+            tableStyle.append(sepeTemp)
+            sepeTemp=('SPAN',(5,exSeper),(5,seperation-1))
+            tableStyle.append(sepeTemp)
+            exSeper = seperation
     tableStyle.append(('SPAN',(1,exSeper),(1,-1)))
     tableStyle.append(('SPAN',(2,exSeper),(2,-1)))
     tableStyle.append(('SPAN',(3,exSeper),(3,-1)))
@@ -212,8 +215,9 @@ def DrawCutSchedule(c,record,colNum,pageDivision):
     tableStyle.append(('SPAN',(5,exSeper),(5,-1)))
     t = Table(data, style=tableStyle,colWidths=tableColWidths)
     t.wrapOn(c, 186.5 * mm, 800 * mm)
-    t.drawOn(c, 12.5 * mm, 8 * mm)
-def MakeCutScheduleTemplate(filename,record=[]):
+    startY=8+(36-len(data))*6.3
+    t.drawOn(c, 12.5 * mm, startY * mm)
+def MakeCutScheduleTemplate(orderID,filename,record=[]):
     num=1
     index = 1
     pages = []
@@ -238,11 +242,16 @@ def MakeCutScheduleTemplate(filename,record=[]):
                 if num>35:
                     num = 1
                     pages.append(data)
-                    pageDivision.append(seperation)
+
+                    pageDivision.append(seperation)#由于每次seperation初始化都自动往里面添加一个[1],所以如果前两行不同的话会出现【1，1】的情况，需要去除重复的1
                     pageMaxList.append(pageMaxvCuttingCol)
                     pageMaxvCuttingCol = 1
                     seperation=[1]
                     data=[]
+    if len(data)>0:
+        pages.append(data)
+        pageDivision.append(seperation)
+        pageMaxList.append(pageMaxvCuttingCol)
     width, height = letter
     myCanvas = canvas.Canvas(filename, pagesize=letter)
     for i,page in enumerate(pages):
@@ -255,7 +264,7 @@ def MakeCutScheduleTemplate(filename,record=[]):
         myCanvas.setFont("SimSun", 12)
         myCanvas.drawCentredString(width/2,710, text="Inexa (NanTong) Interiors Co.Ltd Plate Shear Schedule")
         DrawLine(myCanvas,1,*coord(10, 33, height, mm),*coord(200, 33, height, mm))
-        myCanvas.drawString(40,680, text="订单号；%s"%'64757-001')
+        myCanvas.drawString(40,680, text="订单号；%s"%orderID)
         myCanvas.drawRightString(width-50, 680, '出单日期：%s'%(datetime.date.today()))
         # simple_table_with_style(filename)
         DrawCutSchedule(myCanvas,page,pageMaxList[i],pageDivision[i])

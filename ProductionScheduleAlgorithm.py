@@ -32,19 +32,19 @@ class ProductionScheduleAlgorithm(object):
                     boardThickness=0.7
                 else:
                     boardThickness=0.56
-                temp = [record[0],record[1],record[2],record[3],record[4],record[5],record[6],record[7],'X',record[8],
-                        int(record[10])+delta[0],int(record[11])+delta[1],boardThickness,int(record[13]),'墙板']#现在的record[12]还是墙板厚，而不是基材厚
+                temp = [record[0],record[1],record[2],record[3],record[4],record[5],record[6],"%04d-%04d"%(int(record[1]),int(record[0])),'X',record[8],
+                        int(record[10])+delta[0],int(record[11])+delta[1],boardThickness,int(record[13]),'墙板',record[10],record[11]]#现在的record[12]还是墙板厚，而不是基材厚
                 self.materialBoard.append(temp)
-                temp = [record[0],record[1],record[2],record[3],record[4],record[5],record[6],record[7],'Y',record[9],
-                        int(record[10])+delta[6],int(record[11])+delta[7],boardThickness,int(record[13]),'墙板']
+                temp = [record[0],record[1],record[2],record[3],record[4],record[5],record[6],"%04d-%04d"%(int(record[1]),int(record[0])),'Y',record[9],
+                        int(record[10])+delta[6],int(record[11])+delta[7],boardThickness,int(record[13]),'墙板',record[10],record[11]]
                 self.materialBoard.append(temp)
                 if record[14] != 'None' and record[14] != '0':
-                    temp = [record[0], record[1], record[2], record[3], record[4], record[5], record[6],record[7], 'Z',
-                            record[14], int(record[10]) + delta[2], int(record[11]) + delta[3], boardThickness,int(record[13]),'墙板']
+                    temp = [record[0], record[1], record[2], record[3], record[4], record[5], record[6],"%04d-%04d"%(int(record[1]),int(record[0])), 'Z',
+                            record[14], int(record[10]) + delta[2], int(record[11]) + delta[3], boardThickness,int(record[13]),'墙板',record[10],record[11]]
                     self.materialBoard.append(temp)
                 if record[15] != 'None'and record[15] != '0':
-                    temp = [record[0], record[1], record[2], record[3], record[4], record[5], record[6],record[7], 'V',
-                            record[15], int(record[10]) + delta[4], int(record[11]) + delta[5], boardThickness,int(record[13]),'墙板']
+                    temp = [record[0], record[1], record[2], record[3], record[4], record[5], record[6],"%04d-%04d"%(int(record[1]),int(record[0])), 'V',
+                            record[15], int(record[10]) + delta[4], int(record[11]) + delta[5], boardThickness,int(record[13]),'墙板',record[10],record[11]]
                     self.materialBoard.append(temp)
         # for record in self.constructionOrderData:
         #     drawingNo = record[6]
@@ -68,19 +68,19 @@ class ProductionScheduleAlgorithm(object):
                 self.wrongNumber += 1
             else:
                 boardThickness=0.56
-                temp = [record[0],record[1],record[2],record[3],record[4],record[5],record[6],record[7],'X',record[8],
-                        int(record[10])+delta[0],int(record[11])+delta[1],boardThickness,int(record[13]),'天花板']#现在的record[12]还是墙板厚，而不是基材厚
+                temp = [record[0],record[1],record[2],record[3],record[4],record[5],record[6],"%04d-%04d"%(int(record[1]),int(record[0])),'X',record[8],
+                        int(record[10])+delta[0],int(record[11])+delta[1],boardThickness,int(record[13]),'天花板',record[10],record[11]]#现在的record[12]还是墙板厚，而不是基材厚
                 self.materialBoard.append(temp)
-                temp = [record[0],record[1],record[2],record[3],record[4],record[5],record[6],record[7],'Y',record[9],
-                        int(record[10])+delta[6],int(record[11])+delta[7],boardThickness,int(record[13]),'天花板']
+                temp = [record[0],record[1],record[2],record[3],record[4],record[5],record[6],"%04d-%04d"%(int(record[1]),int(record[0])),'Y',record[9],
+                        int(record[10])+delta[6],int(record[11])+delta[7],boardThickness,int(record[13]),'天花板',record[10],record[11]]
                 self.materialBoard.append(temp)
                 if record[14] != 'None' and record[14] != '0':
-                    temp = [record[0], record[1], record[2], record[3], record[4], record[5], record[6],record[7], 'Z',
-                            record[14], int(record[10]) + delta[2], int(record[11]) + delta[3], boardThickness,int(record[13]),'天花板']
+                    temp = [record[0], record[1], record[2], record[3], record[4], record[5], record[6],"%04d-%04d"%(int(record[1]),int(record[0])), 'Z',
+                            record[14], int(record[10]) + delta[2], int(record[11]) + delta[3], boardThickness,int(record[13]),'天花板',record[10],record[11]]
                     self.materialBoard.append(temp)
                 if record[15] != 'None' and record[15] != '0':
-                    temp = [record[0], record[1], record[2], record[3], record[4], record[5], record[6],record[7], 'V',
-                            record[15], int(record[10]) + delta[4], int(record[11]) + delta[5], boardThickness,int(record[13]),'天花板']
+                    temp = [record[0], record[1], record[2], record[3], record[4], record[5], record[6],"%04d-%04d"%(int(record[1]),int(record[0])), 'V',
+                            record[15], int(record[10]) + delta[4], int(record[11]) + delta[5], boardThickness,int(record[13]),'天花板',record[10],record[11]]
                     self.materialBoard.append(temp)
         self.materialBoard.sort(key=itemgetter(9), reverse=True)
 
@@ -101,18 +101,15 @@ class ProductionScheduleAlgorithm(object):
 
         self.cuttingScheduleList=[]
         for i in range(len(self.materialBoardList)):
-            print("here",self.materialBoardList[i][0])
-            self.materialBoardList[i].sort(key=itemgetter(12,10,11),reverse=True)#对同一种材料的待裁切板材按长度（第一序）及宽度（第二序）排序
-            cuttingSchedule = self.CalculateCuttingSchedule(self.materialBoardList[i])#用排列号的板材计算裁切计划
-            # for record in cuttingSchedule:
-            #     print("schedule=",record)
+            self.materialBoardList[i].sort(key=itemgetter(12,10,11),reverse=True)#对同一种材料的待裁切板材按长度（第一序）、宽度（第二序）及厚度（第三序）排序，这一步已验证正确性
+            cuttingSchedule = self.CalculateCuttingSchedule(self.materialBoardList[i])#用排列好的板材计算裁切计划，这一步已验证正确性
             cuttingSchedule = self.MergeSameSchedule(cuttingSchedule)#cuttingSchedule是合并之前的裁切计划，如果以此直接打印生成裁切任务单的话，会是很多行。所以还要进行合并同类项处理
-            # for record in cuttingSchedule:
-            #     print("after merge=",record)
             self.cuttingScheduleList.append(cuttingSchedule)
-        # for board in self.cuttingScheduleList:
-        #     for schedule in board:
-        #         print(schedule)
+
+        self.bendingScheduleList=[]
+        for i in self.materialBoard:
+            print('i=',i)
+
         print("wrong Number", self.wrongNumber)
 
     def MergeSameSchedule(self,data):
@@ -123,7 +120,7 @@ class ProductionScheduleAlgorithm(object):
         horizentalCuttingBoard.append(1)
         verticalCuttingBoard = [data[0][1]]
         for horizentalCutting,verticalCutting in data[1:]:#第一步合并相同的横切
-            if horizentalCutting[1]==exBoard[1]:
+            if horizentalCutting[1]==exBoard[1] and horizentalCutting[2]==exBoard[2] and horizentalCutting[3]==exBoard[3]:
                 horizentalCuttingBoard[-1] = horizentalCuttingBoard[-1]+1
                 verticalCuttingBoard.append(verticalCutting)
             else:

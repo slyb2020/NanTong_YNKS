@@ -50,7 +50,7 @@ class ProductionScheduleDialog(wx.Dialog):
         self.SetExtraStyle(wx.DIALOG_EX_METAL)
         self.Create(parent, -1, "排产操作对话框", pos, size, style)
         sizer = wx.BoxSizer(wx.VERTICAL)
-        panel = wx.Panel(self, -1, size=(1000, 900))
+        panel = wx.Panel(self, -1, size=(1200, 900))
         hbox = wx.BoxSizer()
         controlPanel = wx.Panel(panel,size=(150,-1))
         hbox.Add(controlPanel,0,wx.EXPAND)
@@ -168,9 +168,9 @@ class ProductionScheduleDialog(wx.Dialog):
         filename = scheduleDir+'%s/CutSchedule.pdf'%self.orderID
         if not os.path.exists(filename):
             print("filename:%sdoes not exist!"%filename)
-            MakeCutScheduleTemplate(filename,self.parent.productionSchedule.cuttingScheduleList)
+            MakeCutScheduleTemplate(self.orderID,filename,self.parent.productionSchedule.cuttingScheduleList)  #这些数据再ProductionScheduleAlgorithm.py文件中
         else:
-            MakeCutScheduleTemplate(filename,self.parent.productionSchedule.cuttingScheduleList)
+            MakeCutScheduleTemplate(self.orderID,filename,self.parent.productionSchedule.cuttingScheduleList)
         self.pdfViewerPanel.viewer.LoadFile(filename)
 
     def OnBendScheduleBTN(self, event):
