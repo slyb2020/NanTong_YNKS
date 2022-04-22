@@ -37,14 +37,20 @@ class PDFViewerPanel(wx.Panel):
         dlg.Destroy()
 
 class ProductionScheduleDialog(wx.Dialog):
-    def __init__(self, parent, log, orderID, size=wx.DefaultSize, pos=wx.DefaultPosition,
+    def __init__(self, parent, log, orderID, suborderID = None,size=wx.DefaultSize, pos=wx.DefaultPosition,
                  style=wx.DEFAULT_DIALOG_STYLE):
         wx.Dialog.__init__(self)
         self.orderID = orderID
+        self.subOrderID = suborderID
         self.parent = parent
         self.log = log
         # self.log.WriteText("操作员：'%s' 开始执行库存参数设置操作。。。\r\n"%(self.parent.operator_name))
-        dirName = scheduleDir + '%s/' % self.orderID
+        if self.subOrderID == None:
+            print("here")
+            dirName = scheduleDir + '%s/' % self.orderID
+        else:
+            print("there")
+            dirName = scheduleDir + '%s/' % self.orderID + '%s/'%(int(self.subOrderID))
         if not os.path.exists(dirName):
             os.makedirs(dirName)
         self.SetExtraStyle(wx.DIALOG_EX_METAL)
@@ -61,11 +67,22 @@ class ProductionScheduleDialog(wx.Dialog):
         vbox.Add((-1, 20))
         hbox = wx.BoxSizer()
         hbox.Add(10, -1)
-        hbox.Add(wx.StaticText(panel, label='订单号：'), 0, wx.TOP, 5)
+        hbox.Add(wx.StaticText(panel, label='订单编号：'), 0, wx.TOP, 5)
         self.newOrderIDTXT = wx.TextCtrl(panel, size=(50, 25),style=wx.TE_READONLY)
         self.newOrderIDTXT.SetValue('%05d' % int(self.orderID))
         hbox.Add(self.newOrderIDTXT, 1, wx.LEFT | wx.RIGHT, 10)
         vbox.Add(hbox, 0, wx.EXPAND)
+        print("subOrderID=",self.subOrderID)
+        if self.subOrderID != None:
+            vbox.Add((-1, 10))
+            hbox = wx.BoxSizer()
+            hbox.Add(10, -1)
+            hbox.Add(wx.StaticText(panel, label='子订单号：'), 0, wx.TOP, 5)
+            self.subOrderIDTXT = wx.TextCtrl(panel, size=(50, 25),style=wx.TE_READONLY)
+            self.subOrderIDTXT.SetValue('%03d' %int(self.subOrderID))
+            hbox.Add(self.subOrderIDTXT, 1, wx.LEFT | wx.RIGHT, 10)
+            vbox.Add(hbox, 0, wx.EXPAND)
+
         vbox.Add((-1,5))
         hhbox = wx.BoxSizer()
         hhbox.Add((10, -1))
@@ -165,12 +182,12 @@ class ProductionScheduleDialog(wx.Dialog):
         self.pdfViewerPanel.viewer.LoadFile(filename)
 
     def OnCutScheduleBTN(self, event):
-        filename = scheduleDir+'%s/CutSchedule.pdf'%self.orderID
+        filename = scheduleDir+'%s/%s/CutSchedule.pdf'%(self.orderID,int(self.subOrderID))
         if not os.path.exists(filename):
             print("filename:%sdoes not exist!"%filename)
-            MakeCutScheduleTemplate(self.orderID,filename,self.parent.productionSchedule.cuttingScheduleList)  #这些数据再ProductionScheduleAlgorithm.py文件中
+            MakeCutScheduleTemplate(self.orderID,self.subOrderID,filename,self.parent.productionSchedule.cuttingScheduleList)  #这些数据在ProductionScheduleAlgorithm.py文件中
         else:
-            MakeCutScheduleTemplate(self.orderID,filename,self.parent.productionSchedule.cuttingScheduleList)
+            MakeCutScheduleTemplate(self.orderID,self.subOrderID,filename,self.parent.productionSchedule.cuttingScheduleList)
         self.pdfViewerPanel.viewer.LoadFile(filename)
 
     def OnBendScheduleBTN(self, event):

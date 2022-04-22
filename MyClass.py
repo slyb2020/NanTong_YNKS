@@ -41,7 +41,7 @@ from OrderManagementPanel import OrderManagementPanel
 from BoardManagementPanel import BoardManagementPanel
 from BluePrintManagementPanel import BluePrintManagementPanel
 from ExcelImport import XLSGridFrame
-from DBOperation import CreateNewOrderSheet,InsertNewOrderRecord,GetAllOrderList,GetOrderByOrderID
+from DBOperation import CreateNewOrderSheet,InsertNewOrderRecord,GetAllOrderList,GetOrderByOrderID,UpdateOrderStateInDB
 from ProductionScheduleAlgorithm import ProductionScheduleAlgorithm
 from ImportOrderDialog import ImportOrderFromExcelDialog
 from ProductionScheduleDialog import ProductionScheduleDialog
@@ -522,8 +522,8 @@ class MainPanel(wx.Panel):
         idx5 = il.Add(images._rt_save.GetBitmap())
         idx6 = il.Add(images._rt_redo.GetBitmap())
         idx7 = il.Add(red)
-        idx8 = il.Add(blue)
-        idx9 = il.Add(green)
+        idx8 = il.Add(green)
+        idx9 = il.Add(blue)
         vbox.Add(self.orderDetailNotebook, 1, wx.EXPAND)
         self.subOrderPanel = []
         self.suborderTotalSquireTXT=[]
@@ -531,16 +531,17 @@ class MainPanel(wx.Panel):
         self.suborderTotalCeilingAmountTXT=[]
         self.suborderTotalConstructionAmountTXT=[]
         self.suborderStateTXT=[]
-        print(self.work_zone_Panel.orderManagmentPanel.data)
-        subOrderNameList=self.work_zone_Panel.orderManagmentPanel.data[8].split(',')
-        subOrderNum = len(subOrderNameList)
+        self.subOrderNameList=self.work_zone_Panel.orderManagmentPanel.data[8].split(',')
+        self.subOrderStateList = self.work_zone_Panel.orderManagmentPanel.data[9].split(',')
+        if len(self.subOrderStateList)!=len(self.subOrderNameList):
+            wx.MessageBox("子订单状态异常——子订单数不匹配，请进行数据检查！")
+        subOrderAmount = len(self.subOrderNameList)
         # subOrderNum=GetSubOrderAmount(self.work_zone_Panel.orderManagmentPanel.data[0])#根据订单号，读取子订单数量
-        for i in range(subOrderNum):
+        for i in range(subOrderAmount):
             subPanel = wx.Panel(self.orderDetailNotebook,size=(100,500))
             self.subOrderPanel.append(subPanel)
-            self.orderDetailNotebook.AddPage(self.subOrderPanel[i],"%s#"%subOrderNameList[i])
+            self.orderDetailNotebook.AddPage(self.subOrderPanel[i],"%s#"%self.subOrderNameList[i])
             # okimage = wx.Bitmap(os.path.normpath(bitmapDir + "/ok3.png"), wx.BITMAP_TYPE_PNG)
-            self.orderDetailNotebook.SetPageImage(i,idx7)
             self.orderDetailNotebook.SetSelection(0)
             vvbox = wx.BoxSizer(wx.VERTICAL)
             hhbox = wx.BoxSizer()
@@ -584,16 +585,18 @@ class MainPanel(wx.Panel):
             hhbox.Add(wx.StaticText(self.subOrderPanel[i], label="子订单状态:", size=(70, -1)), 0, wx.TOP, 5)
             suborderStateTXT = wx.TextCtrl(self.subOrderPanel[i], size=(40, -1), style=wx.TE_READONLY)
             self.suborderStateTXT.append(suborderStateTXT)
-            self.suborderStateTXT[i].SetValue(self.work_zone_Panel.orderManagmentPanel.data[7])
+            self.suborderStateTXT[i].SetValue(self.subOrderStateList[i])
             hhbox.Add(self.suborderStateTXT[i], 1, wx.RIGHT, 5)
             vvbox.Add(hhbox, 0, wx.EXPAND)
             vvbox.Add((-1, 10))
             vvbox.Add(wx.StaticLine(self.subOrderPanel[i], style=wx.HORIZONTAL), 0, wx.EXPAND)
-            if self.work_zone_Panel.orderManagmentPanel.data[7] == "接单":
-                self.specificOrderProductionBTN = wx.Button(self.subOrderPanel[i],label="子订单排产",size=(-1,40),name='子订单排产%d'%i)
+            if self.subOrderStateList[i] == "接单":
+                self.orderDetailNotebook.SetPageImage(i, idx7)
+                self.specificOrderProductionBTN = wx.Button(self.subOrderPanel[i],label="子订单排产",size=(-1,40),name='子订单排产%d'%(i+1))
                 self.specificOrderProductionBTN.Bind(wx.EVT_BUTTON,self.OnSpecificOrderProductionBTN)
                 vvbox.Add(self.specificOrderProductionBTN,0,wx.EXPAND|wx.ALL,5)
-            elif self.work_zone_Panel.orderManagmentPanel.data[7] == "已排产":
+            elif self.subOrderStateList[i] == "已排产":
+                self.orderDetailNotebook.SetPageImage(i, idx8)
                 self.specificOrderPrintScheduleBTN = wx.Button(self.subOrderPanel[i],label="打印子订单任务单",size=(-1,40),name='子订单打印任务单%d'%i)
                 self.specificOrderPrintScheduleBTN.Bind(wx.EVT_BUTTON,self.OnPrintScheduleBTN)
                 vvbox.Add(self.specificOrderPrintScheduleBTN,0,wx.EXPAND|wx.ALL,5)
@@ -623,18 +626,28 @@ class MainPanel(wx.Panel):
         dlg.Destroy()
 
     def OnSpecificOrderProductionBTN(self,event):
-        dlg = wx.MessageDialog(self, '将进行排产操作，此操作不可逆，是否继续?',
+        obj = event.GetEventObject()
+        name = obj.GetName()
+        suborderNumber = name[-1]
+        dlg = wx.MessageDialog(self, '将对 %s# 子订单进行排产操作，此操作不可逆，是否继续?'%(suborderNumber),
                                '信息提示',
                                wx.OK | wx.CANCEL | wx.ICON_INFORMATION
                                # wx.YES_NO | wx.NO_DEFAULT | wx.CANCEL | wx.ICON_INFORMATION
                                )
         if dlg.ShowModal()==wx.ID_OK:
             dlg.Destroy()
-            self.productionSchedule = ProductionScheduleAlgorithm(self.log, self.work_zone_Panel.orderManagmentPanel.data[0])
+            self.productionSchedule = ProductionScheduleAlgorithm(self.log, self.work_zone_Panel.orderManagmentPanel.data[0],suborderNumber)
             if self.productionSchedule.wrongNumber==0:
-                self.work_zone_Panel.orderManagmentPanel.data[7] = "已排产"  # 这个之前应该增加一个数据库更新操作
+                self.subOrderStateList[int(suborderNumber)-1] = "已排产"  # 这个之前应该增加一个数据库更新操作
+                suborderState = str(self.subOrderStateList[0])
+                for state in self.subOrderStateList[1:]:
+                    suborderState += ','
+                    suborderState += state
+                self.work_zone_Panel.orderManagmentPanel.data[9]=suborderState
+                UpdateOrderStateInDB(self.log,1,self.work_zone_Panel.orderManagmentPanel.data[0],suborderState)
                 self.work_zone_Panel.orderManagmentPanel.orderGrid.ReCreate()
-                dlg = ProductionScheduleDialog(self,self.log, self.work_zone_Panel.orderManagmentPanel.data[0])
+                self.ReCreateOrderInfoPanel()
+                dlg = ProductionScheduleDialog(self,self.log, self.work_zone_Panel.orderManagmentPanel.data[0],suborderNumber)
                 dlg.CenterOnScreen()
                 if dlg.ShowModal()==wx.ID_OK:
                     pass
@@ -645,7 +658,7 @@ class MainPanel(wx.Panel):
                 wx.MessageBox("缺少如下%s张图纸：\r\n%s,\r\n  无法完成排产，请补全图纸后再试！" % (self.productionSchedule.wrongNumber, str(self.productionSchedule.missList)), "提示信息")
         else:
             dlg.Destroy()
-        self.ReCreateOrderInfoPanel()
+    # self.ReCreateOrderInfoPanel()
 
     def OnNewOrderBTN(self,event):
         from DBOperation import GetTableListFromDB

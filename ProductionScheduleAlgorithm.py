@@ -5,11 +5,12 @@ import numpy as np
 from operator import itemgetter
 
 class ProductionScheduleAlgorithm(object):
-    def __init__(self,log,orderID):
+    def __init__(self,log,orderID,suborderNum=None):
         super(ProductionScheduleAlgorithm, self).__init__()
         self.log = log
         self.orderID = orderID
-        _, self.orderDetailData = GetOrderDetailRecord(self.log, 1, orderID)
+        self.suborderNum = suborderNum
+        _, self.orderDetailData = GetOrderDetailRecord(self.log, 1, orderID,suborderNum)
         self.wrongNumber = 0
         self.materialBoard=[]#0:订单号，1：
         self.missList=[]
@@ -106,9 +107,9 @@ class ProductionScheduleAlgorithm(object):
             cuttingSchedule = self.MergeSameSchedule(cuttingSchedule)#cuttingSchedule是合并之前的裁切计划，如果以此直接打印生成裁切任务单的话，会是很多行。所以还要进行合并同类项处理
             self.cuttingScheduleList.append(cuttingSchedule)
 
-        self.bendingScheduleList=[]
-        for i in self.materialBoard:
-            print('i=',i)
+        # self.bendingScheduleList=[]
+        # for i in self.materialBoard:
+        #     print('i=',i)
 
         print("wrong Number", self.wrongNumber)
 

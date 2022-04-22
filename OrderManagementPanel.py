@@ -322,7 +322,7 @@ class OrderGrid(gridlib.Grid):  ##, mixins.GridAutoEditMixin):
             self.SetColLabelValue(i,title)
         for i, width in enumerate(self.master.colWidthList):
             self.SetColSize(i, width)
-        for i, order in enumerate(self.master.dataArray):
+        for i, order in enumerate(self.master.dataArray[:,:7]):
             self.SetRowSize(i, 25)
             for j, item in enumerate(order):
                 self.SetCellAlignment(i, j, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE_VERTICAL)

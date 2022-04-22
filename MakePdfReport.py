@@ -217,7 +217,7 @@ def DrawCutSchedule(c,record,colNum,pageDivision):
     t.wrapOn(c, 186.5 * mm, 800 * mm)
     startY=8+(36-len(data))*6.3
     t.drawOn(c, 12.5 * mm, startY * mm)
-def MakeCutScheduleTemplate(orderID,filename,record=[]):
+def MakeCutScheduleTemplate(orderID,subOrderID,filename,record=[]):
     num=1
     index = 1
     pages = []
@@ -264,7 +264,7 @@ def MakeCutScheduleTemplate(orderID,filename,record=[]):
         myCanvas.setFont("SimSun", 12)
         myCanvas.drawCentredString(width/2,710, text="Inexa (NanTong) Interiors Co.Ltd Plate Shear Schedule")
         DrawLine(myCanvas,1,*coord(10, 33, height, mm),*coord(200, 33, height, mm))
-        myCanvas.drawString(40,680, text="订单号；%s"%orderID)
+        myCanvas.drawString(40,680, text="订单号；%s-%03d"%(orderID,int(subOrderID)))
         myCanvas.drawRightString(width-50, 680, '出单日期：%s'%(datetime.date.today()))
         # simple_table_with_style(filename)
         DrawCutSchedule(myCanvas,page,pageMaxList[i],pageDivision[i])
