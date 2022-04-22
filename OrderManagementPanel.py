@@ -235,7 +235,7 @@ class OrderGrid(gridlib.Grid):  ##, mixins.GridAutoEditMixin):
 
         for i, order in enumerate(self.master.dataArray):
             self.SetRowSize(i, 25)
-            for j, item in enumerate(order):
+            for j, item in enumerate(order[:8]):#z最后一列位子订单列表，不再grid上显示
                 # self.SetCellBackgroundColour(i,j,wx.Colour(250, 250, 250))
                 self.SetCellAlignment(i, j, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE_VERTICAL)
                 self.SetCellValue(i, j, str(item))

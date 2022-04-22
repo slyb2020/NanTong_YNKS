@@ -138,9 +138,9 @@ class ProductionScheduleDialog(wx.Dialog):
 
 
         btnsizer = wx.BoxSizer()
-        bitmap1 = wx.Bitmap("bitmaps/ok3.png", wx.BITMAP_TYPE_PNG)
-        bitmap2 = wx.Bitmap("bitmaps/cancel1.png", wx.BITMAP_TYPE_PNG)
-        bitmap3 = wx.Bitmap("bitmaps/33.png", wx.BITMAP_TYPE_PNG)
+        bitmap1 = wx.Bitmap(bitmapDir+"/ok3.png", wx.BITMAP_TYPE_PNG)
+        bitmap2 = wx.Bitmap(bitmapDir+"/cancel1.png", wx.BITMAP_TYPE_PNG)
+        bitmap3 = wx.Bitmap(bitmapDir+"/33.png", wx.BITMAP_TYPE_PNG)
         btn_ok = wx.Button(self, wx.ID_OK, "确  定", size=(200, 40))
         btn_ok.SetBitmap(bitmap1, wx.LEFT)
         btn_cancel = wx.Button(self, wx.ID_CANCEL, "取  消", size=(200, 40))
