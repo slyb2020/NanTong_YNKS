@@ -16,6 +16,22 @@ def GetOrderIDFromExcelFile(fileName):
                     return int(item)
     return -1
 
+def GetSubOrderIDListFromExcelFile(fileName):
+    sheetNameList = GetSheetNameListFromExcelFileName(fileName)
+    result = []
+    for sheetName in sheetNameList:
+        data = GetSheetDataFromExcelFileName(fileName,sheetName)
+        for i, row in enumerate(data):
+            if "SubProject" in row:
+                row = list(row)
+                col = row.index("SubProject")
+                for j, item in enumerate(row[col + 1:]):
+                    if item:
+                        result.append(str(int(item)))
+                        break
+                break
+    return result
+
 def GetSheetNameListFromExcelFileName(fileName):
     wb = openpyxl.load_workbook(fileName)
     sheets = wb.worksheets

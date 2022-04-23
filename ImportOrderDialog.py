@@ -3,7 +3,8 @@ import os
 import images
 from ExcelOperation import GetSheetNameListFromExcelFileName,ExcelGridShowPanel
 from ExcelOperation import GetSheetDataFromExcelFileName
-from DBOperation import InsertBatchOrderDataIntoDB,CreateNewOrderSheet,GetOrderDetailRecord,InsertNewOrderRecord
+from DBOperation import InsertBatchOrderDataIntoDB,CreateNewOrderSheet,GetOrderDetailRecord,InsertNewOrderRecord,\
+    UpdateOrderRecord,GetOrderByOrderID
 dirName = os.path.dirname(os.path.abspath(__file__))
 bitmapDir = os.path.join(dirName, 'bitmaps')
 
@@ -62,11 +63,12 @@ class InputNewOrderDialog(wx.Dialog):
     #     event.Skip()
 
 class ImportOrderFromExcelDialog(wx.Dialog):
-    def __init__(self, parent, newOrderID, size=wx.DefaultSize, pos=wx.DefaultPosition,
+    def __init__(self, parent, newOrderID,insertMode=False, size=wx.DefaultSize, pos=wx.DefaultPosition,
                  style=wx.DEFAULT_DIALOG_STYLE):
         wx.Dialog.__init__(self)
         self.newOrderID = newOrderID
         self.parent = parent
+        self.insertMode = insertMode
         # self.log.WriteText("操作员：'%s' 开始执行库存参数设置操作。。。\r\n"%(self.parent.operator_name))
         self.SetExtraStyle(wx.DIALOG_EX_METAL)
         self.Create(parent, -1, "订单关键信息输入对话框", pos, size, style)
@@ -146,8 +148,20 @@ class ImportOrderFromExcelDialog(wx.Dialog):
         # manualInputBTN.Bind(wx.EVT_BUTTON, self.OnCancel)
 
     def OnOk(self, event):
-        InsertNewOrderRecord(self.parent.log,1,self.newOrderID)
-        CreateNewOrderSheet(self.parent.log,1,self.newOrderID)
+        if self.insertMode:
+            _, orderInfor = GetOrderByOrderID(self.parent.log, 1, self.newOrderID)
+            subOrderIdStr=orderInfor[8]
+            subOrderStateStr = orderInfor[9]
+            for i in self.subOrderIDList:
+                subOrderIdStr += ','
+                subOrderIdStr += str(int(i))
+                subOrderStateStr += ',接单'
+            UpdateOrderRecord(self.parent.log,1,self.newOrderID,subOrderIdStr,subOrderStateStr)
+            self.parent.work_zone_Panel.orderManagmentPanel.data[8] = subOrderIdStr
+            self.parent.work_zone_Panel.orderManagmentPanel.data[9] = subOrderStateStr
+        else:
+            InsertNewOrderRecord(self.parent.log,1,self.newOrderID,self.newOrderName,self.subOrderIDList)
+            CreateNewOrderSheet(self.parent.log,1,self.newOrderID)
         orderDataList = []
         for pageNum, page in enumerate(self.sheetPage):
             (rowStart,rowEnd) = self.keyDataColPostion[pageNum][0]
@@ -327,15 +341,19 @@ class ImportOrderFromExcelDialog(wx.Dialog):
                     amountColNum = rowData.index("Pcs")
                     codeColNum = rowData.index("Code")
                     break
+            rowNumStart = None
             for i, row in enumerate(page.data[rowNum+1:]):
                 if int(row[suborderColNum])==int(self.subOrderIDList[pageNum]):
                     rowNumStart = i+rowNum+1
                     break
-            for i, row in enumerate(page.data[rowNumStart+1:]):
-                if  row[suborderColNum]==None and row[deckColNum]==None and row[areaColNum]==None and row[roomColNum]==None:
-                    break
-            rowNumEnd = i + rowNumStart
-            result.append([[rowNumStart,rowNumEnd],[suborderColNum,deckColNum,areaColNum,roomColNum,drawingNoColNum,widthColNum,heightColNum,thicknessColNum,xColourColNum,yColourColNum,zColourColNum,vColourColNum,amountColNum,codeColNum]])
+            if rowNumStart!=None:
+                for i, row in enumerate(page.data[rowNumStart+1:]):
+                    if  row[suborderColNum]==None and row[deckColNum]==None and row[areaColNum]==None and row[roomColNum]==None:
+                        break
+                rowNumEnd = i + rowNumStart
+                result.append([[rowNumStart,rowNumEnd],[suborderColNum,deckColNum,areaColNum,roomColNum,drawingNoColNum,widthColNum,heightColNum,thicknessColNum,xColourColNum,yColourColNum,zColourColNum,vColourColNum,amountColNum,codeColNum]])
+            else:
+                wx.MessageBox("Excel文件中不包含有效数据，请检查后重试!")
         return result
 
     def GetDeckItemList(self,pageNum,subOrderID):

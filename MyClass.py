@@ -46,7 +46,8 @@ from ProductionScheduleAlgorithm import ProductionScheduleAlgorithm
 from ImportOrderDialog import ImportOrderFromExcelDialog
 from ProductionScheduleDialog import ProductionScheduleDialog
 from PackageDialog import PackageDialog
-from ExcelOperation import GetOrderIDFromExcelFile
+from ExcelOperation import GetOrderIDFromExcelFile,GetSubOrderIDListFromExcelFile
+# from NewOrderInquireDialog import AddSubOrderFromExcelDialog
 from xls2xlsx import xls2xlsx
 import wx.lib.agw.gradientbutton as GB
 
@@ -486,7 +487,9 @@ class MainPanel(wx.Panel):
         hhbox = wx.BoxSizer()
         hhbox.Add((5,-1))
         bitmap = wx.Bitmap(os.path.normpath(bitmapDir+"/lbnews.png"), wx.BITMAP_TYPE_PNG)
-        self.addSubOrderBTN = GB.GradientButton(title,-1, bitmap,'追加子订单',size=(-1,40))
+        # self.addSubOrderBTN = GB.GradientButton(title,-1, bitmap,'追加子订单',size=(-1,40))
+        self.addSubOrderBTN = wx.Button(title,label='追加子订单',size=(-1,40))
+        self.addSubOrderBTN.Bind(wx.EVT_BUTTON,self.OnAddSubOrderBTN)
         hhbox.Add(self.addSubOrderBTN,1,wx.RIGHT,5)
         vbox.Add(hhbox,0,wx.EXPAND)
 
@@ -525,14 +528,17 @@ class MainPanel(wx.Panel):
         idx8 = il.Add(green)
         idx9 = il.Add(blue)
         vbox.Add(self.orderDetailNotebook, 1, wx.EXPAND)
+        self.currentOrderID=self.work_zone_Panel.orderManagmentPanel.data[0]
+        self.currentOrderSubOrderIDStr = self.work_zone_Panel.orderManagmentPanel.data[8]
+        self.currentOrderSubOrderStateStr = self.work_zone_Panel.orderManagmentPanel.data[9]
         self.subOrderPanel = []
         self.suborderTotalSquireTXT=[]
         self.suborderTotalPanelAmountTXT=[]
         self.suborderTotalCeilingAmountTXT=[]
         self.suborderTotalConstructionAmountTXT=[]
         self.suborderStateTXT=[]
-        self.subOrderNameList=self.work_zone_Panel.orderManagmentPanel.data[8].split(',')
-        self.subOrderStateList = self.work_zone_Panel.orderManagmentPanel.data[9].split(',')
+        self.subOrderNameList=self.currentOrderSubOrderIDStr.split(',')
+        self.subOrderStateList = self.currentOrderSubOrderStateStr.split(',')
         if len(self.subOrderStateList)!=len(self.subOrderNameList):
             wx.MessageBox("子订单状态异常——子订单数不匹配，请进行数据检查！")
         subOrderAmount = len(self.subOrderNameList)
@@ -610,6 +616,51 @@ class MainPanel(wx.Panel):
 
         title.SetSizer(vbox)
         self.orderInfoPanel.Layout()
+
+    def OnAddSubOrderBTN(self,event):
+        wildcard = "Excel文件 (*.xlsx)|*.xlsx|" \
+                   "Excel文件 (*.xls)|*.xls|" \
+                   "All files (*.*)|*.*"
+        dlg = wx.FileDialog(
+            self, message="请选择Excel文件",
+            defaultDir=os.getcwd(),
+            defaultFile="",
+            wildcard=wildcard,
+            style=wx.FD_OPEN | wx.FD_MULTIPLE |
+                  wx.FD_CHANGE_DIR | wx.FD_FILE_MUST_EXIST |
+                  wx.FD_PREVIEW
+        )
+        if dlg.ShowModal() == wx.ID_OK:
+            self.excelFileName = dlg.GetPaths()[0]
+            temp = self.excelFileName.split('.')[-1]
+            if temp == 'xls':
+                xls2xlsx(self.excelFileName)
+                self.excelFileName += 'x'
+            orderID = GetOrderIDFromExcelFile(self.excelFileName)
+            subOrderList = GetSubOrderIDListFromExcelFile(self.excelFileName)
+            # print("orderID=",orderID,subOrderList,self.subOrderNameList)
+            error = False
+            for newSubOrder in subOrderList:
+                if newSubOrder in self.subOrderNameList:
+                    wx.MessageBox("%s订单已包含 %s# 子订单的数据，无法重复导入，请检查后重试！"%(self.currentOrderID,newSubOrder),"信息提示窗口")
+                    error = True
+            if not error:
+                # dlg2 = AddSubOrderFromExcelDialog(self, orderID)
+                dlg2 = ImportOrderFromExcelDialog(self, orderID, insertMode=True)
+                dlg2.CenterOnScreen()
+                if dlg2.ShowModal() == wx.ID_OK:
+                    # InsertNewOrderRecord(self.log, 1, self.newOrderID)
+                    # CreateNewOrderSheet(self.log, 1, self.newOrderID)
+                    _, boardList = GetAllOrderList(self.log, 1)
+                    self.work_zone_Panel.orderManagmentPanel.dataArray = np.array(boardList)
+                    self.work_zone_Panel.orderManagmentPanel.orderGrid.ReCreate()
+                dlg2.Destroy()
+        dlg.Destroy()
+        self.currentOrderID=self.work_zone_Panel.orderManagmentPanel.data[0]
+        self.currentOrderSubOrderIDStr = self.work_zone_Panel.orderManagmentPanel.data[8]
+        self.currentOrderSubOrderStateStr = self.work_zone_Panel.orderManagmentPanel.data[9]
+        self.ReCreateOrderInfoPanel()
+        self.work_zone_Panel.orderManagmentPanel.ReCreateOrderDetailTree()
 
     def OnPackageBTN(self,event):
         dlg = PackageDialog(self, self.log, self.work_zone_Panel.orderManagmentPanel.data[0])
@@ -697,7 +748,7 @@ class MainPanel(wx.Panel):
                 dlg.Destroy()
                 orderID = GetOrderIDFromExcelFile(self.excelFileName)
                 _,orderInfor = GetOrderByOrderID(self.log, 1, orderID)
-                if len(orderInfor)>0:
+                if orderInfor!=None:
                     wx.MessageBox("此订单已存在，请修改Excel文件中的订单编号，然后重试！","错误提示：")
                 else:
                     dlg = ImportOrderFromExcelDialog(self, self.newOrderID)
@@ -709,7 +760,8 @@ class MainPanel(wx.Panel):
                         self.work_zone_Panel.orderManagmentPanel.dataArray = np.array(boardList)
                         self.work_zone_Panel.orderManagmentPanel.orderGrid.ReCreate()
                     dlg.Destroy()
-
+            else:
+                dlg.Destroy()
                 # _, boardList = GetAllOrderList(self.log, 1)
                 # self.work_zone_Panel.orderManagmentPanel.dataArray = np.array(boardList)
                 # self.work_zone_Panel.orderManagmentPanel.orderGrid.ReCreate()
@@ -719,11 +771,12 @@ class MainPanel(wx.Panel):
             dlg = NewOrderMainDialog(self, self.newOrderID)
             dlg.CenterOnScreen()
             if dlg.ShowModal() == wx.ID_OK:
-                InsertNewOrderRecord(self.log,1,self.newOrderID)
-                CreateNewOrderSheet(self.log,1,self.newOrderID)
-                _, boardList = GetAllOrderList(self.log, 1)
-                self.work_zone_Panel.orderManagmentPanel.dataArray = np.array(boardList)
-                self.work_zone_Panel.orderManagmentPanel.orderGrid.ReCreate()
+                pass
+                # InsertNewOrderRecord(self.log,1,self.newOrderID)
+                # CreateNewOrderSheet(self.log,1,self.newOrderID)
+                # _, boardList = GetAllOrderList(self.log, 1)
+                # self.work_zone_Panel.orderManagmentPanel.dataArray = np.array(boardList)
+                # self.work_zone_Panel.orderManagmentPanel.orderGrid.ReCreate()
             dlg.Destroy()
 
     def OnPressCaption(self,event):

@@ -104,3 +104,5 @@ class NewOrderMainDialog(wx.Dialog):
     # def OnCancel(self, event):
     #     # self.log.WriteText("操作员：'%s' 取消库存参数设置操作\r\n"%(self.parent.operator_name))
     #     event.Skip()
+
+

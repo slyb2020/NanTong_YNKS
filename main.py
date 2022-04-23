@@ -7,6 +7,7 @@ from ID_DEFINE import *
 from BackgoundPanel import BackgroundPanel
 from PasswordDialog import PasswordDialog
 from DBOperation import GetStaffInfoWithPassword, GetEnterpriseInfo
+from SetupPropertyDialog import SetupPropertyDialog
 
 VERSION_STRING = "20220313A"
 
@@ -95,6 +96,7 @@ class FlatMenuFrame(wx.Frame):
         order1Bmp = wx.Bitmap(bitmapDir+"/locked.png", wx.BITMAP_TYPE_PNG)
         order2Bmp = wx.Bitmap(bitmapDir+"/opened.png", wx.BITMAP_TYPE_PNG)
         order3Bmp = wx.Bitmap(bitmapDir+"/order3.png", wx.BITMAP_TYPE_PNG)
+        propertyBmp = wx.Bitmap(bitmapDir+"/property.png", wx.BITMAP_TYPE_PNG)
 
         # Set an icon to the exit/help/transparency menu item
         exitImg = wx.Bitmap(bitmapDir+"/exit-16.png", wx.BITMAP_TYPE_PNG)
@@ -107,9 +109,13 @@ class FlatMenuFrame(wx.Frame):
         item = FM.FlatMenuItem(fileMenu, MENU_CHECK_OUT, "&R 注销...\tCtrl+R", "登录系统", wx.ITEM_NORMAL)
         fileMenu.AppendItem(item)
 
+        item = FM.FlatMenuItem(setupMenu, MENU_SETUP_PROPERTY, "&O 设置系统参数...\tCtrl+O", "设置系统参数", wx.ITEM_NORMAL)
+        setupMenu.AppendItem(item)
+
         if self.check_in_flag:
             self._mb.AddTool(MENU_NEW_FILE, u"新建订单", view1Bmp)
             self._mb.AddTool(MENU_CHECK_OUT, u"注销...", order2Bmp)
+            self._mb.AddTool(MENU_SETUP_PROPERTY, u"设置系统参数", propertyBmp)
         else:
             self._mb.AddTool(MENU_CHECK_IN, u"&R 登录系统...\tCtrl+R", order1Bmp)
         self._mb.AddSeparator()  # Separator
@@ -148,7 +154,14 @@ class FlatMenuFrame(wx.Frame):
         self.Bind(FM.EVT_FLAT_MENU_SELECTED, self.OnQuit, id=wx.ID_EXIT)
         self.Bind(FM.EVT_FLAT_MENU_SELECTED, self.OnAbout, id=MENU_HELP)
         self.Bind(FM.EVT_FLAT_MENU_SELECTED, self.OnCheckIn, id=MENU_CHECK_IN)
+        self.Bind(FM.EVT_FLAT_MENU_SELECTED, self.OnSetupProperty, id=MENU_SETUP_PROPERTY)
         self.Bind(FM.EVT_FLAT_MENU_SELECTED, self.OnCheckOut, id=MENU_CHECK_OUT)
+
+    def OnSetupProperty(self,event):
+        dlg = SetupPropertyDialog(self, self.mainPANEL.log)
+        dlg.CenterOnScreen()
+        dlg.ShowModal()
+        dlg.Destroy()
 
     def OnCheckOut(self, event):
         self.check_in_flag = False

@@ -85,9 +85,9 @@ def GetOrderByOrderID(log, whichDB, orderID):
             log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
         return -1, []
     cursor = db.cursor()
-    sql = """SELECT `订单编号`,`订单名称`,`总价`,`产品数量`,`订单交货日期`,`下单时间`,`下单员ID`,`状态`  from `订单信息` where `订单编号` = %s"""%int(orderID)
+    sql = """SELECT `订单编号`,`订单名称`,`总价`,`产品数量`,`订单交货日期`,`下单时间`,`下单员ID`,`状态`,`子订单编号`,`子订单状态`  from `订单信息` where `订单编号` = %s"""%int(orderID)
     cursor.execute(sql)
-    temp = cursor.fetchall()  # 获得压条信息
+    temp = cursor.fetchone()  # 获得压条信息
     db.close()
     return 0, temp
 
@@ -449,6 +449,29 @@ def UpdateOrderStateInDB(log,whichDB,orderID,subOrderState):
         print("error")
     db.close()
 
+def UpdatePropertyInDB(log,whichDB,propertyDic):
+    try:
+        db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
+                             passwd='%s' % dbPassword[whichDB], db='%s' % dbName[whichDB], charset='utf8')
+    except:
+        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        if log:
+            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+        return -1, []
+    cursor = db.cursor()
+    sql = "UPDATE 系统参数 SET `启动纵切最小板材数`='%s' " %(propertyDic["启动纵切最小板材数"])
+    # sql = "INSERT INTO 图纸信息(`图纸号`,`面板增量`,`中板增量`,`背板增量`,`剪板505`,`成型405`,`成型409`,`成型406`,`折弯652`," \
+    #       "`热压100`,`热压306`,`冲铣`,`图纸状态`,`创建人`,`中板`,`打包9000`,`图纸大类`,`创建时间`,`备注`)" \
+    #       "VALUES ('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')"\
+    #       % (data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],data[12],data[13],data[14],data[15],data[16],datetime.date.today(),data[17])
+    try:
+        cursor.execute(sql)
+        db.commit()  # 必须有，没有的话插入语句不会执行
+    except:
+        db.rollback()
+        print("error")
+    db.close()
+
 
 def GetTableListFromDB(log,whichDB):
     try:
@@ -525,7 +548,8 @@ def CreateNewOrderSheet(log,whichDB,newOrderID):
         db.rollback()
     db.close()
 
-def InsertNewOrderRecord(log,whichDB,newOrderID):
+
+def InsertNewOrderRecord(log,whichDB,newOrderID,newOrderName,subOrderIDList):
     try:
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % dbName[whichDB], charset='utf8')
@@ -535,15 +559,45 @@ def InsertNewOrderRecord(log,whichDB,newOrderID):
             log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
         return -1, []
     cursor = db.cursor()
+    subOrderIdStr=str(int(subOrderIDList[0]))
+    for i in subOrderIDList[1:]:
+        subOrderIdStr += ','
+        subOrderIdStr += str(int(i))
+    print("str=",subOrderIdStr)
     # sql = "INSERT INTO 订单信息(`订单编号`,`面板增量`,`中板增量`,`背板增量`,`剪板505`,`成型405`,`成型409`,`成型406`,`折弯652`," \
     #       "`热压100`,`热压306`,`冲铣`,`图纸状态`,`创建人`,`中板`,`打包9000`,`图纸大类`,`创建时间`,`备注`)" \
     #       "VALUES ('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')"\
     #       % (data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],data[12],data[13],data[14],data[15],data[16],datetime.date.today(),data[17])
-    sql = "INSERT INTO 订单信息(`订单编号`) VALUES (%s)" % (newOrderID)
+    sql = "INSERT INTO 订单信息(`订单编号`,`订单名称`,`子订单编号`) VALUES (%s,'%s','%s')" %(int(newOrderID),newOrderName,subOrderIdStr)
     try:
         cursor.execute(sql)
         db.commit()  # 必须有，没有的话插入语句不会执行
     except:
+        print("error")
+        db.rollback()
+    db.close()
+
+def UpdateOrderRecord(log,whichDB,OrderID,subOrderIdStr,subOrderStateStr):
+    try:
+        db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
+                             passwd='%s' % dbPassword[whichDB], db='%s' % dbName[whichDB], charset='utf8')
+    except:
+        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        if log:
+            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+        return -1, []
+    cursor = db.cursor()
+    print("str=",int(OrderID),subOrderIdStr,subOrderStateStr)
+    # sql = "INSERT INTO 订单信息(`订单编号`,`面板增量`,`中板增量`,`背板增量`,`剪板505`,`成型405`,`成型409`,`成型406`,`折弯652`," \
+    #       "`热压100`,`热压306`,`冲铣`,`图纸状态`,`创建人`,`中板`,`打包9000`,`图纸大类`,`创建时间`,`备注`)" \
+    #       "VALUES ('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')"\
+    #       % (data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],data[12],data[13],data[14],data[15],data[16],datetime.date.today(),data[17])
+    sql = "UPDATE 订单信息 SET `子订单编号`='%s', `子订单状态`='%s' where `订单编号`=%s" %(subOrderIdStr,subOrderStateStr,int(OrderID))
+    try:
+        cursor.execute(sql)
+        db.commit()  # 必须有，没有的话插入语句不会执行
+    except:
+        print("error1")
         db.rollback()
     db.close()
 

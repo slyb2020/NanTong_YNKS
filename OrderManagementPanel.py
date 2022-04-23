@@ -537,6 +537,11 @@ class OrderManagementPanel(wx.Panel):
 
     def ReCreateOrderDetailTree(self):
         self.orderDetailTreePanel.DestroyChildren()
+        _, self.orderDetailData = GetOrderDetailRecord(self.log, 1, self.data[0])
+        if len(self.orderDetailData) == 0:
+            self.treeStructure = []
+        else:
+            self.treeStructure = self.TreeDataTransform()
         self.orderDetailTree = OrderDetailTree(self.orderDetailTreePanel,self,self.log,self.data[0],self.treeStructure)
         vbox = wx.BoxSizer(wx.VERTICAL)
         vbox.Add(self.orderDetailTree,1,wx.EXPAND)
