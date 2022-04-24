@@ -2,7 +2,7 @@ import wx
 import os
 import images
 
-from DBOperation import UpdatePropertyInDB
+from DBOperation import UpdatePropertyInDB,GetPropertyVerticalCuttingParameter
 dirName = os.path.dirname(os.path.abspath(__file__))
 bitmapDir = os.path.join(dirName, 'bitmaps')
 #!/usr/bin/env python
@@ -730,7 +730,8 @@ class PropertyPanel(wx.Panel):
             "UseCheckbox", True)     # The attribute name and value
 
         pg.Append( wxpg.PropertyCategory("2 - 系统排产参数") )
-        pg.Append( wxpg.IntProperty("启动纵切最小板材数",value=10) )
+        _,minNum=GetPropertyVerticalCuttingParameter(self.log,1)
+        pg.Append( wxpg.IntProperty("启动纵切最小板材数",value=minNum) )
         pg.SetPropertyEditor("启动纵切最小板材数","SpinCtrl")
 
         pg.Append( wxpg.PropertyCategory("3 - Advanced Properties") )
@@ -902,7 +903,6 @@ class PropertyPanel(wx.Panel):
             self.propertyDic={}
             for k,v in d.items():
                 self.propertyDic[k]=v
-            print("启动纵切最小板材数=",self.propertyDic["启动纵切最小板材数"]+1)
             with MemoDialog(self,"GetPropertyValues Result",
                            'Contents of resulting dictionary:\n\n'+'\n'.join(ss)) as dlg:
                 dlg.ShowModal()

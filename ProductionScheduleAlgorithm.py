@@ -1,6 +1,6 @@
 import copy
 import wx
-from DBOperation import GetOrderDetailRecord,GetDeltaWithBluePrintNo,GetConstructionDetailWithDrawingNo
+from DBOperation import GetOrderDetailRecord,GetDeltaWithBluePrintNo,GetConstructionDetailWithDrawingNo,GetPropertyVerticalCuttingParameter
 import numpy as np
 from operator import itemgetter
 
@@ -101,17 +101,147 @@ class ProductionScheduleAlgorithm(object):
         self.materialBoardList.append(temp)#把待裁切的板材按原材料的不同分开到不同的列表
 
         self.cuttingScheduleList=[]
+        self.verticalCuttingScheduleList=[]
+        # self.verticalCuttingMaterialBoardList=[[]*len(self.materialBoardList)]
+        # self.cuttingMaterialBoardList=[[]*len(self.materialBoardList)]
+        # print("self.verticalCuttingMaterialBoardList",self.verticalCuttingMaterialBoardList)
+        # print("self.cuttingMaterialBoardList",self.cuttingMaterialBoardList)
         for i in range(len(self.materialBoardList)):
-            self.materialBoardList[i].sort(key=itemgetter(12,10,11),reverse=True)#对同一种材料的待裁切板材按长度（第一序）、宽度（第二序）及厚度（第三序）排序，这一步已验证正确性
-            cuttingSchedule = self.CalculateCuttingSchedule(self.materialBoardList[i])#用排列好的板材计算裁切计划，这一步已验证正确性
-            cuttingSchedule = self.MergeSameSchedule(cuttingSchedule)#cuttingSchedule是合并之前的裁切计划，如果以此直接打印生成裁切任务单的话，会是很多行。所以还要进行合并同类项处理
-            self.cuttingScheduleList.append(cuttingSchedule)
+            self.materialBoardList[i].sort(key=itemgetter(12,11,10),reverse=True)#对同一种材料的待裁切板材按厚度度（第一序）、宽度（第二序）及长度（第三序）排序，这一步已验证正确性
+            #下面的代码用于统计厚度相同时，各宽度的板材个数，当板材个数超过系统设定的最小启动纵切个数时，将这个厚度的板材都移到纵切计划里
+            countList=[]
+            currentBoard=self.materialBoardList[i][0]
+            amount=currentBoard[13]
+            for board in self.materialBoardList[i][1:]:
+                if currentBoard[12]==board[12] and currentBoard[11]==board[11]:
+                    amount += board[13]
+                else:
+                    countList.append([currentBoard[9],currentBoard[12],currentBoard[11],amount])
+                    currentBoard = board
+                    amount = currentBoard[13]
+            countList.append([currentBoard[9],currentBoard[12],currentBoard[11],amount])
+            #先造出哪些宽度的板材需要移入纵切计划：
+            _, minNum = GetPropertyVerticalCuttingParameter(self.log, 1)
+            verticalList=[]
+            for item in countList:
+                if item[3]>=minNum:
+                    verticalList.append(item)
+            # 下面的代码用于将数量大于设定阈值的板材移入纵切计划，剩余板材移入剪切计划
+            if len(verticalList)==0:
+                cuttingMaterialBoardList=self.materialBoardList[i]
+                verticalCuttingMaterialBoardList=[]
+            else:
+                verticalCuttingMaterialBoardList=[]
+                cuttingMaterialBoardList = self.materialBoardList[i]
+                for item in verticalList:
+                    temp = []
+                    for board in cuttingMaterialBoardList:
+                        if item[0]==board[9] and item[1]==board[12]:
+                            if item[0]==board[9] and item[1]==board[12] and item[2]==board[11]:
+                                verticalCuttingMaterialBoardList.append(board)
+                            else:
+                                temp.append(board)
+                    cuttingMaterialBoardList=temp
+            # 下面的代码对需要剪切计划的板子进行剪切计划计算
+            # if len(needCuttingBoardList)>0:
+            #     needCuttingBoardList.sort(key=itemgetter(12,10,11),reverse=True)#对同一种材料的待裁切板材按厚度度（第一序）、长度（第二序）及宽度（第三序）排序，这一步已验证正确性
+            #     mergeMaterialBoardList=[]
+            #     currentBoard=needCuttingBoardList[0]
+            #     for board in needCuttingBoardList[1:]:
+            #         if currentBoard[9]==board[9] and currentBoard[10]==board[10] and currentBoard[11]==board[11] and currentBoard[12]==board[12]:
+            #             currentBoard[13] += board[13]
+            #         else:
+            #             mergeMaterialBoardList.append(currentBoard)
+            #             currentBoard = board
+            #     mergeMaterialBoardList.append(currentBoard)
+            #
+            # verticalCuttingMaterialBoardList=[]
+            # cuttingMaterialBoardList=[]
+            # for board in mergeMaterialBoardList:
+            #     # board = [238, 64730, '2', '1', '9', 'Change Room', 'N.2SF.0852', '64730-0238', 'X', 'YQ73D', 2045, 662, 0.56, 1, '墙板', '2045', '605']
+            #     _,minNum = GetPropertyVerticalCuttingParameter(self.log,1)
+            #     if int(board[13])>=minNum:
+            #         verticalCuttingMaterialBoardList.append(board)
+            #     else:
+            #         cuttingMaterialBoardList.append(board)
+            # print("verticalCuttingMaterialBoardList",verticalCuttingMaterialBoardList)
+            # print("cuttingMaterialBoardList",cuttingMaterialBoardList)
+            if len(cuttingMaterialBoardList)>0:
+                cuttingMaterialBoardList.sort(key=itemgetter(12,10,11),reverse=True)
+                cuttingSchedule = self.CalculateCuttingSchedule(cuttingMaterialBoardList)#用排列好的板材计算裁切计划，这一步已验证正确性
+                cuttingSchedule = self.MergeSameSchedule(cuttingSchedule)#cuttingSchedule是合并之前的裁切计划，如果以此直接打印生成裁切任务单的话，会是很多行。所以还要进行合并同类项处理
+                self.cuttingScheduleList.append(cuttingSchedule)
 
+            if len(verticalCuttingMaterialBoardList)>0:
+                verticalCuttingMaterialBoardList.sort(key=itemgetter(12, 11, 10), reverse=True)
+                verticalCuttingSchedule = self.CalculateVerticalCuttingSchedule(verticalCuttingMaterialBoardList)
+                self.verticalCuttingScheduleList.append(verticalCuttingSchedule)
+
+        for board in self.verticalCuttingScheduleList:
+            print("board=",board)
+            # verticalCuttingSchedule = self.CalculateVerticalCuttingSchedule(verticalCuttingMaterialBoardList)
+            # self.verticalCuttingScheduleList.append(verticalCuttingSchedule)
+
+        # print(self.cuttingScheduleList)
         # self.bendingScheduleList=[]
         # for i in self.materialBoard:
         #     print('i=',i)
-
         print("wrong Number", self.wrongNumber)
+
+    def CalculateVerticalCuttingSchedule(self,data):
+        # board = [11, 64730, '1', '3', '9', 'Corridor', 'A.2SF.0900', '64730-0011', 'X', 'YC74H', 2160, 213, 0.56, 29,'墙板', '2160', '205']
+        result = []
+        exBoard = data[0]
+        temp = [exBoard[9],exBoard[12],exBoard[11],[[exBoard[10],exBoard[13]]]]
+        for board in data[1:]:
+            if board[9]==exBoard[9] and board[12]==exBoard[12] and board[11]==exBoard[11]:
+                if board[10]==exBoard[10]:
+                    temp[-1][-1][-1] += int(board[13])
+                else:
+                    temp[-1].append([board[10],board[13]])
+                    exBoard=board
+            else:
+                result.append(temp)
+                exBoard = board
+                temp = [exBoard[9],exBoard[12],exBoard[11],[[exBoard[10],exBoard[13]]]]
+        result.append(temp)
+        return result
+
+
+
+    def CalculateCuttingSchedule(self, data):
+        # boardName = data[0][9]  #获得板材名称
+        # boardThickness = data[0][12]#获得板材厚度
+        dataList = []
+        for record in data:  # 将待裁切板材按单块列表
+            for i in range(int(record[13])):
+                temp = record[:13]
+                temp.append(1)
+                dataList.append(temp)
+        sameLenthBoardListSet = []
+        temp = []
+        thisLength = dataList[0][10]
+        temp.append(dataList[0])
+        for record in dataList[1:]:  # 把同一种板材，按相同长度分堆
+            if thisLength != record[10]:
+                sameLenthBoardListSet.append(temp)
+                temp = []
+            temp.append(record)
+            thisLength = record[10]
+        sameLenthBoardListSet.append(temp)
+        result = []
+        for sameLenthBoardList in sameLenthBoardListSet:
+            CuttingFinish = False
+            while not CuttingFinish:  # 循环调用直到将所有待裁切板材全部裁切完毕
+                result, sameLenthBoardList = self.MakeHorizontalCutting(result,
+                                                                        sameLenthBoardList)  # 每次待用都开始一次新的横切
+                temp = []
+                for record in sameLenthBoardList:
+                    if record[-1] > 0:
+                        temp.append(record)
+                sameLenthBoardList = temp
+                CuttingFinish = False if len(sameLenthBoardList) > 0 else True
+        return result
 
     def MergeSameSchedule(self,data):
         # [['YQ73D', 2160, 1234], [553, 553]]
@@ -147,40 +277,6 @@ class ProductionScheduleAlgorithm(object):
                     amount=1
             verticalCuttingList.append([exVerticalCutting,amount])
             result[i] = [schedule[0],verticalCuttingList]
-
-        return result
-
-    def CalculateCuttingSchedule(self,data):
-        # boardName = data[0][9]  #获得板材名称
-        # boardThickness = data[0][12]#获得板材厚度
-        dataList = []
-        for record in data:#将待裁切板材按单块列表
-            for i in range(int(record[13])):
-                temp = record[:13]
-                temp.append(1)
-                dataList.append(temp)
-        sameLenthBoardListSet=[]
-        temp=[]
-        thisLength = dataList[0][10]
-        temp.append(dataList[0])
-        for record in dataList[1:]:#把同一种板材，按相同长度分堆
-            if thisLength != record[10]:
-                sameLenthBoardListSet.append(temp)
-                temp=[]
-            temp.append(record)
-            thisLength=record[10]
-        sameLenthBoardListSet.append(temp)
-        result=[]
-        for sameLenthBoardList in sameLenthBoardListSet:
-            CuttingFinish = False
-            while not CuttingFinish:   #循环调用直到将所有待裁切板材全部裁切完毕
-                result,sameLenthBoardList = self.MakeHorizontalCutting(result,sameLenthBoardList)   #每次待用都开始一次新的横切
-                temp = []
-                for record in sameLenthBoardList:
-                    if record[-1]>0:
-                        temp.append(record)
-                sameLenthBoardList = temp
-                CuttingFinish = False if len(sameLenthBoardList)>0 else True
         return result
 
     def MakeHorizontalCutting(self,result,data):

@@ -50,6 +50,7 @@ from ExcelOperation import GetOrderIDFromExcelFile,GetSubOrderIDListFromExcelFil
 # from NewOrderInquireDialog import AddSubOrderFromExcelDialog
 from xls2xlsx import xls2xlsx
 import wx.lib.agw.gradientbutton as GB
+from MakePdfReport import *
 
 def switchRGBtoBGR(colour):
     return wx.Colour(colour.Blue(), colour.Green(), colour.Red())
@@ -603,10 +604,10 @@ class MainPanel(wx.Panel):
                 vvbox.Add(self.specificOrderProductionBTN,0,wx.EXPAND|wx.ALL,5)
             elif self.subOrderStateList[i] == "已排产":
                 self.orderDetailNotebook.SetPageImage(i, idx8)
-                self.specificOrderPrintScheduleBTN = wx.Button(self.subOrderPanel[i],label="打印子订单任务单",size=(-1,40),name='子订单打印任务单%d'%i)
+                self.specificOrderPrintScheduleBTN = wx.Button(self.subOrderPanel[i],label="打印子订单任务单",size=(-1,40),name='子订单打印任务单%d'%(i+1))
                 self.specificOrderPrintScheduleBTN.Bind(wx.EVT_BUTTON,self.OnPrintScheduleBTN)
                 vvbox.Add(self.specificOrderPrintScheduleBTN,0,wx.EXPAND|wx.ALL,5)
-                self.glueSchedulePrintBTN = wx.Button(self.subOrderPanel[i],label="打印子订单胶水单",size=(-1,40),name='子订单打印胶水单%d'%i)
+                self.glueSchedulePrintBTN = wx.Button(self.subOrderPanel[i],label="打印子订单胶水单",size=(-1,40),name='子订单打印胶水单%d'%(i+1))
                 # self.glueSchedulePrintBTN.Bind(wx.EVT_BUTTON,self.OnGlueSchedulePrintBTN)
                 vvbox.Add(self.glueSchedulePrintBTN,0,wx.EXPAND|wx.ALL,5)
                 self.packageBTN = wx.Button(self.subOrderPanel[i],label="子订单打包",size=(-1,40),name='子订单产品打包%d'%i)
@@ -670,7 +671,10 @@ class MainPanel(wx.Panel):
         dlg.Destroy()
 
     def OnPrintScheduleBTN(self,event):
-        dlg = ProductionScheduleDialog(self, self.log, self.work_zone_Panel.orderManagmentPanel.data[0])
+        obj = event.GetEventObject()
+        name = obj.GetName()
+        suborderNumber = name[-1]
+        dlg = ProductionScheduleDialog(self, self.log, self.work_zone_Panel.orderManagmentPanel.data[0],suborderNumber)
         dlg.CenterOnScreen()
         if dlg.ShowModal() == wx.ID_OK:
             pass
@@ -689,6 +693,18 @@ class MainPanel(wx.Panel):
             dlg.Destroy()
             self.productionSchedule = ProductionScheduleAlgorithm(self.log, self.work_zone_Panel.orderManagmentPanel.data[0],suborderNumber)
             if self.productionSchedule.wrongNumber==0:
+                if self.work_zone_Panel.orderManagmentPanel.data[0] == None:
+                    dirName = scheduleDir + '%s/' % self.work_zone_Panel.orderManagmentPanel.data[0]
+                else:
+                    dirName = scheduleDir + '%s/' % self.work_zone_Panel.orderManagmentPanel.data[0] + '%s/' % (int(suborderNumber))
+                if not os.path.exists(dirName):
+                    os.makedirs(dirName)
+                filename = scheduleDir + '%s/%s/CutSchedule.pdf' % (self.work_zone_Panel.orderManagmentPanel.data[0],suborderNumber)
+                MakeCutScheduleTemplate(self.work_zone_Panel.orderManagmentPanel.data[0],suborderNumber, filename,
+                                        self.productionSchedule.cuttingScheduleList)  # 这些数据在ProductionScheduleAlgorithm.py文件中
+                filename = scheduleDir + '%s/%s/VerticalCutSchedule.pdf' % (self.work_zone_Panel.orderManagmentPanel.data[0],suborderNumber)
+                MakeVerticalCutScheduleTemplate(self.work_zone_Panel.orderManagmentPanel.data[0],suborderNumber, filename,
+                                        self.productionSchedule.verticalCuttingScheduleList)  # 这些数据在ProductionScheduleAlgorithm.py文件中
                 self.subOrderStateList[int(suborderNumber)-1] = "已排产"  # 这个之前应该增加一个数据库更新操作
                 suborderState = str(self.subOrderStateList[0])
                 for state in self.subOrderStateList[1:]:

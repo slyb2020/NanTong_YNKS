@@ -472,6 +472,22 @@ def UpdatePropertyInDB(log,whichDB,propertyDic):
         print("error")
     db.close()
 
+def GetPropertyVerticalCuttingParameter(log,whichDB):
+    try:
+        db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
+                             passwd='%s' % dbPassword[whichDB], db='%s' % dbName[whichDB], charset='utf8')
+    except:
+        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        if log:
+            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+        return -1, []
+    cursor = db.cursor()
+    sql = """SELECT `启动纵切最小板材数` from `系统参数` """
+    cursor.execute(sql)
+    temp = cursor.fetchone()
+    db.close()
+    return 0, temp[0]
+
 
 def GetTableListFromDB(log,whichDB):
     try:
@@ -563,7 +579,6 @@ def InsertNewOrderRecord(log,whichDB,newOrderID,newOrderName,subOrderIDList):
     for i in subOrderIDList[1:]:
         subOrderIdStr += ','
         subOrderIdStr += str(int(i))
-    print("str=",subOrderIdStr)
     # sql = "INSERT INTO 订单信息(`订单编号`,`面板增量`,`中板增量`,`背板增量`,`剪板505`,`成型405`,`成型409`,`成型406`,`折弯652`," \
     #       "`热压100`,`热压306`,`冲铣`,`图纸状态`,`创建人`,`中板`,`打包9000`,`图纸大类`,`创建时间`,`备注`)" \
     #       "VALUES ('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')"\
@@ -587,7 +602,6 @@ def UpdateOrderRecord(log,whichDB,OrderID,subOrderIdStr,subOrderStateStr):
             log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
         return -1, []
     cursor = db.cursor()
-    print("str=",int(OrderID),subOrderIdStr,subOrderStateStr)
     # sql = "INSERT INTO 订单信息(`订单编号`,`面板增量`,`中板增量`,`背板增量`,`剪板505`,`成型405`,`成型409`,`成型406`,`折弯652`," \
     #       "`热压100`,`热压306`,`冲铣`,`图纸状态`,`创建人`,`中板`,`打包9000`,`图纸大类`,`创建时间`,`备注`)" \
     #       "VALUES ('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')"\
