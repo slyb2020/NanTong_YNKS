@@ -190,35 +190,30 @@ class ProductionScheduleAlgorithm(object):
         S2FORMING_CEILING_LIST =['C64']
         SOUND_PROOF_PANEL_LIST = ['2SM']
         COLOUR_PLATE_LIST = ['YC94E']
-        for i, board in enumerate(self.materialBoard):
-            #[316, 64730, '3', '10', 'None', 'Staircase 2#', 'N.2SF.0923', '64730-0316', 'X', 'YC94E', 3000, 632, 0.56, 1, '墙板', '3000', '575']
-            if board[6].split('.')[1] in NEED_BEND_PANEL_LIST:
-                self.bendScheduleList.append(board)
-                self.vacuumScheduleList.append(board)
+        for i, panel in enumerate(self.wallOrderData):
+            #[121, 64730, '2', '1', '9', 'CREW  MESS', 'N.2SF.0867', '0', 'YC08E', 'G', '2160', '200', '25', 1, 'None', 'None']
+            if panel[6].split('.')[1] in NEED_BEND_PANEL_LIST:
+                self.bendScheduleList.append(panel)  #角墙板都走折弯
+                self.vacuumScheduleList.append(panel) #折弯的都走特制品
             else:
-                if board[14]=='天花板' and board[6].split(".")[1] not in S2FORMING_CEILING_LIST:
-                    self.ceilingFormingScheduleList.append(board)
+                self.S2RFormingScheduleList.append(panel) #平墙板都走2S成型
+                if int(panel[11])<=200 or panel[6].split('.')[1] in SOUND_PROOF_PANEL_LIST:#宽度小于200的平墙板，隔音板，双面带颜色板也走特质平
+                    self.vacuumScheduleList.append(panel)
                 else:
-                    self.S2RFormingScheduleList.append(board)
-                if board[11]<=200 or board[6].split('.')[1] in SOUND_PROOF_PANEL_LIST:
-                    self.vacuumScheduleList.append(board)
-                else:
-                    if board[9] in COLOUR_PLATE_LIST:
-                        tempColor=[]
-                        for tempBoard in self.materialBoard:
-                            if tempBoard[0]== board[0]:
-                                tempColor.append(tempBoard[9])
-                        needVacuum=True
-                        for plateColor in tempColor:
-                            if plateColor not in COLOUR_PLATE_LIST:
-                                needVacuum=False
-                                break
-                        if needVacuum:
-                            self.vacuumScheduleList.append(board)
-                        else:
-                            self.prScheduleList.append(board)
+                    if panel[8] in COLOUR_PLATE_LIST and panel[9] in COLOUR_PLATE_LIST:
+                        self.vacuumScheduleList.append(panel)
                     else:
-                        self.prScheduleList.append(board)
+                        self.prScheduleList.append(panel)
+
+        for i, panel in enumerate(self.ceilingOrderData):
+            print("ceiling panel:",panel)
+            #[121, 64730, '2', '1', '9', 'CREW  MESS', 'N.2SF.0867', '0', 'YC08E', 'G', '2160', '200', '25', 1, 'None', 'None']
+            self.prScheduleList.append(panel)#所有天花板都走PR热压
+            if panel[6].split('.')[1] in S2FORMING_CEILING_LIST:
+                self.S2RFormingScheduleList.append(panel)  #C64天花板走2S成型
+            else:
+                self.ceilingFormingScheduleList.append(panel) #其它所有天花板都走2S天花板成型
+
         print("bendScheduleList",self.bendScheduleList)#折弯
         print("S2RFormingScheduleList",self.S2RFormingScheduleList)#2S成型
         print("ceilingFormingScheduleList",self.ceilingFormingScheduleList)#天花板成型
@@ -227,8 +222,6 @@ class ProductionScheduleAlgorithm(object):
 
         print("wrong Number", self.wrongNumber)
 
-        for record in self.wallOrderData:
-            print("wall Panel:",record)
         # self.orticFormingScheduleList=[] #构件成型
 
     def CalculateVerticalCuttingSchedule(self,data):
