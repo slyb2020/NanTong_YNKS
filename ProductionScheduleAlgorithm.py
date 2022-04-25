@@ -101,7 +101,7 @@ class ProductionScheduleAlgorithm(object):
         self.materialBoardList.append(temp)#把待裁切的板材按原材料的不同分开到不同的列表
 
         self.cuttingScheduleList=[]
-        self.verticalCuttingScheduleList=[]
+        self.horizontalCuttingScheduleList=[]
         # self.verticalCuttingMaterialBoardList=[[]*len(self.materialBoardList)]
         # self.cuttingMaterialBoardList=[[]*len(self.materialBoardList)]
         # print("self.verticalCuttingMaterialBoardList",self.verticalCuttingMaterialBoardList)
@@ -129,16 +129,16 @@ class ProductionScheduleAlgorithm(object):
             # 下面的代码用于将数量大于设定阈值的板材移入纵切计划，剩余板材移入剪切计划
             if len(verticalList)==0:
                 cuttingMaterialBoardList=self.materialBoardList[i]
-                verticalCuttingMaterialBoardList=[]
+                horizontalCuttingMaterialBoardList=[]
             else:
-                verticalCuttingMaterialBoardList=[]
+                horizontalCuttingMaterialBoardList=[]
                 cuttingMaterialBoardList = self.materialBoardList[i]
                 for item in verticalList:
                     temp = []
                     for board in cuttingMaterialBoardList:
                         if item[0]==board[9] and item[1]==board[12]:
                             if item[0]==board[9] and item[1]==board[12] and item[2]==board[11]:
-                                verticalCuttingMaterialBoardList.append(board)
+                                horizontalCuttingMaterialBoardList.append(board)
                             else:
                                 temp.append(board)
                     cuttingMaterialBoardList=temp
@@ -172,21 +172,64 @@ class ProductionScheduleAlgorithm(object):
                 cuttingSchedule = self.MergeSameSchedule(cuttingSchedule)#cuttingSchedule是合并之前的裁切计划，如果以此直接打印生成裁切任务单的话，会是很多行。所以还要进行合并同类项处理
                 self.cuttingScheduleList.append(cuttingSchedule)
 
-            if len(verticalCuttingMaterialBoardList)>0:
-                verticalCuttingMaterialBoardList.sort(key=itemgetter(12, 11, 10), reverse=True)
-                verticalCuttingSchedule = self.CalculateVerticalCuttingSchedule(verticalCuttingMaterialBoardList)
-                self.verticalCuttingScheduleList.append(verticalCuttingSchedule)
+            if len(horizontalCuttingMaterialBoardList)>0:
+                horizontalCuttingMaterialBoardList.sort(key=itemgetter(12, 11, 10), reverse=True)
+                horizontalCuttingSchedule = self.CalculateVerticalCuttingSchedule(horizontalCuttingMaterialBoardList)
+                self.horizontalCuttingScheduleList.append(horizontalCuttingSchedule)
 
-        for board in self.verticalCuttingScheduleList:
-            print("board=",board)
             # verticalCuttingSchedule = self.CalculateVerticalCuttingSchedule(verticalCuttingMaterialBoardList)
             # self.verticalCuttingScheduleList.append(verticalCuttingSchedule)
-
         # print(self.cuttingScheduleList)
         # self.bendingScheduleList=[]
-        # for i in self.materialBoard:
-        #     print('i=',i)
+        self.bendScheduleList=[]#折弯
+        self.S2RFormingScheduleList=[]#2S成型
+        self.ceilingFormingScheduleList=[]#天花板成型
+        self.prScheduleList=[]#PR热压
+        self.vacuumScheduleList=[]#特制品热压
+        NEED_BEND_PANEL_LIST = ["2SG",'2SA']
+        S2FORMING_CEILING_LIST =['C64']
+        SOUND_PROOF_PANEL_LIST = ['2SM']
+        COLOUR_PLATE_LIST = ['YC94E']
+        for i, board in enumerate(self.materialBoard):
+            #[316, 64730, '3', '10', 'None', 'Staircase 2#', 'N.2SF.0923', '64730-0316', 'X', 'YC94E', 3000, 632, 0.56, 1, '墙板', '3000', '575']
+            if board[6].split('.')[1] in NEED_BEND_PANEL_LIST:
+                self.bendScheduleList.append(board)
+                self.vacuumScheduleList.append(board)
+            else:
+                if board[14]=='天花板' and board[6].split(".")[1] not in S2FORMING_CEILING_LIST:
+                    self.ceilingFormingScheduleList.append(board)
+                else:
+                    self.S2RFormingScheduleList.append(board)
+                if board[11]<=200 or board[6].split('.')[1] in SOUND_PROOF_PANEL_LIST:
+                    self.vacuumScheduleList.append(board)
+                else:
+                    if board[9] in COLOUR_PLATE_LIST:
+                        tempColor=[]
+                        for tempBoard in self.materialBoard:
+                            if tempBoard[0]== board[0]:
+                                tempColor.append(tempBoard[9])
+                        needVacuum=True
+                        for plateColor in tempColor:
+                            if plateColor not in COLOUR_PLATE_LIST:
+                                needVacuum=False
+                                break
+                        if needVacuum:
+                            self.vacuumScheduleList.append(board)
+                        else:
+                            self.prScheduleList.append(board)
+                    else:
+                        self.prScheduleList.append(board)
+        print("bendScheduleList",self.bendScheduleList)#折弯
+        print("S2RFormingScheduleList",self.S2RFormingScheduleList)#2S成型
+        print("ceilingFormingScheduleList",self.ceilingFormingScheduleList)#天花板成型
+        print("prScheduleList",self.prScheduleList)#PR热压
+        print("vacuumScheduleList",self.vacuumScheduleList)#特制品热压
+
         print("wrong Number", self.wrongNumber)
+
+        for record in self.wallOrderData:
+            print("wall Panel:",record)
+        # self.orticFormingScheduleList=[] #构件成型
 
     def CalculateVerticalCuttingSchedule(self,data):
         # board = [11, 64730, '1', '3', '9', 'Corridor', 'A.2SF.0900', '64730-0011', 'X', 'YC74H', 2160, 213, 0.56, 29,'墙板', '2160', '205']

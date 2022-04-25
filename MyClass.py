@@ -41,7 +41,7 @@ from OrderManagementPanel import OrderManagementPanel
 from BoardManagementPanel import BoardManagementPanel
 from BluePrintManagementPanel import BluePrintManagementPanel
 from ExcelImport import XLSGridFrame
-from DBOperation import CreateNewOrderSheet,InsertNewOrderRecord,GetAllOrderList,GetOrderByOrderID,UpdateOrderStateInDB
+from DBOperation import CreateNewOrderSheet,InsertNewOrderRecord,GetAllOrderList,GetOrderByOrderID,UpdateOrderStateInDB,GetPropertySchedulePageRowNumber
 from ProductionScheduleAlgorithm import ProductionScheduleAlgorithm
 from ImportOrderDialog import ImportOrderFromExcelDialog
 from ProductionScheduleDialog import ProductionScheduleDialog
@@ -610,7 +610,7 @@ class MainPanel(wx.Panel):
                 self.glueSchedulePrintBTN = wx.Button(self.subOrderPanel[i],label="打印子订单胶水单",size=(-1,40),name='子订单打印胶水单%d'%(i+1))
                 # self.glueSchedulePrintBTN.Bind(wx.EVT_BUTTON,self.OnGlueSchedulePrintBTN)
                 vvbox.Add(self.glueSchedulePrintBTN,0,wx.EXPAND|wx.ALL,5)
-                self.packageBTN = wx.Button(self.subOrderPanel[i],label="子订单打包",size=(-1,40),name='子订单产品打包%d'%i)
+                self.packageBTN = wx.Button(self.subOrderPanel[i],label="子订单打包",size=(-1,40),name='子订单产品打包%d'%(i+1))
                 self.packageBTN.Bind(wx.EVT_BUTTON,self.OnPackageBTN)
                 vvbox.Add(self.packageBTN,0,wx.EXPAND|wx.ALL,5)
             self.subOrderPanel[i].SetSizer(vvbox)
@@ -693,6 +693,7 @@ class MainPanel(wx.Panel):
             dlg.Destroy()
             self.productionSchedule = ProductionScheduleAlgorithm(self.log, self.work_zone_Panel.orderManagmentPanel.data[0],suborderNumber)
             if self.productionSchedule.wrongNumber==0:
+                _, self.pageRowNum = GetPropertySchedulePageRowNumber(self.log, 1)
                 if self.work_zone_Panel.orderManagmentPanel.data[0] == None:
                     dirName = scheduleDir + '%s/' % self.work_zone_Panel.orderManagmentPanel.data[0]
                 else:
@@ -701,10 +702,15 @@ class MainPanel(wx.Panel):
                     os.makedirs(dirName)
                 filename = scheduleDir + '%s/%s/CutSchedule.pdf' % (self.work_zone_Panel.orderManagmentPanel.data[0],suborderNumber)
                 MakeCutScheduleTemplate(self.work_zone_Panel.orderManagmentPanel.data[0],suborderNumber, filename,
-                                        self.productionSchedule.cuttingScheduleList)  # 这些数据在ProductionScheduleAlgorithm.py文件中
+                                        self.productionSchedule.cuttingScheduleList,PAGEROWNUMBER=self.pageRowNum)  # 这些数据在ProductionScheduleAlgorithm.py文件中
                 filename = scheduleDir + '%s/%s/VerticalCutSchedule.pdf' % (self.work_zone_Panel.orderManagmentPanel.data[0],suborderNumber)
-                MakeVerticalCutScheduleTemplate(self.work_zone_Panel.orderManagmentPanel.data[0],suborderNumber, filename,
-                                        self.productionSchedule.verticalCuttingScheduleList)  # 这些数据在ProductionScheduleAlgorithm.py文件中
+                MakeHorizontalCutScheduleTemplate(self.work_zone_Panel.orderManagmentPanel.data[0], suborderNumber, filename,
+                                                  self.productionSchedule.horizontalCuttingScheduleList,PAGEROWNUMBER=self.pageRowNum)  # 这些数据在ProductionScheduleAlgorithm.py文件中
+                filename = scheduleDir + '%s/%s/MaterialSchedule.pdf' % (self.work_zone_Panel.orderManagmentPanel.data[0],suborderNumber)
+                MakeMaterialScheduleTemplate(self.work_zone_Panel.orderManagmentPanel.data[0], suborderNumber, filename,
+                                             self.productionSchedule.horizontalCuttingScheduleList,
+                                             self.productionSchedule.cuttingScheduleList,
+                                             PAGEROWNUMBER=self.pageRowNum)  # 这些数据在ProductionScheduleAlgorithm.py文件中
                 self.subOrderStateList[int(suborderNumber)-1] = "已排产"  # 这个之前应该增加一个数据库更新操作
                 suborderState = str(self.subOrderStateList[0])
                 for state in self.subOrderStateList[1:]:

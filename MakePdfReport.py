@@ -13,7 +13,7 @@ from reportlab.lib.units import inch
 from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from ID_DEFINE import *
-
+from BarCodeGenerator import BarCodeGenerator
 
 pdfmetrics.registerFont(TTFont('SimSun', 'Font/SimSun.ttf'))  #注册字体
 
@@ -46,7 +46,7 @@ def coord(x, y, height, unit=1):
 #
 #     doc.build(story)
 
-def DrawMaterialSchedule(c):
+def DrawMaterialSchedule(c,page,pageDivision):
     I = Image(bitmapDir+"/PVC.jpg")
     styleSheet = getSampleStyleSheet()
     I.drawHeight = 1.25 * inch * I.drawHeight / I.drawWidth
@@ -69,64 +69,100 @@ def DrawMaterialSchedule(c):
     Title7 = Paragraph('<font name="SimSun">签名</font>')
     data = [
             [Title1, Title2, Title3, Title4, Title5, Title6, Title7],
-            ['0', '9GLAV', '0.56', 'Hoved 1234.00mm', '516.95','',''],
-            ['1', 'G', '0.56', 'Hoved 1234.00mm', '516.95','',''],
-            ['1', '9GLAV', '0.56', 'Hoved 1234.00mm', '516.95','',''],
-            ['3', 'G', '0.56', 'Hoved 610.00mm', '516.95','',''],
-            ['4', '9GLAV', '0.56', 'Hoved 694.00mm', '516.95','',''],
-            ['5', 'G', '0.56', 'Hoved 164.50mm', '516.95','',''],
-            ['6', '9GLAV', '0.56', 'Hoved 612.00mm', '516.95','',''],
-            ['7', 'G', '0.56', 'Hoved 622.00mm', '516.95','',''],
-            ['8', 'G', '0.7', 'Hoved 622.00mm', '516.95','',''],
-            ['9', 'G', '1.0', 'Hoved 622.00mm', '516.95','',''],
-            ['10', 'G', '1.25', 'Hoved 622.00mm', '516.95','',''],
-            ['11', 'G', '0.56', 'Hoved 622.00mm', '516.95','',''],
-            ['12', 'G', '0.56', 'Hoved 622.00mm', '516.95','',''],
-            ['13', 'G', '0.56', 'Hoved 622.00mm', '516.95','',''],
-            ['14', 'G', '0.56', 'Hoved 622.00mm', '516.95','',''],
         ]
-    t = Table(data, style=[
-                           ('ALIGN', (0, 1), (-1, -1), 'CENTER'),
-                           ('GRID', (0, 0), (-1, -1), 1, colors.black),       #   类别，(起始列，起始行）,(结束列，结束行)，线宽，颜色  #GRID是内外都有线   #BOX是只有外框，内部没线
-                           ('BOX', (0, 0), (-1, -1), 2, colors.black),
-                           # ('BACKGROUND', (0, 0), (-1, 0), colors.beige),
-                           ('BACKGROUND', (0, 0), (-1, 0), colors.khaki),
-                           # ('SPAN',(0,0),(1,0)),
-                           # ('LINEABOVE', (1, 2), (-2, 2), 1, colors.blue),
-                           # ('LINEBEFORE', (2, 1), (2, -2), 1, colors.pink),
-                           # ('BACKGROUND', (1, 1), (1, 2), colors.lavender),
-                           # ('BACKGROUND', (2, 2), (2, 3), colors.orange),
-                           # ('BOX', (0, 0), (-1, -1), 2, colors.black),
-                           # ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
-                           # ('VALIGN', (3, 0), (3, 0), 'BOTTOM'),
-                           # # ('ALIGN', (0, 3), (0, 3), 'CENTER'),
-                           # ('BACKGROUND', (3, 0), (3, 0), colors.limegreen),
-                           # ('BACKGROUND', (3, 1), (3, 1), colors.khaki),
-                           # # ('ALIGN', (3, 1), (3, 1), 'CENTER'),
-                           # ('BACKGROUND', (3, 2), (3, 2), colors.beige),
-                           # # ('ALIGN', (3, 2), (3, 2), 'LEFT'),
-                           ],colWidths=[15.0*mm,27.5*mm,27.5*mm,35*mm,25.0*mm,(186.5-155.0)*mm,25.0*mm])
-    # Table(data, colWidths=[1.9 * inch] * 5)
-    # t._argW[3] = 1.5 * inch
-    t.wrapOn(c, 186.5 * mm, 800 * mm)
-    t.drawOn(c, 12.5 * mm, 130 * mm)
+    for record in page:
+        data.append(record)
 
-def MakeMaterialScheduleTemplate(filename,data=[]):
+    tableColWidths = [15.0 * mm, 27.5 * mm, 27.5 * mm, 35 * mm, 25.0 * mm, (186.5 - 155.0) * mm, 25.0 * mm]
+    tableStyle=[
+                    ('ALIGN', (0, 1), (-1, -1), 'CENTER'),
+                    ('GRID', (0, 0), (-1, -1), 1, colors.black),  # 类别，(起始列，起始行）,(结束列，结束行)，线宽，颜色  #GRID是内外都有线   #BOX是只有外框，内部没线
+                    ('BOX', (0, 0), (-1, -1), 2, colors.black),
+                    # ('BACKGROUND', (0, 0), (-1, 0), colors.beige),
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.khaki),
+                ]
+    exSeper = pageDivision[0]
+    for seperation in pageDivision[1:]:
+        if seperation>1:
+            sepeTemp=('SPAN',(1,exSeper),(1,seperation-1))
+            tableStyle.append(sepeTemp)
+            sepeTemp=('SPAN',(2,exSeper),(2,seperation-1))
+            tableStyle.append(sepeTemp)
+            exSeper = seperation
+    tableStyle.append(('SPAN',(1,exSeper),(1,-1)))
+    tableStyle.append(('SPAN',(2,exSeper),(2,-1)))
+    t = Table(data, style=tableStyle,colWidths=tableColWidths)
+    t.wrapOn(c, 186.5 * mm, 800 * mm)
+    startY=8+(36-len(data))*6.3
+    t.drawOn(c, 12.5 * mm, startY * mm)
+
+def MakeMaterialScheduleTemplate(orderID,subOrderID,filename,horizontalData,cuttingData,PAGEROWNUMBER=35):
+    num=1
+    index = 1
+    pages = []
+    pageDivision = []
+    data = []
+    seperation = []
+    for type in horizontalData:
+        for record in type:
+            length=0
+            seperation.append(num)
+            for board in record[3]:
+                length+=int(board[0])*int(board[1])
+            temp=[index,record[0],record[1],record[2],float(length)/1000.,'','']
+            data.append(temp)
+            num+=1
+            index+=1
+            if num>PAGEROWNUMBER:
+                num = 1
+                pages.append(data)
+                pageDivision.append(seperation)#由于每次seperation初始化都自动往里面添加一个[1],所以如果前两行不同的话会出现【1，1】的情况，需要去除重复的1
+                seperation=[1]
+                data=[]
+    # if len(data)>0:
+        # pages.append(data)
+        # pageDivision.append(seperation)
+    for type in cuttingData:
+        length=0
+        seperation.append(num)
+        for board in type:
+            length+=int(board[0][3])*int(board[0][4])
+        temp=[index,type[0][0][0],type[0][0][1],type[0][0][2],float(length)/1000.]
+        data.append(temp)
+        num+=1
+        index+=1
+        if num>PAGEROWNUMBER:
+            num = 1
+            pages.append(data)
+            pageDivision.append(seperation)#由于每次seperation初始化都自动往里面添加一个[1],所以如果前两行不同的话会出现【1，1】的情况，需要去除重复的1
+            seperation=[1]
+            data=[]
+    if len(data)>0:
+        pages.append(data)
+        pageDivision.append(seperation)
+    # print("pages=",pages)
+    # print("pageDivision",pageDivision)
     width, height = letter
     myCanvas = canvas.Canvas(filename, pagesize=letter)
-    myCanvas.setFont("SimSun", 18)
-    myCanvas.drawCentredString(width/2,730, text="伊纳克赛(南通)精致内饰材料有限公司出料单")
-    myCanvas.drawImage(bitmapDir+"/logo.jpg", 30, 710,
-                        width=40, height=40)
-    myCanvas.setFont("SimSun", 12)
-    myCanvas.drawCentredString(width/2,710, text="Inexa (NanTong) Interiors Co.Ltd Meterial Requisition")
-    DrawLine(myCanvas,1,*coord(10, 33, height, mm),*coord(200, 33, height, mm))
-    myCanvas.drawString(40,680, text="订单号；%s"%'64757-001')
-    myCanvas.drawRightString(width-50, 680, '出单日期：%s'%(datetime.date.today()))
-    # simple_table_with_style(filename)
-    DrawMaterialSchedule(myCanvas)
+    for i,page in enumerate(pages):
+        myCanvas.setFont("SimSun", 18)
+        myCanvas.drawCentredString(width/2,735, text="伊纳克赛(南通)精致内饰材料有限公司原材料出库单")
+        myCanvas.drawImage(bitmapDir+"/logo.jpg", 30, 715,
+                            width=40, height=40)
+        tempCode='M'+'%05d'%int(orderID)+'-'+'%03d'%int(subOrderID)+'P%03d'%(i+1)
+        BarCodeGenerator(tempCode)
+        myCanvas.drawImage(dirName+"/tempBarcode.png", width-100, height-40,
+                            width=100, height=40)
+        myCanvas.setFont("SimSun", 12)
+        myCanvas.drawCentredString(width/2,715, text="Inexa (NanTong) Interiors Co.Ltd Plate Outbound Delivery Schedule")
+        DrawLine(myCanvas,1,*coord(10, 31, height, mm),*coord(200, 31, height, mm))
+        myCanvas.drawString(40,685, text="订单号；%s-%03d"%(orderID,int(subOrderID)))
+        myCanvas.drawRightString(width-50, 685, '出单日期：%s'%(datetime.date.today()))
+        # simple_table_with_style(filename)
+        DrawMaterialSchedule(myCanvas,page,pageDivision[i])
+        myCanvas.drawRightString(width-50, 5, '页码：%s/%s'%(i+1,len(pages)))
+        myCanvas.showPage()#这句话相当于分页，显示页面即完成当前页面，开始新页面
     myCanvas.save()
-
 
 def DrawVerticalCutSchedule(c,record,pageDivision):
     # if pageDivision[0] == pageDivision[1]:
@@ -160,7 +196,6 @@ def DrawVerticalCutSchedule(c,record,pageDivision):
 #     data = pages[0]
     data= [title]
     for row in record:
-        print("row=",row)
         data.append(row)
     tableStyle=[
                ('ALIGN', (0, 1), (-1, -1), 'CENTER'),
@@ -194,14 +229,14 @@ def DrawVerticalCutSchedule(c,record,pageDivision):
     startY=8+(36-len(data))*6.3
     t.drawOn(c, 12.5 * mm, startY * mm)
 
-def MakeVerticalCutScheduleTemplate(orderID,subOrderID,filename,record=[]):
+def MakeHorizontalCutScheduleTemplate(orderID, subOrderID, filename, record=[],PAGEROWNUMBER=35):
     num=1
     index = 1
     pages = []
     pageDivision = []
     data = []
     seperation = []
-    for type in record[1:]:
+    for type in record:
         for board in type:
             seperation.append(num)
             for item in board[-1]:
@@ -209,7 +244,7 @@ def MakeVerticalCutScheduleTemplate(orderID,subOrderID,filename,record=[]):
                 data.append(temp)
                 num+=1
                 index+=1
-                if num>35:
+                if num>PAGEROWNUMBER:
                     num = 1
                     pages.append(data)
                     pageDivision.append(seperation)#由于每次seperation初始化都自动往里面添加一个[1],所以如果前两行不同的话会出现【1，1】的情况，需要去除重复的1
@@ -218,8 +253,6 @@ def MakeVerticalCutScheduleTemplate(orderID,subOrderID,filename,record=[]):
     if len(data)>0:
         pages.append(data)
         pageDivision.append(seperation)
-    print("pages=",pages)
-    print("pageDivision",pageDivision)
     width, height = letter
     myCanvas = canvas.Canvas(filename, pagesize=letter)
     for i,page in enumerate(pages):
@@ -227,10 +260,12 @@ def MakeVerticalCutScheduleTemplate(orderID,subOrderID,filename,record=[]):
         myCanvas.drawCentredString(width/2,735, text="伊纳克赛(南通)精致内饰材料有限公司横剪任务单")
         myCanvas.drawImage(bitmapDir+"/logo.jpg", 30, 715,
                             width=40, height=40)
-        myCanvas.drawImage(dirName+"/code128.png", width-100, height-40,
+        tempCode='H'+'%05d'%int(orderID)+'-'+'%03d'%int(subOrderID)+'P%03d'%(i+1)
+        BarCodeGenerator(tempCode)
+        myCanvas.drawImage(dirName+"/tempBarcode.png", width-100, height-40,
                             width=100, height=40)
         myCanvas.setFont("SimSun", 12)
-        myCanvas.drawCentredString(width/2,715, text="Inexa (NanTong) Interiors Co.Ltd Plate Shear Schedule")
+        myCanvas.drawCentredString(width/2,715, text="Inexa (NanTong) Interiors Co.Ltd Plate Horizontal Shear Schedule")
         DrawLine(myCanvas,1,*coord(10, 31, height, mm),*coord(200, 31, height, mm))
         myCanvas.drawString(40,685, text="订单号；%s-%03d"%(orderID,int(subOrderID)))
         myCanvas.drawRightString(width-50, 685, '出单日期：%s'%(datetime.date.today()))
@@ -310,7 +345,7 @@ def DrawCutSchedule(c,record,colNum,pageDivision):
                ('BOX', (0, 0), (-1, -1), 2, colors.black),
                ('BACKGROUND', (0, 0), (-1, 0), colors.khaki),
                ('BACKGROUND', (4, 1), (5, -1), colors.beige),
-               ('BACKGROUND', (6, 1), (13, -1), colors.lavender),
+               ('BACKGROUND', (6, 1), (-1, -1), colors.lavender),
                ('LINEABOVE', (0, 1), (-1, 1), 2, colors.black),
                ('LINEBEFORE', (4, 0), (4, -1), 2, colors.black),
                ('LINEBEFORE', (6, 0), (6, -1), 2, colors.black),
@@ -342,7 +377,7 @@ def DrawCutSchedule(c,record,colNum,pageDivision):
     startY=8+(36-len(data))*6.3
     t.drawOn(c, 12.5 * mm, startY * mm)
 
-def MakeCutScheduleTemplate(orderID,subOrderID,filename,record=[]):
+def MakeCutScheduleTemplate(orderID,subOrderID,filename,record=[],PAGEROWNUMBER=35):
     num=1
     index = 1
     pages = []
@@ -364,7 +399,7 @@ def MakeCutScheduleTemplate(orderID,subOrderID,filename,record=[]):
                     pageMaxvCuttingCol=len(item[0])
                 num+=1
                 index+=1
-                if num>35:
+                if num>PAGEROWNUMBER:
                     num = 1
                     pages.append(data)
 
@@ -381,10 +416,12 @@ def MakeCutScheduleTemplate(orderID,subOrderID,filename,record=[]):
     myCanvas = canvas.Canvas(filename, pagesize=letter)
     for i,page in enumerate(pages):
         myCanvas.setFont("SimSun", 18)
-        myCanvas.drawCentredString(width/2,735, text="伊纳克赛(南通)精致内饰材料有限公司剪切任务单")
+        myCanvas.drawCentredString(width/2,735, text="伊纳克赛(南通)精致内饰材料有限公司剪板机任务单")
         myCanvas.drawImage(bitmapDir+"/logo.jpg", 30, 715,
                             width=40, height=40)
-        myCanvas.drawImage(dirName+"/code128.png", width-100, height-40,
+        tempCode='C'+'%05d'%int(orderID)+'-'+'%03d'%int(subOrderID)+'P%03d'%(i+1)
+        BarCodeGenerator(tempCode)
+        myCanvas.drawImage(dirName+"/tempBarcode.png", width-100, height-40,
                             width=100, height=40)
         myCanvas.setFont("SimSun", 12)
         myCanvas.drawCentredString(width/2,715, text="Inexa (NanTong) Interiors Co.Ltd Plate Shear Schedule")

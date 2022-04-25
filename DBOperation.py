@@ -459,7 +459,7 @@ def UpdatePropertyInDB(log,whichDB,propertyDic):
             log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
         return -1, []
     cursor = db.cursor()
-    sql = "UPDATE 系统参数 SET `启动纵切最小板材数`='%s' " %(propertyDic["启动纵切最小板材数"])
+    sql = "UPDATE 系统参数 SET `启动纵切最小板材数`='%s', `任务单每页行数`='%s' " %(propertyDic["启动纵切最小板材数"],propertyDic["任务单每页行数"])
     # sql = "INSERT INTO 图纸信息(`图纸号`,`面板增量`,`中板增量`,`背板增量`,`剪板505`,`成型405`,`成型409`,`成型406`,`折弯652`," \
     #       "`热压100`,`热压306`,`冲铣`,`图纸状态`,`创建人`,`中板`,`打包9000`,`图纸大类`,`创建时间`,`备注`)" \
     #       "VALUES ('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')"\
@@ -488,6 +488,21 @@ def GetPropertyVerticalCuttingParameter(log,whichDB):
     db.close()
     return 0, temp[0]
 
+def GetPropertySchedulePageRowNumber(log,whichDB):
+    try:
+        db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
+                             passwd='%s' % dbPassword[whichDB], db='%s' % dbName[whichDB], charset='utf8')
+    except:
+        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        if log:
+            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+        return -1, []
+    cursor = db.cursor()
+    sql = """SELECT `任务单每页行数` from `系统参数` """
+    cursor.execute(sql)
+    temp = cursor.fetchone()
+    db.close()
+    return 0, temp[0]
 
 def GetTableListFromDB(log,whichDB):
     try:

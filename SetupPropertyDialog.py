@@ -2,7 +2,7 @@ import wx
 import os
 import images
 
-from DBOperation import UpdatePropertyInDB,GetPropertyVerticalCuttingParameter
+from DBOperation import UpdatePropertyInDB,GetPropertyVerticalCuttingParameter,GetPropertySchedulePageRowNumber
 dirName = os.path.dirname(os.path.abspath(__file__))
 bitmapDir = os.path.join(dirName, 'bitmaps')
 #!/usr/bin/env python
@@ -733,6 +733,9 @@ class PropertyPanel(wx.Panel):
         _,minNum=GetPropertyVerticalCuttingParameter(self.log,1)
         pg.Append( wxpg.IntProperty("启动纵切最小板材数",value=minNum) )
         pg.SetPropertyEditor("启动纵切最小板材数","SpinCtrl")
+        _,pageRowNum=GetPropertySchedulePageRowNumber(self.log,1)
+        pg.Append( wxpg.IntProperty("任务单每页行数",value=pageRowNum) )
+        pg.SetPropertyEditor("任务单每页行数","SpinCtrl")
 
         pg.Append( wxpg.PropertyCategory("3 - Advanced Properties") )
         pg.Append( wxpg.LongStringProperty("LongString",
@@ -1071,7 +1074,6 @@ class SetupPropertyDialog(wx.Dialog):
         self.propertyDic = {}
         for k, v in d.items():
             self.propertyDic[k] = v
-        print("启动纵切最小板材数=", self.propertyDic["启动纵切最小板材数"] + 1)
         UpdatePropertyInDB(self.log,1,self.propertyDic)
         event.Skip()
 

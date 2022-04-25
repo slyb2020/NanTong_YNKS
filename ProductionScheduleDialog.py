@@ -3,7 +3,7 @@ import os
 from wx.lib.pdfviewer import pdfViewer, pdfButtonPanel
 from ID_DEFINE import *
 from MakePdfReport import *
-
+from DBOperation import GetPropertySchedulePageRowNumber
 class PDFViewerPanel(wx.Panel):
     def __init__(self, parent, log):
         wx.Panel.__init__(self, parent, -1)
@@ -44,6 +44,7 @@ class ProductionScheduleDialog(wx.Dialog):
         self.subOrderID = suborderID
         self.parent = parent
         self.log = log
+        _, self.pageRowNum = GetPropertySchedulePageRowNumber(self.log,1)
         # self.log.WriteText("操作员：'%s' 开始执行库存参数设置操作。。。\r\n"%(self.parent.operator_name))
         if self.subOrderID == None:
             dirName = scheduleDir + '%s/' % self.orderID
@@ -90,14 +91,14 @@ class ProductionScheduleDialog(wx.Dialog):
         vbox.Add((-1,5))
         hhbox = wx.BoxSizer()
         hhbox.Add((10, -1))
-        self.verticalCuttingScheduleButton = wx.Button(controlPanel, label="纵切任务单", size=(90, 40))
+        self.verticalCuttingScheduleButton = wx.Button(controlPanel, label="横剪任务单", size=(90, 40))
         self.verticalCuttingScheduleButton.Bind(wx.EVT_BUTTON, self.OnVerticalCuttingScheduleBTN)
         hhbox.Add(self.verticalCuttingScheduleButton, 1, wx.EXPAND|wx.ALL, 5)
         vbox.Add(hhbox,1,wx.EXPAND)
         vbox.Add((-1,5))
         hhbox = wx.BoxSizer()
         hhbox.Add((10, -1))
-        self.cutScheduleButton = wx.Button(controlPanel, label="剪切任务单", size=(90, 40))
+        self.cutScheduleButton = wx.Button(controlPanel, label="剪板机任务单", size=(90, 40))
         self.cutScheduleButton.Bind(wx.EVT_BUTTON, self.OnCutScheduleBTN)
         hhbox.Add(self.cutScheduleButton, 1, wx.EXPAND|wx.ALL, 5)
         vbox.Add(hhbox,1,wx.EXPAND)
@@ -109,6 +110,31 @@ class ProductionScheduleDialog(wx.Dialog):
         hhbox.Add(self.bendScheduleButton, 1, wx.EXPAND|wx.ALL, 5)
         vbox.Add(hhbox,1,wx.EXPAND)
         vbox.Add((-1,5))
+
+        hhbox = wx.BoxSizer()
+        hhbox.Add((10, -1))
+        self.orticFormingScheduleButton = wx.Button(controlPanel, label="构件成型任务单", size=(90, 40))
+        self.orticFormingScheduleButton.Bind(wx.EVT_BUTTON, self.OnFormingScheduleBTN)
+        hhbox.Add(self.orticFormingScheduleButton, 1, wx.EXPAND|wx.ALL, 5)
+        vbox.Add(hhbox,1,wx.EXPAND)
+        vbox.Add((-1,5))
+
+        hhbox = wx.BoxSizer()
+        hhbox.Add((10, -1))
+        self.S2FormingScheduleButton = wx.Button(controlPanel, label="2S成型任务单", size=(90, 40))
+        self.S2FormingScheduleButton.Bind(wx.EVT_BUTTON, self.OnFormingScheduleBTN)
+        hhbox.Add(self.S2FormingScheduleButton, 1, wx.EXPAND|wx.ALL, 5)
+        vbox.Add(hhbox,1,wx.EXPAND)
+        vbox.Add((-1,5))
+
+        hhbox = wx.BoxSizer()
+        hhbox.Add((10, -1))
+        self.ceilingFormingScheduleButton = wx.Button(controlPanel, label="天花板成型任务单", size=(90, 40))
+        self.ceilingFormingScheduleButton.Bind(wx.EVT_BUTTON, self.OnFormingScheduleBTN)
+        hhbox.Add(self.ceilingFormingScheduleButton, 1, wx.EXPAND|wx.ALL, 5)
+        vbox.Add(hhbox,1,wx.EXPAND)
+        vbox.Add((-1,5))
+
         hhbox = wx.BoxSizer()
         hhbox.Add((10, -1))
         self.hotPressScheduleButton = wx.Button(controlPanel, label="热压任务单", size=(90, 40))
@@ -118,24 +144,20 @@ class ProductionScheduleDialog(wx.Dialog):
         vbox.Add((-1,5))
         hhbox = wx.BoxSizer()
         hhbox.Add((10, -1))
-        self.formingScheduleButton = wx.Button(controlPanel, label="成型任务单", size=(90, 40))
-        self.formingScheduleButton.Bind(wx.EVT_BUTTON, self.OnFormingScheduleBTN)
-        hhbox.Add(self.formingScheduleButton, 1, wx.EXPAND|wx.ALL, 5)
-        vbox.Add(hhbox,1,wx.EXPAND)
-        vbox.Add((-1,5))
-        hhbox = wx.BoxSizer()
-        hhbox.Add((10, -1))
         self.specialScheduleButton = wx.Button(controlPanel, label="特制品任务单", size=(90, 40))
         self.specialScheduleButton.Bind(wx.EVT_BUTTON, self.OnOpenFileBTN)
         hhbox.Add(self.specialScheduleButton, 1, wx.EXPAND|wx.ALL, 5)
         vbox.Add(hhbox,1,wx.EXPAND)
         vbox.Add((-1,5))
-        hhbox = wx.BoxSizer()
-        hhbox.Add((10, -1))
-        self.packageScheduleButton = wx.Button(controlPanel, label="打包任务单", size=(90, 40))
-        self.packageScheduleButton.Bind(wx.EVT_BUTTON, self.OnOpenFileBTN)
-        hhbox.Add(self.packageScheduleButton, 1, wx.EXPAND|wx.ALL, 5)
-        vbox.Add(hhbox,1,wx.EXPAND)
+
+        # hhbox = wx.BoxSizer()
+        # hhbox.Add((10, -1))
+        # self.packageScheduleButton = wx.Button(controlPanel, label="打包任务单", size=(90, 40))
+        # self.packageScheduleButton.Bind(wx.EVT_BUTTON, self.OnOpenFileBTN)
+        # hhbox.Add(self.packageScheduleButton, 1, wx.EXPAND|wx.ALL, 5)
+        # vbox.Add(hhbox,1,wx.EXPAND)
+
+
         # vbox.Add((-1,10))
         # self.cutScheduleButton = wx.Button(controlPanel, label="裁切计划", size=(100, 100))
         # self.cutScheduleButton.Bind(wx.EVT_BUTTON, self.OnOpenFileBTN)
@@ -170,23 +192,21 @@ class ProductionScheduleDialog(wx.Dialog):
         # manualInputBTN.Bind(wx.EVT_BUTTON, self.OnCancel)
 
     def OnMaterialScheduleBTN(self, event):
-        filename = scheduleDir+'%s/MaterialSchedule.pdf'%self.orderID
+        filename = scheduleDir+'%s/%s/MaterialSchedule.pdf'%(self.orderID,int(self.subOrderID))
         if not os.path.exists(filename):
-            MakeMaterialScheduleTemplate(filename)
-        else:
-            MakeMaterialScheduleTemplate(filename)
+            MakeMaterialScheduleTemplate(self.orderID, self.subOrderID, filename, self.parent.productionSchedule.horizontalCuttingScheduleList,self.parent.productionSchedule.cuttingScheduleList,PAGEROWNUMBER=self.pageRowNum)
         self.pdfViewerPanel.viewer.LoadFile(filename)
 
     def OnVerticalCuttingScheduleBTN(self, event):
         filename = scheduleDir+'%s/%s/VerticalCutSchedule.pdf'%(self.orderID,int(self.subOrderID))
         if not os.path.exists(filename):
-            MakeVerticalCutScheduleTemplate(self.orderID,self.subOrderID,filename,self.parent.productionSchedule.verticalCuttingScheduleList)  #这些数据在ProductionScheduleAlgorithm.py文件中
+            MakeHorizontalCutScheduleTemplate(self.orderID, self.subOrderID, filename, self.parent.productionSchedule.horizontalCuttingScheduleList,PAGEROWNUMBER=self.pageRowNum)  #这些数据在ProductionScheduleAlgorithm.py文件中
         self.pdfViewerPanel.viewer.LoadFile(filename)
 
     def OnCutScheduleBTN(self, event):
         filename = scheduleDir+'%s/%s/CutSchedule.pdf'%(self.orderID,int(self.subOrderID))
         if not os.path.exists(filename):
-            MakeCutScheduleTemplate(self.orderID,self.subOrderID,filename,self.parent.productionSchedule.cuttingScheduleList)  #这些数据在ProductionScheduleAlgorithm.py文件中
+            MakeCutScheduleTemplate(self.orderID,self.subOrderID,filename,self.parent.productionSchedule.cuttingScheduleList,PAGEROWNUMBER=self.pageRowNum)  #这些数据在ProductionScheduleAlgorithm.py文件中
         self.pdfViewerPanel.viewer.LoadFile(filename)
 
     def OnBendScheduleBTN(self, event):
