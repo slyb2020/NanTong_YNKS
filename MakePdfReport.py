@@ -434,73 +434,400 @@ def MakeCutScheduleTemplate(orderID,subOrderID,filename,record=[],PAGEROWNUMBER=
         myCanvas.showPage()#这句话相当于分页，显示页面即完成当前页面，开始新页面
     myCanvas.save()
 
-def DrawBendSchedule(c):
+def DrawBendingSchedule(c,record,pageDivision):
+    # if pageDivision[0] == pageDivision[1]:
+    I = Image("D:\\WorkSpace\\Python\\NanTong_YNKS\\bitmaps\\PVC.jpg")
+    styleSheet = getSampleStyleSheet()
+    I.drawHeight = 1.25 * inch * I.drawHeight / I.drawWidth
+    I.drawWidth = 1.25 * inch
+    P0 = Paragraph('''
+             <b>A pa<font color=red>r</font>a<i>graph</i></b>
+             <super><font color=yellow>1</font></super>''',
+                   styleSheet["BodyText"])
+    P = Paragraph('''
+             <para align=center spaceb=3>The <b>ReportLab Left
+             <font color=red>Logo</font></b>
+             Image</para>''',
+                  styleSheet["BodyText"])
     Title1 = Paragraph('<font name="SimSun">序号</font>')
-    Title2 = Paragraph('<font name="SimSun">板材颜色</font>')
-    Title3 = Paragraph('<font name="SimSun">板材厚度</font>')
-    Title4 = Paragraph('<font name="SimSun">剪切长度</font>')
-    Title5 = Paragraph('<font name="SimSun">剪切宽度</font>')
-    Title6 = Paragraph('<font name="SimSun">折弯长度</font>')
-    Title7 = Paragraph('<font name="SimSun">折弯宽度</font>')
-    Title8 = Paragraph('<font name="SimSun">数量</font>')
-    Title9 = Paragraph('<font name="SimSun">图纸</font>')
-    Title10 = Paragraph('<font name="SimSun">面</font>')
-    data = [
-            [Title1, Title2, Title3, Title4, Title5, Title6, Title7, Title8, Title9, Title10],
-            ['1', '9GLAV', '0.56', '1495', '560','1495','548','37','CC64001','X'],
-            ['2', '9GLAV', '0.56', '1495', '560','1495','548','37','CC64001','X'],
-            ['3', '9GLAV', '0.56', '1495', '560','1495','548','37','CC64001','X'],
-            ['4', '9GLAV', '0.56', '1495', '560','1495','548','37','CC64001','X'],
-            ['5', '9GLAV', '0.56', '1495', '560','1495','548','37','CC64001','X'],
-            ['6', '9GLAV', '0.56', '1495', '560','1495','548','37','CC64001','X'],
-            ['7', '9GLAV', '0.56', '1495', '560','1495','548','37','CC64001','X'],
-            ['8', '9GLAV', '0.56', '1495', '560','1495','548','37','CC64001','X'],
-            ['9', '9GLAV', '0.56', '1495', '560','1495','548','37','CC64001','X'],
-            ['10', '9GLAV', '0.56', '1495', '560','1495','548','37','CC64001','X'],
-            ['11', '9GLAV', '0.56', '1495', '560','1495','548','37','CC64001','X'],
-            ['12', '9GLAV', '0.56', '1495', '560','1495','548','37','CC64001','X'],
-            ['13', '9GLAV', '0.56', '1495', '560','1495','548','37','CC64001','X'],
-            ['14', '9GLAV', '0.56', '1495', '560','1495','548','37','CC64001','X'],
+    Title2 = Paragraph('<font name="SimSun">面板代码</font>')
+    Title3 = Paragraph('<font name="SimSun">图纸号</font>')
+    Title4 = Paragraph('<font name="SimSun">长度</font>')
+    Title5 = Paragraph('<font name="SimSun">宽度</font>')
+    Title6 = Paragraph('<font name="SimSun">厚度</font>')
+    Title7 = Paragraph('<font name="SimSun">X面颜色</font>')
+    Title8 = Paragraph('<font name="SimSun">Y面颜色</font>')
+    Title9 = Paragraph('<font name="SimSun">Z面颜色</font>')
+    Title10 = Paragraph('<font name="SimSun">V面颜色</font>')
+    Title11 = Paragraph('<font name="SimSun">数量</font>')
+    Title12 = Paragraph('<font name="SimSun">胶水单号</font>')
+    title = [Title1, Title2, Title3, Title4, Title5, Title6, Title7, Title8, Title9, Title10,Title11,Title12]
+    tableColWidths = [11.5*mm,25.0*mm,25.0*mm,11.5*mm,11.5*mm,11.5*mm,17*mm,17*mm,17*mm,17*mm,11.5*mm,25*mm]
+    data = [title]
+    for row in record:
+        data.append(row)
+    tableStyle = [
+        ('ALIGN', (0, 1), (-1, -1), 'CENTER'),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),  # 类别，(起始列，起始行）,(结束列，结束行)，线宽，颜色  #GRID是内外都有线   #BOX是只有外框，内部没线
+        ('BOX', (0, 0), (-1, -1), 2, colors.black),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.khaki),
+        # ('BACKGROUND', (2, 1), (2, -1), colors.pink),
+        # ('BACKGROUND', (3, 1), (5, -1), colors.beige),
+        # ('BACKGROUND', (6, 1), (10, -1), colors.lavender),
+
+        ('LINEABOVE', (0, 1), (-1, 1), 2, colors.black),
+        ('LINEBEFORE', (2, 0), (2, -1), 2, colors.black),
+        ('LINEBEFORE', (3, 0), (3, -1), 2, colors.black),
+        ('LINEBEFORE', (6, 0), (6, -1), 2, colors.black),
+        ('LINEBEFORE', (10, 0), (10, -1), 2, colors.black),
+        ('LINEBEFORE', (-1, 0), (-1, -1), 2, colors.black),
+        ('VALIGN', (1, 1), (5, 6), 'MIDDLE'),
+        ('VALIGN', (1, 7), (5, -1), 'MIDDLE'),
     ]
-    t = Table(data, style=[
-                           ('ALIGN', (0, 1), (-1, -1), 'CENTER'),
-                           ('GRID', (0, 0), (-1, -1), 1, colors.black),       #   类别，(起始列，起始行）,(结束列，结束行)，线宽，颜色  #GRID是内外都有线   #BOX是只有外框，内部没线
-                           ('BOX', (0, 0), (-1, -1), 2, colors.black),
-                           # ('BACKGROUND', (0, 0), (-1, 0), colors.beige),
-                           ('BACKGROUND', (0, 0), (-1, 0), colors.khaki),
-                           # ('SPAN',(0,0),(1,0)),
-                           # ('LINEABOVE', (1, 2), (-2, 2), 1, colors.blue),
-                           # ('LINEBEFORE', (2, 1), (2, -2), 1, colors.pink),
-                           # ('BACKGROUND', (1, 1), (1, 2), colors.lavender),
-                           # ('BACKGROUND', (2, 2), (2, 3), colors.orange),
-                           # ('BOX', (0, 0), (-1, -1), 2, colors.black),
-                           # ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
-                           # ('VALIGN', (3, 0), (3, 0), 'BOTTOM'),
-                           # # ('ALIGN', (0, 3), (0, 3), 'CENTER'),
-                           # ('BACKGROUND', (3, 0), (3, 0), colors.limegreen),
-                           # ('BACKGROUND', (3, 1), (3, 1), colors.khaki),
-                           # # ('ALIGN', (3, 1), (3, 1), 'CENTER'),
-                           # ('BACKGROUND', (3, 2), (3, 2), colors.beige),
-                           # # ('ALIGN', (3, 2), (3, 2), 'LEFT'),
-                           ],colWidths=[15*mm,20.0*mm,20.0*mm,20.0*mm,20.0*mm,20.0*mm,20.0*mm,15.0*mm,25.0*mm,12.0*mm])
-    # Table(data, colWidths=[1.9 * inch] * 5)
-    # t._argW[3] = 1.5 * inch
+    for i in range(len(record)):
+        if i%2 == 1:
+           tableStyle.append(('BACKGROUND', (0, i+1), (-1, i+1), colors.lavender))
+
+    t = Table(data, style=tableStyle, colWidths=tableColWidths)
     t.wrapOn(c, 186.5 * mm, 800 * mm)
-    t.drawOn(c, 12.5 * mm, 130 * mm)
-def MakeBendScheduleTemplate(filename,data=[]):
+    startY = 8 + (36 - len(data)) * 6.3
+    t.drawOn(c, 8 * mm, startY * mm)
+
+def MakeBendingScheduleTemplate(orderID,subOrderID,filename,record=[],PAGEROWNUMBER=35):
+    #1, 64730, '1', '3', '9', 'Corridor', 'A.2SA.0900', '0', 'YC74H', 'YQ73D', '2160', '550', '50', 2, 'None', 'None'
+    num=1
+    index = 1
+    pages = []
+    pageDivision = []
+    data = []
+    seperation = []
+    for board in record:
+        seperation.append(num)
+        board=list(board)
+        if board[14]=='None':
+            board[14]=''
+        if board[15]=='None':
+            board[15]=''
+        temp=[index,board[7],board[6],board[10],board[11],board[12],board[8],board[9],board[14],board[15],board[13]]
+        data.append(temp)
+        num+=1
+        index+=1
+        if num>PAGEROWNUMBER:
+            num = 1
+            pages.append(data)
+            pageDivision.append(seperation)#由于每次seperation初始化都自动往里面添加一个[1],所以如果前两行不同的话会出现【1，1】的情况，需要去除重复的1
+            seperation=[1]
+            data=[]
+    if len(data)>0:
+        pages.append(data)
+        pageDivision.append(seperation)
     width, height = letter
     myCanvas = canvas.Canvas(filename, pagesize=letter)
-    myCanvas.setFont("SimSun", 18)
-    myCanvas.drawCentredString(width/2,730, text="伊纳克赛(南通)精致内饰材料有限公司折弯任务单")
-    myCanvas.drawImage(bitmapDir+"/logo.jpg", 30, 710,
-                        width=40, height=40)
-    myCanvas.setFont("SimSun", 12)
-    myCanvas.drawCentredString(width/2,710, text="Inexa (NanTong) Interiors Co.Ltd Bending Schedule")
-    DrawLine(myCanvas,1,*coord(10, 33, height, mm),*coord(200, 33, height, mm))
-    myCanvas.drawString(40,670, text="订单号；%s"%'64757-001')
-    myCanvas.drawRightString(width-50, 670, '出单日期：%s'%(datetime.date.today()))
-    # simple_table_with_style(filename)
-    DrawBendSchedule(myCanvas)
+    for i,page in enumerate(pages):
+        myCanvas.setFont("SimSun", 18)
+        myCanvas.drawCentredString(width/2,735, text="伊纳克赛(南通)精致内饰材料有限公司折弯任务单")
+        myCanvas.drawImage(bitmapDir+"/logo.jpg", 30, 715,
+                            width=40, height=40)
+        tempCode='B'+'%05d'%int(orderID)+'-'+'%03d'%int(subOrderID)+'P%03d'%(i+1)
+        BarCodeGenerator(tempCode)
+        myCanvas.drawImage(dirName+"/tempBarcode.png", width-100, height-40,
+                            width=100, height=40)
+        myCanvas.setFont("SimSun", 12)
+        myCanvas.drawCentredString(width/2,715, text="Inexa (NanTong) Interiors Co.Ltd Bending Machine Schedule")
+        DrawLine(myCanvas,1,*coord(10, 31, height, mm),*coord(200, 31, height, mm))
+        myCanvas.drawString(40,685, text="订单号；%s-%03d"%(orderID,int(subOrderID)))
+        myCanvas.drawRightString(width-50, 685, '出单日期：%s'%(datetime.date.today()))
+        # simple_table_with_style(filename)
+        DrawBendingSchedule(myCanvas,page,pageDivision[i])
+        myCanvas.drawRightString(width-50, 5, '页码：%s/%s'%(i+1,len(pages)))
+        myCanvas.showPage()#这句话相当于分页，显示页面即完成当前页面，开始新页面
+    myCanvas.save()
+
+def MakeS2FormingScheduleTemplate(orderID,subOrderID,filename,record=[],PAGEROWNUMBER=35):
+    #1, 64730, '1', '3', '9', 'Corridor', 'A.2SA.0900', '0', 'YC74H', 'YQ73D', '2160', '550', '50', 2, 'None', 'None'
+    num=1
+    index = 1
+    pages = []
+    pageDivision = []
+    data = []
+    seperation = []
+    for board in record:
+        seperation.append(num)
+        board=list(board)
+        if board[14]=='None':
+            board[14]=''
+        if board[15]=='None':
+            board[15]=''
+        temp=[index,board[7],board[6],board[10],board[11],board[12],board[8],board[9],board[14],board[15],board[13]]
+        data.append(temp)
+        num+=1
+        index+=1
+        if num>PAGEROWNUMBER:
+            num = 1
+            pages.append(data)
+            pageDivision.append(seperation)#由于每次seperation初始化都自动往里面添加一个[1],所以如果前两行不同的话会出现【1，1】的情况，需要去除重复的1
+            seperation=[1]
+            data=[]
+    if len(data)>0:
+        pages.append(data)
+        pageDivision.append(seperation)
+    width, height = letter
+    myCanvas = canvas.Canvas(filename, pagesize=letter)
+    for i,page in enumerate(pages):
+        myCanvas.setFont("SimSun", 18)
+        myCanvas.drawCentredString(width/2,735, text="伊纳克赛(南通)精致内饰材料有限公司2S成型任务单")
+        myCanvas.drawImage(bitmapDir+"/logo.jpg", 30, 715,
+                            width=40, height=40)
+        tempCode='S'+'%05d'%int(orderID)+'-'+'%03d'%int(subOrderID)+'P%03d'%(i+1)
+        BarCodeGenerator(tempCode)
+        myCanvas.drawImage(dirName+"/tempBarcode.png", width-100, height-40,
+                            width=100, height=40)
+        myCanvas.setFont("SimSun", 12)
+        myCanvas.drawCentredString(width/2,715, text="Inexa (NanTong) Interiors Co.Ltd S2 Forming Schedule")
+        DrawLine(myCanvas,1,*coord(10, 31, height, mm),*coord(200, 31, height, mm))
+        myCanvas.drawString(40,685, text="订单号；%s-%03d"%(orderID,int(subOrderID)))
+        myCanvas.drawRightString(width-50, 685, '出单日期：%s'%(datetime.date.today()))
+        # simple_table_with_style(filename)
+        DrawBendingSchedule(myCanvas,page,pageDivision[i])
+        myCanvas.drawRightString(width-50, 5, '页码：%s/%s'%(i+1,len(pages)))
+        myCanvas.showPage()#这句话相当于分页，显示页面即完成当前页面，开始新页面
+    myCanvas.save()
+
+def MakeCeilingFormingScheduleTemplate(orderID,subOrderID,filename,record=[],PAGEROWNUMBER=35):
+    #1, 64730, '1', '3', '9', 'Corridor', 'A.2SA.0900', '0', 'YC74H', 'YQ73D', '2160', '550', '50', 2, 'None', 'None'
+    num=1
+    index = 1
+    pages = []
+    pageDivision = []
+    data = []
+    seperation = []
+    for board in record:
+        seperation.append(num)
+        board=list(board)
+        if board[14]=='None':
+            board[14]=''
+        if board[15]=='None':
+            board[15]=''
+        temp=[index,board[7],board[6],board[10],board[11],board[12],board[8],board[9],board[14],board[15],board[13]]
+        data.append(temp)
+        num+=1
+        index+=1
+        if num>PAGEROWNUMBER:
+            num = 1
+            pages.append(data)
+            pageDivision.append(seperation)#由于每次seperation初始化都自动往里面添加一个[1],所以如果前两行不同的话会出现【1，1】的情况，需要去除重复的1
+            seperation=[1]
+            data=[]
+    if len(data)>0:
+        pages.append(data)
+        pageDivision.append(seperation)
+    width, height = letter
+    myCanvas = canvas.Canvas(filename, pagesize=letter)
+    for i,page in enumerate(pages):
+        myCanvas.setFont("SimSun", 18)
+        myCanvas.drawCentredString(width/2,735, text="伊纳克赛(南通)精致内饰材料有限公司天花板成型任务单")
+        myCanvas.drawImage(bitmapDir+"/logo.jpg", 30, 715,
+                            width=40, height=40)
+        tempCode='E'+'%05d'%int(orderID)+'-'+'%03d'%int(subOrderID)+'P%03d'%(i+1)
+        BarCodeGenerator(tempCode)
+        myCanvas.drawImage(dirName+"/tempBarcode.png", width-100, height-40,
+                            width=100, height=40)
+        myCanvas.setFont("SimSun", 12)
+        myCanvas.drawCentredString(width/2,715, text="Inexa (NanTong) Interiors Co.Ltd Ceiling Forming Schedule")
+        DrawLine(myCanvas,1,*coord(10, 31, height, mm),*coord(200, 31, height, mm))
+        myCanvas.drawString(40,685, text="订单号；%s-%03d"%(orderID,int(subOrderID)))
+        myCanvas.drawRightString(width-50, 685, '出单日期：%s'%(datetime.date.today()))
+        # simple_table_with_style(filename)
+        DrawBendingSchedule(myCanvas,page,pageDivision[i])
+        myCanvas.drawRightString(width-50, 5, '页码：%s/%s'%(i+1,len(pages)))
+        myCanvas.showPage()#这句话相当于分页，显示页面即完成当前页面，开始新页面
+    myCanvas.save()
+
+def MakePRPressScheduleTemplate(orderID,subOrderID,filename,record=[],PAGEROWNUMBER=35):
+    #1, 64730, '1', '3', '9', 'Corridor', 'A.2SA.0900', '0', 'YC74H', 'YQ73D', '2160', '550', '50', 2, 'None', 'None'
+    num=1
+    index = 1
+    pages = []
+    pageDivision = []
+    data = []
+    seperation = []
+    for board in record:
+        seperation.append(num)
+        board=list(board)
+        if board[14]=='None':
+            board[14]=''
+        if board[15]=='None':
+            board[15]=''
+        temp=[index,board[7],board[6],board[10],board[11],board[12],board[8],board[9],board[14],board[15],board[13]]
+        data.append(temp)
+        num+=1
+        index+=1
+        if num>PAGEROWNUMBER:
+            num = 1
+            pages.append(data)
+            pageDivision.append(seperation)#由于每次seperation初始化都自动往里面添加一个[1],所以如果前两行不同的话会出现【1，1】的情况，需要去除重复的1
+            seperation=[1]
+            data=[]
+    if len(data)>0:
+        pages.append(data)
+        pageDivision.append(seperation)
+    width, height = letter
+    myCanvas = canvas.Canvas(filename, pagesize=letter)
+    for i,page in enumerate(pages):
+        myCanvas.setFont("SimSun", 18)
+        myCanvas.drawCentredString(width/2,735, text="伊纳克赛(南通)精致内饰材料有限公司PR热压任务单")
+        myCanvas.drawImage(bitmapDir+"/logo.jpg", 30, 715,
+                            width=40, height=40)
+        tempCode='P'+'%05d'%int(orderID)+'-'+'%03d'%int(subOrderID)+'P%03d'%(i+1)
+        BarCodeGenerator(tempCode)
+        myCanvas.drawImage(dirName+"/tempBarcode.png", width-100, height-40,
+                            width=100, height=40)
+        myCanvas.setFont("SimSun", 12)
+        myCanvas.drawCentredString(width/2,715, text="Inexa (NanTong) Interiors Co.Ltd PR Schedule")
+        DrawLine(myCanvas,1,*coord(10, 31, height, mm),*coord(200, 31, height, mm))
+        myCanvas.drawString(40,685, text="订单号；%s-%03d"%(orderID,int(subOrderID)))
+        myCanvas.drawRightString(width-50, 685, '出单日期：%s'%(datetime.date.today()))
+        # simple_table_with_style(filename)
+        DrawBendingSchedule(myCanvas,page,pageDivision[i])
+        myCanvas.drawRightString(width-50, 5, '页码：%s/%s'%(i+1,len(pages)))
+        myCanvas.showPage()#这句话相当于分页，显示页面即完成当前页面，开始新页面
+    myCanvas.save()
+
+def MakeVacuumScheduleTemplate(orderID,subOrderID,filename,record=[],PAGEROWNUMBER=35):
+    #1, 64730, '1', '3', '9', 'Corridor', 'A.2SA.0900', '0', 'YC74H', 'YQ73D', '2160', '550', '50', 2, 'None', 'None'
+    num=1
+    index = 1
+    pages = []
+    pageDivision = []
+    data = []
+    seperation = []
+    for board in record:
+        seperation.append(num)
+        board=list(board)
+        if board[14]=='None':
+            board[14]=''
+        if board[15]=='None':
+            board[15]=''
+        temp=[index,board[7],board[6],board[10],board[11],board[12],board[8],board[9],board[14],board[15],board[13]]
+        data.append(temp)
+        num+=1
+        index+=1
+        if num>PAGEROWNUMBER:
+            num = 1
+            pages.append(data)
+            pageDivision.append(seperation)#由于每次seperation初始化都自动往里面添加一个[1],所以如果前两行不同的话会出现【1，1】的情况，需要去除重复的1
+            seperation=[1]
+            data=[]
+    if len(data)>0:
+        pages.append(data)
+        pageDivision.append(seperation)
+    width, height = letter
+    myCanvas = canvas.Canvas(filename, pagesize=letter)
+    for i,page in enumerate(pages):
+        myCanvas.setFont("SimSun", 18)
+        myCanvas.drawCentredString(width/2,735, text="伊纳克赛(南通)精致内饰材料有限公司特制品任务单")
+        myCanvas.drawImage(bitmapDir+"/logo.jpg", 30, 715,
+                            width=40, height=40)
+        tempCode='V'+'%05d'%int(orderID)+'-'+'%03d'%int(subOrderID)+'P%03d'%(i+1)
+        BarCodeGenerator(tempCode)
+        myCanvas.drawImage(dirName+"/tempBarcode.png", width-100, height-40,
+                            width=100, height=40)
+        myCanvas.setFont("SimSun", 12)
+        myCanvas.drawCentredString(width/2,715, text="Inexa (NanTong) Interiors Co.Ltd Vacuum Schedule")
+        DrawLine(myCanvas,1,*coord(10, 31, height, mm),*coord(200, 31, height, mm))
+        myCanvas.drawString(40,685, text="订单号；%s-%03d"%(orderID,int(subOrderID)))
+        myCanvas.drawRightString(width-50, 685, '出单日期：%s'%(datetime.date.today()))
+        # simple_table_with_style(filename)
+        DrawBendingSchedule(myCanvas,page,pageDivision[i])
+        myCanvas.drawRightString(width-50, 5, '页码：%s/%s'%(i+1,len(pages)))
+        myCanvas.showPage()#这句话相当于分页，显示页面即完成当前页面，开始新页面
+    myCanvas.save()
+
+# def DrawGlueSheet(c,data):
+#     # if pageDivision[0] == pageDivision[1]:
+#     tableColWidths = [20*mm,20*mm,20*mm,20*mm,20*mm]
+#     sheet = [0]*16
+#     sheet[0] = ["合同编号：  %s-%03d"%(data[1],int(data[2]))]
+#     print("sheet=",sheet)
+#     tableStyle = [
+#         ('ALIGN', (0, 1), (-1, -1), 'CENTER'),
+#         ('GRID', (0, 0), (-1, -1), 0.5, colors.black),  # 类别，(起始列，起始行）,(结束列，结束行)，线宽，颜色  #GRID是内外都有线   #BOX是只有外框，内部没线
+#         ('BOX', (0, 0), (-1, -1), 2, colors.black),
+#         ('BACKGROUND', (0, 0), (-1, 0), colors.khaki),
+#         # ('BACKGROUND', (2, 1), (2, -1), colors.pink),
+#         # ('BACKGROUND', (3, 1), (5, -1), colors.beige),
+#         # ('BACKGROUND', (6, 1), (10, -1), colors.lavender),
+#
+#         ('LINEABOVE', (0, 1), (-1, 1), 2, colors.black),
+#         ('LINEBEFORE', (2, 0), (2, -1), 2, colors.black),
+#         ('LINEBEFORE', (3, 0), (3, -1), 2, colors.black),
+#         # ('LINEBEFORE', (6, 0), (6, -1), 2, colors.black),
+#         # ('LINEBEFORE', (10, 0), (10, -1), 2, colors.black),
+#         # ('LINEBEFORE', (-1, 0), (-1, -1), 2, colors.black),
+#         # ('VALIGN', (1, 1), (5, 6), 'MIDDLE'),
+#         # ('VALIGN', (1, 7), (5, -1), 'MIDDLE'),
+#     ]
+#     t = Table(sheet, style=tableStyle, colWidths=tableColWidths)
+#     t.wrapOn(c, 186.5 * mm, 800 * mm)
+#     startY = 8 + (36 - len(sheet)) * 6.3
+#     t.drawOn(c, 8 * mm, startY * mm)
+def DrawGlueSheet(canvas,data,offset=0):
+    width, height = letter
+    DrawLine(canvas, 1, *coord(20, 40+offset, height, mm), *coord(190, 40+offset, height, mm))
+
+
+def MakeGlueNoSheetTemplate(orderID,subOrderID,filename,record=[]):
+    #1, 64730, '1', '3', '9', 'Corridor', 'A.2SA.0900', '0', 'YC74H', 'YQ73D', '2160', '550', '50', 2, 'None', 'None','胶水单号'
+    num=1
+    index = 1
+    pages = []
+    width, height = letter
+    myCanvas = canvas.Canvas(filename, pagesize=letter)
+    for board in record[:10]:
+        data=list(board)
+        if data[14]=='None':
+            data[14]=''
+        if data[15]=='None':
+            data[15]=''
+        for i in range(data[13]):
+            myCanvas.setFont("SimSun", 18)
+            myCanvas.drawCentredString(width/2,735, text="伊纳克赛(南通)精致内饰材料有限公司胶水单")
+            myCanvas.drawImage(bitmapDir+"/logo.jpg", 30, 715,
+                                width=40, height=40)
+            tempCode='G'+'%05d'%int(orderID)+'-'+'%03d'%int(subOrderID)+'P%03d'%(i+1)
+            BarCodeGenerator(tempCode)
+            myCanvas.drawImage(dirName+"/tempBarcode.png", width-100, height-40,
+                                width=100, height=40)
+            myCanvas.setFont("SimSun", 12)
+            myCanvas.drawCentredString(width/2,715, text="Inexa (NanTong) Interiors Co.Ltd Glue Sheet")
+            DrawLine(myCanvas,1,*coord(10, 31, height, mm),*coord(200, 31, height, mm))
+            myCanvas.drawString(40,685, text="订单号；%s-%03d"%(orderID,int(subOrderID)))
+            myCanvas.drawRightString(width-50, 685, '出单日期：%s'%(datetime.date.today()))
+            # simple_table_with_style(filename)
+            DrawGlueSheet(myCanvas,data)
+
+            print("height,width=",height,width)
+            DrawLine(myCanvas,1,*coord(00, 140, height, mm),*coord(220, 140, height, mm))
+
+            offset = 380
+            myCanvas.setFont("SimSun", 18)
+            myCanvas.drawCentredString(width/2,735-offset, text="伊纳克赛(南通)精致内饰材料有限公司胶水单")
+            myCanvas.drawImage(bitmapDir+"/logo.jpg", 30, 715-offset,
+                                width=40, height=40)
+            tempCode='G'+'%05d'%int(orderID)+'-'+'%03d'%int(subOrderID)+'P%03d'%(i+1)
+            BarCodeGenerator(tempCode)
+            myCanvas.drawImage(dirName+"/tempBarcode.png", width-100, height-40-offset-35,
+                                width=100, height=40)
+            myCanvas.setFont("SimSun", 12)
+            offset2=135
+            myCanvas.drawCentredString(width/2,715-offset, text="Inexa (NanTong) Interiors Co.Ltd Glue Sheet")
+            DrawLine(myCanvas,1,*coord(10, 31+offset2, height, mm),*coord(200, 31+offset2, height, mm))
+            myCanvas.drawString(40,685-offset, text="订单号；%s-%03d"%(orderID,int(subOrderID)))
+            myCanvas.drawRightString(width-50, 685-offset, '出单日期：%s'%(datetime.date.today()))
+            # simple_table_with_style(filename)
+            DrawGlueSheet(myCanvas,data,offset=offset2)
+            myCanvas.drawRightString(width-50, 5, '页码：%s/%s'%(i+1,len(pages)))
+            myCanvas.showPage()#这句话相当于分页，显示页面即完成当前页面，开始新页面
     myCanvas.save()
 
 def DrawFormingSchedule(c):
@@ -554,7 +881,7 @@ def DrawFormingSchedule(c):
                            # # ('ALIGN', (3, 1), (3, 1), 'CENTER'),
                            # ('BACKGROUND', (3, 2), (3, 2), colors.beige),
                            # # ('ALIGN', (3, 2), (3, 2), 'LEFT'),
-                           ],colWidths=[12*mm,15.0*mm,25.0*mm,15.0*mm,15.0*mm,12.0*mm,20.0*mm,20.0*mm,20.0*mm,20*mm,15.0*mm])
+                           ],colWidths=[12*mm,15.0*mm,25.0*mm,15.0*mm,15.0*mm,12.0*mm,20.0*mm,20.0*mm,20.0*mm,20*mm,22.0*mm])
     # Table(data, colWidths=[1.9 * inch] * 5)
     # t._argW[3] = 1.5 * inch
     t.wrapOn(c, 186.5 * mm, 800 * mm)

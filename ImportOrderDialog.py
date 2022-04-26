@@ -172,7 +172,7 @@ class ImportOrderFromExcelDialog(wx.Dialog):
                 temp[10] = None
                 temp[11] = None
                 for i in range(len(col)):
-                    if col[i]>0:
+                    if col[i]>=0:
                         temp[i]=data[col[i]]
                 orderDataList.append(temp)
         InsertBatchOrderDataIntoDB(self.parent.log, 1, self.newOrderID, orderDataList)
@@ -330,6 +330,7 @@ class ImportOrderFromExcelDialog(wx.Dialog):
                     thicknessColNum = rowData.index("Thickness")
                     xColourColNum = rowData.index("X-Colour")
                     yColourColNum = rowData.index("Y-Colour")
+                    codeColNum = rowData.index("Code")
                     if "Z-Colour" in rowData:
                         zColourColNum = rowData.index("Z-Colour")
                     else:

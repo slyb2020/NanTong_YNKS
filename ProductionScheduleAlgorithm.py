@@ -19,6 +19,8 @@ class ProductionScheduleAlgorithm(object):
         self.constructionOrderData=[]
         self.DisassembleOrderData()#将全部订单数据拆分成墙板，天花板，构件等3个数据列表
         self.CreateGlueNoForOrder()#未全部订单生成胶水单号码
+        for panel in self.panelList:
+            print("panelP:",panel)
         for record in self.wallOrderData:
             #record->0:ID,1:订单号,2:子订单号,3:甲板号,4:区域,5:房间,6:图纸号,7:胶水单号,8:X面颜色,9:Y面颜色,10:长,11:宽,12:厚,13:数量,14:Z面颜色,15:V面颜色
             errorCode,delta = self.GetWalllBoardDelta(record)
@@ -84,7 +86,6 @@ class ProductionScheduleAlgorithm(object):
                             record[15], int(record[10]) + delta[4], int(record[11]) + delta[5], boardThickness,int(record[13]),'天花板',record[10],record[11]]
                     self.materialBoard.append(temp)
         self.materialBoard.sort(key=itemgetter(9), reverse=True)
-
         self.materialBoardList=[]
         kind = []
         temp = []
@@ -181,8 +182,8 @@ class ProductionScheduleAlgorithm(object):
             # self.verticalCuttingScheduleList.append(verticalCuttingSchedule)
         # print(self.cuttingScheduleList)
         # self.bendingScheduleList=[]
-        self.bendScheduleList=[]#折弯
-        self.S2RFormingScheduleList=[]#2S成型
+        self.bendingScheduleList=[]#折弯
+        self.S2FormingScheduleList=[]#2S成型
         self.ceilingFormingScheduleList=[]#天花板成型
         self.prScheduleList=[]#PR热压
         self.vacuumScheduleList=[]#特制品热压
@@ -193,10 +194,10 @@ class ProductionScheduleAlgorithm(object):
         for i, panel in enumerate(self.wallOrderData):
             #[121, 64730, '2', '1', '9', 'CREW  MESS', 'N.2SF.0867', '0', 'YC08E', 'G', '2160', '200', '25', 1, 'None', 'None']
             if panel[6].split('.')[1] in NEED_BEND_PANEL_LIST:
-                self.bendScheduleList.append(panel)  #角墙板都走折弯
+                self.bendingScheduleList.append(panel)  #角墙板都走折弯
                 self.vacuumScheduleList.append(panel) #折弯的都走特制品
             else:
-                self.S2RFormingScheduleList.append(panel) #平墙板都走2S成型
+                self.S2FormingScheduleList.append(panel) #平墙板都走2S成型
                 if int(panel[11])<=200 or panel[6].split('.')[1] in SOUND_PROOF_PANEL_LIST:#宽度小于200的平墙板，隔音板，双面带颜色板也走特质平
                     self.vacuumScheduleList.append(panel)
                 else:
@@ -206,19 +207,18 @@ class ProductionScheduleAlgorithm(object):
                         self.prScheduleList.append(panel)
 
         for i, panel in enumerate(self.ceilingOrderData):
-            print("ceiling panel:",panel)
             #[121, 64730, '2', '1', '9', 'CREW  MESS', 'N.2SF.0867', '0', 'YC08E', 'G', '2160', '200', '25', 1, 'None', 'None']
             self.prScheduleList.append(panel)#所有天花板都走PR热压
             if panel[6].split('.')[1] in S2FORMING_CEILING_LIST:
-                self.S2RFormingScheduleList.append(panel)  #C64天花板走2S成型
+                self.S2FormingScheduleList.append(panel)  #C64天花板走2S成型
             else:
                 self.ceilingFormingScheduleList.append(panel) #其它所有天花板都走2S天花板成型
 
-        print("bendScheduleList",self.bendScheduleList)#折弯
-        print("S2RFormingScheduleList",self.S2RFormingScheduleList)#2S成型
-        print("ceilingFormingScheduleList",self.ceilingFormingScheduleList)#天花板成型
-        print("prScheduleList",self.prScheduleList)#PR热压
-        print("vacuumScheduleList",self.vacuumScheduleList)#特制品热压
+        # print("bendScheduleList", self.bendingScheduleList)#折弯
+        # print("S2RFormingScheduleList", self.S2FormingScheduleList)#2S成型
+        # print("ceilingFormingScheduleList",self.ceilingFormingScheduleList)#天花板成型
+        # print("prScheduleList",self.prScheduleList)#PR热压
+        # print("vacuumScheduleList",self.vacuumScheduleList)#特制品热压
 
         print("wrong Number", self.wrongNumber)
 
@@ -331,7 +331,18 @@ class ProductionScheduleAlgorithm(object):
         return result,data
 
     def CreateGlueNoForOrder(self):
-        pass
+        self.panelList=[]
+        for data in self.wallOrderData:
+            glueNo="%05d-%04d"%(data[1],data[0])
+            temp = list(data)
+            temp.append(glueNo)
+            self.panelList.append(temp)
+        for data in self.ceilingOrderData:
+            glueNo="%05d-%04d"%(data[1],data[0])
+            temp = list(data)
+            temp.append(glueNo)
+            self.panelList.append(temp)
+
 
     def DisassembleOrderData(self):
         for data in self.orderDetailData:

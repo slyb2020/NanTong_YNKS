@@ -711,6 +711,27 @@ class MainPanel(wx.Panel):
                                              self.productionSchedule.horizontalCuttingScheduleList,
                                              self.productionSchedule.cuttingScheduleList,
                                              PAGEROWNUMBER=self.pageRowNum)  # 这些数据在ProductionScheduleAlgorithm.py文件中
+                filename = scheduleDir + '%s/%s/BendingSchedule.pdf' % (self.work_zone_Panel.orderManagmentPanel.data[0],suborderNumber)
+                MakeBendingScheduleTemplate(self.work_zone_Panel.orderManagmentPanel.data[0], suborderNumber, filename,
+                                             self.productionSchedule.bendingScheduleList,PAGEROWNUMBER=self.pageRowNum)  # 这些数据在ProductionScheduleAlgorithm.py文件中
+                filename = scheduleDir + '%s/%s/S2FormingSchedule.pdf' % (self.work_zone_Panel.orderManagmentPanel.data[0],suborderNumber)
+                MakeS2FormingScheduleTemplate(self.work_zone_Panel.orderManagmentPanel.data[0], suborderNumber, filename,
+                                             self.productionSchedule.S2FormingScheduleList,PAGEROWNUMBER=self.pageRowNum)  # 这些数据在ProductionScheduleAlgorithm.py文件中
+                filename = scheduleDir + '%s/%s/CeilingFormingSchedule.pdf' % (self.work_zone_Panel.orderManagmentPanel.data[0],suborderNumber)
+                MakeCeilingFormingScheduleTemplate(self.work_zone_Panel.orderManagmentPanel.data[0], suborderNumber, filename,
+                                             self.productionSchedule.ceilingFormingScheduleList,PAGEROWNUMBER=self.pageRowNum)  # 这些数据在ProductionScheduleAlgorithm.py文件中
+                filename = scheduleDir + '%s/%s/CeilingFormingSchedule.pdf' % (self.work_zone_Panel.orderManagmentPanel.data[0],suborderNumber)
+                MakeCeilingFormingScheduleTemplate(self.work_zone_Panel.orderManagmentPanel.data[0], suborderNumber, filename,
+                                             self.productionSchedule.ceilingFormingScheduleList,PAGEROWNUMBER=self.pageRowNum)  # 这些数据在ProductionScheduleAlgorithm.py文件中
+                filename = scheduleDir + '%s/%s/PRPressSchedule.pdf' % (self.work_zone_Panel.orderManagmentPanel.data[0],suborderNumber)
+                MakePRPressScheduleTemplate(self.work_zone_Panel.orderManagmentPanel.data[0], suborderNumber, filename,
+                                             self.productionSchedule.prScheduleList,PAGEROWNUMBER=self.pageRowNum)  # 这些数据在ProductionScheduleAlgorithm.py文件中
+                filename = scheduleDir + '%s/%s/VacuumSchedule.pdf' % (self.work_zone_Panel.orderManagmentPanel.data[0],suborderNumber)
+                MakeVacuumScheduleTemplate(self.work_zone_Panel.orderManagmentPanel.data[0], suborderNumber, filename,
+                                             self.productionSchedule.vacuumScheduleList,PAGEROWNUMBER=self.pageRowNum)  # 这些数据在ProductionScheduleAlgorithm.py文件中
+                filename = scheduleDir + '%s/%s/GlueNoSheet.pdf' % (self.work_zone_Panel.orderManagmentPanel.data[0],suborderNumber)
+                MakeGlueNoSheetTemplate(self.work_zone_Panel.orderManagmentPanel.data[0], suborderNumber, filename,
+                                             self.productionSchedule.panelList)  # 这些数据在ProductionScheduleAlgorithm.py文件中
                 self.subOrderStateList[int(suborderNumber)-1] = "已排产"  # 这个之前应该增加一个数据库更新操作
                 suborderState = str(self.subOrderStateList[0])
                 for state in self.subOrderStateList[1:]:

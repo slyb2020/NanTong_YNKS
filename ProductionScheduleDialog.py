@@ -122,7 +122,7 @@ class ProductionScheduleDialog(wx.Dialog):
         hhbox = wx.BoxSizer()
         hhbox.Add((10, -1))
         self.S2FormingScheduleButton = wx.Button(controlPanel, label="2S成型任务单", size=(90, 40))
-        self.S2FormingScheduleButton.Bind(wx.EVT_BUTTON, self.OnFormingScheduleBTN)
+        self.S2FormingScheduleButton.Bind(wx.EVT_BUTTON, self.OnS2FormingScheduleBTN)
         hhbox.Add(self.S2FormingScheduleButton, 1, wx.EXPAND|wx.ALL, 5)
         vbox.Add(hhbox,1,wx.EXPAND)
         vbox.Add((-1,5))
@@ -130,23 +130,23 @@ class ProductionScheduleDialog(wx.Dialog):
         hhbox = wx.BoxSizer()
         hhbox.Add((10, -1))
         self.ceilingFormingScheduleButton = wx.Button(controlPanel, label="天花板成型任务单", size=(90, 40))
-        self.ceilingFormingScheduleButton.Bind(wx.EVT_BUTTON, self.OnFormingScheduleBTN)
+        self.ceilingFormingScheduleButton.Bind(wx.EVT_BUTTON, self.OnCeilingFormingScheduleBTN)
         hhbox.Add(self.ceilingFormingScheduleButton, 1, wx.EXPAND|wx.ALL, 5)
         vbox.Add(hhbox,1,wx.EXPAND)
         vbox.Add((-1,5))
 
         hhbox = wx.BoxSizer()
         hhbox.Add((10, -1))
-        self.hotPressScheduleButton = wx.Button(controlPanel, label="热压任务单", size=(90, 40))
-        self.hotPressScheduleButton.Bind(wx.EVT_BUTTON, self.OnOpenFileBTN)
-        hhbox.Add(self.hotPressScheduleButton, 1, wx.EXPAND|wx.ALL, 5)
+        self.PRPressScheduleButton = wx.Button(controlPanel, label="热压任务单", size=(90, 40))
+        self.PRPressScheduleButton.Bind(wx.EVT_BUTTON, self.OnPRPressScheduleTN)
+        hhbox.Add(self.PRPressScheduleButton, 1, wx.EXPAND | wx.ALL, 5)
         vbox.Add(hhbox,1,wx.EXPAND)
         vbox.Add((-1,5))
         hhbox = wx.BoxSizer()
         hhbox.Add((10, -1))
-        self.specialScheduleButton = wx.Button(controlPanel, label="特制品任务单", size=(90, 40))
-        self.specialScheduleButton.Bind(wx.EVT_BUTTON, self.OnOpenFileBTN)
-        hhbox.Add(self.specialScheduleButton, 1, wx.EXPAND|wx.ALL, 5)
+        self.vacuumScheduleButton = wx.Button(controlPanel, label="特制品任务单", size=(90, 40))
+        self.vacuumScheduleButton.Bind(wx.EVT_BUTTON, self.OnVacuumScheduleBTN)
+        hhbox.Add(self.vacuumScheduleButton, 1, wx.EXPAND | wx.ALL, 5)
         vbox.Add(hhbox,1,wx.EXPAND)
         vbox.Add((-1,5))
 
@@ -210,11 +210,33 @@ class ProductionScheduleDialog(wx.Dialog):
         self.pdfViewerPanel.viewer.LoadFile(filename)
 
     def OnBendScheduleBTN(self, event):
-        filename = scheduleDir+'%s/BendSchedule.pdf'%self.orderID
+        filename = scheduleDir+'%s/%s/BendingSchedule.pdf'%(self.orderID,int(self.subOrderID))
         if not os.path.exists(filename):
-            MakeBendScheduleTemplate(filename)
-        else:
-            MakeBendScheduleTemplate(filename)
+            MakeBendingScheduleTemplate(self.orderID,self.subOrderID,filename,self.parent.productionSchedule.bendingScheduleList,PAGEROWNUMBER=self.pageRowNum)
+        self.pdfViewerPanel.viewer.LoadFile(filename)
+
+    def OnS2FormingScheduleBTN(self, event):
+        filename = scheduleDir+'%s/%s/S2FormingSchedule.pdf'%(self.orderID,int(self.subOrderID))
+        if not os.path.exists(filename):
+            MakeS2FormingScheduleTemplate(self.orderID,self.subOrderID,filename,self.parent.productionSchedule.S2FormingScheduleList,PAGEROWNUMBER=self.pageRowNum)
+        self.pdfViewerPanel.viewer.LoadFile(filename)
+
+    def OnCeilingFormingScheduleBTN(self, event):
+        filename = scheduleDir+'%s/%s/CeilingFormingSchedule.pdf'%(self.orderID,int(self.subOrderID))
+        if not os.path.exists(filename):
+            MakeCeilingFormingScheduleTemplate(self.orderID,self.subOrderID,filename,self.parent.productionSchedule.ceilingFormingScheduleList,PAGEROWNUMBER=self.pageRowNum)
+        self.pdfViewerPanel.viewer.LoadFile(filename)
+
+    def OnPRPressScheduleTN(self, event):
+        filename = scheduleDir+'%s/%s/PRPressSchedule.pdf'%(self.orderID,int(self.subOrderID))
+        if not os.path.exists(filename):
+            MakePRPressScheduleTemplate(self.orderID,self.subOrderID,filename,self.parent.productionSchedule.prScheduleList,PAGEROWNUMBER=self.pageRowNum)
+        self.pdfViewerPanel.viewer.LoadFile(filename)
+
+    def OnVacuumScheduleBTN(self, event):
+        filename = scheduleDir+'%s/%s/SpecialSchedule.pdf'%(self.orderID,int(self.subOrderID))
+        if not os.path.exists(filename):
+            MakeVacuumScheduleTemplate(self.orderID,self.subOrderID,filename,self.parent.productionSchedule.vacuumScheduleList,PAGEROWNUMBER=self.pageRowNum)
         self.pdfViewerPanel.viewer.LoadFile(filename)
 
     def OnFormingScheduleBTN(self, event):
