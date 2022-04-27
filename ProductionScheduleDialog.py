@@ -3,7 +3,12 @@ import os
 from wx.lib.pdfviewer import pdfViewer, pdfButtonPanel
 from ID_DEFINE import *
 from MakePdfReport import *
-from DBOperation import GetPropertySchedulePageRowNumber
+from DBOperation import GetPropertySchedulePageRowNumber,GetOrderPanelRecord,GetGluepageFromGlueNum
+from DataGrid import DataGrid
+import numpy as np
+import images
+import wx.grid as gridlib
+
 class PDFViewerPanel(wx.Panel):
     def __init__(self, parent, log):
         wx.Panel.__init__(self, parent, -1)
@@ -249,6 +254,117 @@ class ProductionScheduleDialog(wx.Dialog):
 
     def OnOpenFileBTN(self, event):
         self.pdfViewerPanel.viewer.LoadFile("Excel/Stena 生产图纸 2SA.pdf")
+
+    # def OnCancel(self, event):
+    #     # self.log.WriteText("操作员：'%s' 取消库存参数设置操作\r\n"%(self.parent.operator_name))
+    #     event.Skip()
+
+
+class GlueSheetManagementDailog(wx.Dialog):
+    def __init__(self, parent, log, orderID, suborderID = None,size=wx.DefaultSize, pos=wx.DefaultPosition,
+                 style=wx.DEFAULT_DIALOG_STYLE):
+        wx.Dialog.__init__(self)
+        self.orderID = orderID
+        self.subOrderID = suborderID
+        self.parent = parent
+        self.log = log
+        self.filename = scheduleDir + '%s/%s/GlueNoSheet.pdf' % (orderID,suborderID)
+        if self.subOrderID == None:
+            dirName = scheduleDir + '%s/' % self.orderID
+        else:
+            dirName = scheduleDir + '%s/' % self.orderID + '%s/'%(int(self.subOrderID))
+        if not os.path.exists(dirName):
+            os.makedirs(dirName)
+        self.SetExtraStyle(wx.DIALOG_EX_METAL)
+        self.Create(parent, -1, "面板胶水单/标签管理窗口", pos, size, style)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        panel = wx.Panel(self, -1, size=(1600, 900))
+        hbox = wx.BoxSizer()
+        controlPanel = wx.Panel(panel,size=(835,-1))
+        hbox.Add(controlPanel,0,wx.EXPAND)
+        self.notebook = wx.Notebook(panel, -1, size=(21, 21), style=
+                                    wx.BK_DEFAULT
+                                    # wx.BK_TOP
+                                    # wx.BK_BOTTOM
+                                    # wx.BK_LEFT
+                                    # wx.BK_RIGHT
+                                    # | wx.NB_MULTILINE
+                                    )
+        il = wx.ImageList(16, 16)
+        idx1 = il.Add(images._rt_smiley.GetBitmap())
+        self.total_page_num = 0
+        self.notebook.AssignImageList(il)
+        idx2 = il.Add(images.GridBG.GetBitmap())
+        idx3 = il.Add(images.Smiles.GetBitmap())
+        idx4 = il.Add(images._rt_undo.GetBitmap())
+        idx5 = il.Add(images._rt_save.GetBitmap())
+        idx6 = il.Add(images._rt_redo.GetBitmap())
+        hbox.Add(self.notebook, 1, wx.EXPAND)
+        gluePanel = wx.Panel(self.notebook,size=(100,-1))
+        self.notebook.AddPage(gluePanel,"胶水单")
+        glueLabelPanel = wx.Panel(self.notebook,size=(100,-1))
+        self.notebook.AddPage(glueLabelPanel,"不干胶标签")
+        panel.SetSizer(hbox)
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        vbox.Add((-1, 20))
+        hbox = wx.BoxSizer()
+        hbox.Add(10, -1)
+        hbox.Add(wx.StaticText(controlPanel, label='订单编号：'), 0, wx.TOP, 5)
+        self.newOrderIDTXT = wx.TextCtrl(controlPanel, size=(50, 25),style=wx.TE_READONLY)
+        self.newOrderIDTXT.SetValue('%05d' % int(self.orderID))
+        hbox.Add(self.newOrderIDTXT, 1, wx.LEFT | wx.RIGHT, 10)
+        if self.subOrderID != None:
+            hbox.Add(20, -1)
+            hbox.Add(wx.StaticText(controlPanel, label='子订单号：'), 0, wx.TOP, 5)
+            self.subOrderIDTXT = wx.TextCtrl(controlPanel, size=(50, 25),style=wx.TE_READONLY)
+            self.subOrderIDTXT.SetValue('%03d' %int(self.subOrderID))
+            hbox.Add(self.subOrderIDTXT, 1, wx.LEFT | wx.RIGHT, 10)
+            vbox.Add(hbox, 0, wx.EXPAND)
+        _,data = GetOrderPanelRecord(self.log, 1, self.orderID,self.subOrderID)
+        data=np.array(data)
+        data=data[:,3:]
+        titleList = ['甲板', '区域', '房间', '图纸', '面板代码', 'X面颜色', 'Y面颜色', '高度', '宽度', '厚度',
+                                '数量', 'Z面颜色', 'V面颜色', '胶水单号']
+        colSizeList = [35, 50, 70, 80, 60, 60, 40, 40, 40, 40, 50, 50, 70, 72]
+        self.panelsGrid = DataGrid(controlPanel,data,titleList,colSizeList, log=self.log)
+        self.panelsGrid.Bind(gridlib.EVT_GRID_CELL_LEFT_CLICK, self.OnCellLeftClick)
+        vbox.Add(self.panelsGrid,1,wx.LEFT|wx.TOP|wx.BOTTOM|wx.EXPAND,10)
+        controlPanel.SetSizer(vbox)
+        # panel.SetBackgroundColour(wx.Colour(234,219,212))
+        sizer.Add(panel, 0, wx.EXPAND)
+        line = wx.StaticLine(self, -1, size=(30, -1), style=wx.LI_HORIZONTAL)
+        sizer.Add(line, 0, wx.GROW | wx.RIGHT | wx.TOP, 5)
+        vbox=wx.BoxSizer(wx.VERTICAL)
+        self.gluePDFViewerPanel = PDFViewerPanel(gluePanel, self.log)
+        vbox.Add(self.gluePDFViewerPanel, 1, wx.EXPAND)
+        gluePanel.SetSizer(vbox)
+        self.gluePDFViewerPanel.viewer.LoadFile(self.filename)
+        vbox=wx.BoxSizer(wx.VERTICAL)
+        self.glueLabelPDFViewerPanel = PDFViewerPanel(glueLabelPanel, self.log)
+        vbox.Add(self.glueLabelPDFViewerPanel, 1, wx.EXPAND)
+        glueLabelPanel.SetSizer(vbox)
+        # self.gluePDFViewerPanel.viewer.LoadFile(self.filename)
+
+
+        # btnsizer = wx.BoxSizer()
+        # bitmap1 = wx.Bitmap(bitmapDir+"/ok3.png", wx.BITMAP_TYPE_PNG)
+        # btn_ok = wx.Button(self, wx.ID_OK, "返回", size=(400, 40))
+        # btn_ok.SetBitmap(bitmap1, wx.LEFT)
+        # btnsizer.Add(btn_ok, 0)
+        # sizer.Add(btnsizer, 0, wx.ALIGN_CENTER | wx.ALL, 10)
+        self.SetSizer(sizer)
+        sizer.Fit(self)
+        # btn_ok.Bind(wx.EVT_BUTTON, self.OnOk)
+        # btn_cancel.Bind(wx.EVT_BUTTON, self.OnCancel)
+        # manualInputBTN.Bind(wx.EVT_BUTTON, self.OnCancel)
+
+    def OnCellLeftClick(self, evt):
+        row = evt.GetRow()
+        evt.Skip()
+        glueNum = self.panelsGrid.data[row][-1]
+        _, gluePage = GetGluepageFromGlueNum(self.log,1,self.orderID,glueNum)
+        print("page=",gluePage)
+        self.gluePDFViewerPanel.viewer.GoPage(int(gluePage) - 1)
 
     # def OnCancel(self, event):
     #     # self.log.WriteText("操作员：'%s' 取消库存参数设置操作\r\n"%(self.parent.operator_name))

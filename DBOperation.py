@@ -630,6 +630,44 @@ def UpdateOrderRecord(log,whichDB,OrderID,subOrderIdStr,subOrderStateStr):
         db.rollback()
     db.close()
 
+def UpdataPanelGlueNoInDB(log,whichDB,orderID,index,glueNo):
+    try:
+        db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
+                             passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
+    except:
+        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        if log:
+            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+        return -1, []
+    cursor = db.cursor()
+    sql = "UPDATE `%s` SET `胶水单编号`='%s'  where `Index`=%s" %(orderID,glueNo,int(index))
+    try:
+        cursor.execute(sql)
+        db.commit()  # 必须有，没有的话插入语句不会执行
+    except:
+        print("error1")
+        db.rollback()
+    db.close()
+
+def UpdataPanelGluePageInDB(log,whichDB,orderID,glueNo,gluePage):
+    try:
+        db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
+                             passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
+    except:
+        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        if log:
+            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+        return -1, []
+    cursor = db.cursor()
+    sql = "UPDATE `%s` SET `胶水单注释`='%s'  where `胶水单编号`='%s'" %(orderID,gluePage,glueNo)
+    try:
+        cursor.execute(sql)
+        db.commit()  # 必须有，没有的话插入语句不会执行
+    except:
+        print("error1")
+        db.rollback()
+    db.close()
+
 def GetOrderDetailRecord(log, whichDB, orderDetailID,suborderNum=None):
     try:
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
@@ -641,14 +679,57 @@ def GetOrderDetailRecord(log, whichDB, orderDetailID,suborderNum=None):
         return -1, []
     cursor = db.cursor()
     if suborderNum == None:
-        sql = """SELECT `Index`,`订单号`,`子订单号`,`甲板`,`区域`,`房间`,`图纸`,`面板代码`,`X面颜色`,`Y面颜色`,`高度`,`宽度`,`厚度`,`数量`,`Z面颜色`,`V面颜色` from `%s` """%(str(orderDetailID))
+        sql = """SELECT `Index`,`订单号`,`子订单号`,`甲板`,`区域`,`房间`,`图纸`,`面板代码`,`X面颜色`,`Y面颜色`,`高度`,`宽度`,`厚度`,`数量`,`Z面颜色`,`V面颜色`,`胶水单编号` from `%s` """%(str(orderDetailID))
     else:
-        sql = """SELECT `Index`,`订单号`,`子订单号`,`甲板`,`区域`,`房间`,`图纸`,`面板代码`,`X面颜色`,`Y面颜色`,`高度`,`宽度`,`厚度`,`数量`,`Z面颜色`,`V面颜色` from `%s` where `子订单号`='%s'"""%(str(orderDetailID),str(suborderNum))
+        sql = """SELECT `Index`,`订单号`,`子订单号`,`甲板`,`区域`,`房间`,`图纸`,`面板代码`,`X面颜色`,`Y面颜色`,`高度`,`宽度`,`厚度`,`数量`,`Z面颜色`,`V面颜色`,`胶水单编号` from `%s` where `子订单号`='%s'"""%(str(orderDetailID),str(suborderNum))
 
     cursor.execute(sql)
     temp = cursor.fetchall()  # 获得压条信息
     db.close()
     return 0, temp
+
+def GetOrderPanelRecord(log, whichDB, orderDetailID,suborderNum=None):
+    try:
+        db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
+                             passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
+    except:
+        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        if log:
+            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+        return -1, []
+    cursor = db.cursor()
+    if suborderNum == None:
+        sql = """SELECT `Index`,`订单号`,`子订单号`,`甲板`,`区域`,`房间`,`图纸`,`面板代码`,`X面颜色`,`Y面颜色`,`高度`,`宽度`,`厚度`,`数量`,`Z面颜色`,`V面颜色`,`胶水单编号`,`产品类型` from `%s` """%(str(orderDetailID))
+    else:
+        sql = """SELECT `Index`,`订单号`,`子订单号`,`甲板`,`区域`,`房间`,`图纸`,`面板代码`,`X面颜色`,`Y面颜色`,`高度`,`宽度`,`厚度`,`数量`,`Z面颜色`,`V面颜色`,`胶水单编号`,`产品类型` from `%s` where `子订单号`='%s'"""%(str(orderDetailID),str(suborderNum))
+
+    cursor.execute(sql)
+    temp = cursor.fetchall()  # 获得压条信息
+    db.close()
+    result = []
+    for record in temp:
+        print("record[-1]=",record[-1])
+        if not record[-1].isdigit():
+            print("mmsm",record[:-1])
+            result.append(record[:-1])
+    return 0, result
+
+def GetGluepageFromGlueNum(log, whichDB, orderID,glueNum):
+    try:
+        db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
+                             passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
+    except:
+        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        if log:
+            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+        return -1, []
+    cursor = db.cursor()
+    sql = """SELECT `胶水单注释` from `%s` where `胶水单编号`= '%s' """%(str(orderID),glueNum)
+
+    cursor.execute(sql)
+    temp = cursor.fetchone()  # 获得压条信息
+    db.close()
+    return 0, temp[0]
 
 def InsertOrderDetailRecord(log,whichDB,OrderID):
     try:
@@ -711,9 +792,10 @@ def InsertBatchOrderDataIntoDB(log, whichDB, orderTabelName, orderDataList):
         if data[11]!=None:
             data[11]=str(data[11]).replace('-','')
             data[11]=data[11].strip().upper()
-        sql="""INSERT INTO `%d`(`订单号`,`子订单号`,`甲板`,`区域`,`房间`,`图纸`,`宽度`,`高度`,`厚度`,`X面颜色`,`Y面颜色`,`Z面颜色`,`V面颜色`,`数量`,`面板代码`)
-        VALUES (%d,%d,'%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s',%d,'%s')"""\
-            %(int(orderTabelName),int(orderTabelName),int(data[0]),data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],int(data[12]),data[13])
+
+        sql="""INSERT INTO `%d`(`订单号`,`子订单号`,`甲板`,`区域`,`房间`,`图纸`,`宽度`,`高度`,`厚度`,`X面颜色`,`Y面颜色`,`Z面颜色`,`V面颜色`,`数量`,`面板代码`,`产品类型`)
+        VALUES (%d,%d,'%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s',%d,'%s','%s')"""\
+            %(int(orderTabelName),int(orderTabelName),int(data[0]),data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],int(data[12]),data[13],temp[1])
         cursor.execute(sql)
         try:
             db.commit()  # 必须有，没有的话插入语句不会执行

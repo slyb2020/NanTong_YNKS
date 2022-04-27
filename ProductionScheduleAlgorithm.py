@@ -1,6 +1,7 @@
 import copy
 import wx
-from DBOperation import GetOrderDetailRecord,GetDeltaWithBluePrintNo,GetConstructionDetailWithDrawingNo,GetPropertyVerticalCuttingParameter
+from DBOperation import GetOrderDetailRecord,GetDeltaWithBluePrintNo,GetConstructionDetailWithDrawingNo,\
+    GetPropertyVerticalCuttingParameter,UpdataPanelGlueNoInDB
 import numpy as np
 from operator import itemgetter
 
@@ -19,8 +20,6 @@ class ProductionScheduleAlgorithm(object):
         self.constructionOrderData=[]
         self.DisassembleOrderData()#将全部订单数据拆分成墙板，天花板，构件等3个数据列表
         self.CreateGlueNoForOrder()#未全部订单生成胶水单号码
-        for panel in self.panelList:
-            print("panelP:",panel)
         for record in self.wallOrderData:
             #record->0:ID,1:订单号,2:子订单号,3:甲板号,4:区域,5:房间,6:图纸号,7:胶水单号,8:X面颜色,9:Y面颜色,10:长,11:宽,12:厚,13:数量,14:Z面颜色,15:V面颜色
             errorCode,delta = self.GetWalllBoardDelta(record)
@@ -220,8 +219,6 @@ class ProductionScheduleAlgorithm(object):
         # print("prScheduleList",self.prScheduleList)#PR热压
         # print("vacuumScheduleList",self.vacuumScheduleList)#特制品热压
 
-        print("wrong Number", self.wrongNumber)
-
         # self.orticFormingScheduleList=[] #构件成型
 
     def CalculateVerticalCuttingSchedule(self,data):
@@ -337,11 +334,13 @@ class ProductionScheduleAlgorithm(object):
             temp = list(data)
             temp.append(glueNo)
             self.panelList.append(temp)
+            UpdataPanelGlueNoInDB(self.log,1,self.orderID,data[0],glueNo)
         for data in self.ceilingOrderData:
             glueNo="%05d-%04d"%(data[1],data[0])
             temp = list(data)
             temp.append(glueNo)
             self.panelList.append(temp)
+            UpdataPanelGlueNoInDB(self.log,1,self.orderID,data[0],glueNo)
 
 
     def DisassembleOrderData(self):

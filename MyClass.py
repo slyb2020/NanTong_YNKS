@@ -44,7 +44,7 @@ from ExcelImport import XLSGridFrame
 from DBOperation import CreateNewOrderSheet,InsertNewOrderRecord,GetAllOrderList,GetOrderByOrderID,UpdateOrderStateInDB,GetPropertySchedulePageRowNumber
 from ProductionScheduleAlgorithm import ProductionScheduleAlgorithm
 from ImportOrderDialog import ImportOrderFromExcelDialog
-from ProductionScheduleDialog import ProductionScheduleDialog
+from ProductionScheduleDialog import ProductionScheduleDialog,GlueSheetManagementDailog
 from PackageDialog import PackageDialog
 from ExcelOperation import GetOrderIDFromExcelFile,GetSubOrderIDListFromExcelFile
 # from NewOrderInquireDialog import AddSubOrderFromExcelDialog
@@ -608,7 +608,7 @@ class MainPanel(wx.Panel):
                 self.specificOrderPrintScheduleBTN.Bind(wx.EVT_BUTTON,self.OnPrintScheduleBTN)
                 vvbox.Add(self.specificOrderPrintScheduleBTN,0,wx.EXPAND|wx.ALL,5)
                 self.glueSchedulePrintBTN = wx.Button(self.subOrderPanel[i],label="打印子订单胶水单",size=(-1,40),name='子订单打印胶水单%d'%(i+1))
-                # self.glueSchedulePrintBTN.Bind(wx.EVT_BUTTON,self.OnGlueSchedulePrintBTN)
+                self.glueSchedulePrintBTN.Bind(wx.EVT_BUTTON,self.OnGlueSchedulePrintBTN)
                 vvbox.Add(self.glueSchedulePrintBTN,0,wx.EXPAND|wx.ALL,5)
                 self.packageBTN = wx.Button(self.subOrderPanel[i],label="子订单打包",size=(-1,40),name='子订单产品打包%d'%(i+1))
                 self.packageBTN.Bind(wx.EVT_BUTTON,self.OnPackageBTN)
@@ -617,6 +617,41 @@ class MainPanel(wx.Panel):
 
         title.SetSizer(vbox)
         self.orderInfoPanel.Layout()
+    def OnGlueSchedulePrintBTN(self,event):
+        obj = event.GetEventObject()
+        name = obj.GetName()
+        suborderNumber = name[-1]
+        message = "系统正在处理胶水单数据，请稍候..."
+        busy = PBI.PyBusyInfo(message, parent=None, title="系统正忙",
+                              icon=images.Smiles.GetBitmap())
+
+        wx.Yield()
+        self.productionSchedule = ProductionScheduleAlgorithm(self.log,
+                                                              self.work_zone_Panel.orderManagmentPanel.data[0],
+                                                              suborderNumber)
+        if self.productionSchedule.wrongNumber == 0:
+            filename = scheduleDir + '%s/%s/GlueNoSheet.pdf' % (self.work_zone_Panel.orderManagmentPanel.data[0],suborderNumber)
+            if not os.path.exists(filename):
+                event.Skip()
+                MakeGlueNoSheetTemplate(self.work_zone_Panel.orderManagmentPanel.data[0], suborderNumber, filename,
+                                             self.productionSchedule.panelList)  # 这些数据在ProductionScheduleAlgorithm.py文件中
+            filename = scheduleDir + '%s/%s/GlueLabelSheet.pdf' % (self.work_zone_Panel.orderManagmentPanel.data[0],suborderNumber)
+            if not os.path.exists(filename):
+                event.Skip()
+                MakeGlueLabelSheetTemplate(self.work_zone_Panel.orderManagmentPanel.data[0], suborderNumber, filename,
+                                             self.productionSchedule.panelList)  # 这些数据在ProductionScheduleAlgorithm.py文件中
+            del busy
+            dlg = GlueSheetManagementDailog(self, self.log, self.work_zone_Panel.orderManagmentPanel.data[0],
+                                           suborderNumber)
+            dlg.CenterOnScreen()
+            dlg.ShowModal()
+            dlg.Destroy()
+        else:
+            del busy
+            self.productionSchedule.missList = list(set(self.productionSchedule.missList))
+            self.productionSchedule.wrongNumber = len(self.productionSchedule.missList)
+            wx.MessageBox("缺少如下%s张图纸：\r\n%s,\r\n  无法完成排产，请补全图纸后再试！" % (
+            self.productionSchedule.wrongNumber, str(self.productionSchedule.missList)), "提示信息")
 
     def OnAddSubOrderBTN(self,event):
         wildcard = "Excel文件 (*.xlsx)|*.xlsx|" \
@@ -729,9 +764,6 @@ class MainPanel(wx.Panel):
                 filename = scheduleDir + '%s/%s/VacuumSchedule.pdf' % (self.work_zone_Panel.orderManagmentPanel.data[0],suborderNumber)
                 MakeVacuumScheduleTemplate(self.work_zone_Panel.orderManagmentPanel.data[0], suborderNumber, filename,
                                              self.productionSchedule.vacuumScheduleList,PAGEROWNUMBER=self.pageRowNum)  # 这些数据在ProductionScheduleAlgorithm.py文件中
-                filename = scheduleDir + '%s/%s/GlueNoSheet.pdf' % (self.work_zone_Panel.orderManagmentPanel.data[0],suborderNumber)
-                MakeGlueNoSheetTemplate(self.work_zone_Panel.orderManagmentPanel.data[0], suborderNumber, filename,
-                                             self.productionSchedule.panelList)  # 这些数据在ProductionScheduleAlgorithm.py文件中
                 self.subOrderStateList[int(suborderNumber)-1] = "已排产"  # 这个之前应该增加一个数据库更新操作
                 suborderState = str(self.subOrderStateList[0])
                 for state in self.subOrderStateList[1:]:
