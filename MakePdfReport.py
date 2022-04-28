@@ -1,6 +1,6 @@
 from reportlab.platypus import SimpleDocTemplate, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib.pagesizes import letter
+from reportlab.lib.pagesizes import letter,legal,A4
 from reportlab.lib.units import mm
 from reportlab.pdfgen import canvas
 from reportlab.pdfbase import pdfmetrics
@@ -14,7 +14,7 @@ from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from ID_DEFINE import *
 from BarCodeGenerator import BarCodeGenerator
-from DBOperation import UpdataPanelGluePageInDB
+from DBOperation import UpdataPanelGluePageInDB,UpdataPanelGlueLabelPageInDB
 
 pdfmetrics.registerFont(TTFont('SimSun', 'Font/SimSun.ttf'))  #注册字体
 
@@ -871,127 +871,157 @@ def MakeGlueNoSheetTemplate(orderID,subOrderID,filename,record=[]):
 def MakeGlueLabelSheetTemplate(orderID,subOrderID,filename,record=[]):
     #1, 64730, '1', '3', '9', 'Corridor', 'A.2SA.0900', '0', 'YC74H', 'YQ73D', '2160', '550', '50', 2, 'None', 'None','胶水单号'
     #23.2mm
-    num=1
-    index = 1
-    pages = []
-    width, height = letter
-    myCanvas = canvas.Canvas(filename, pagesize=letter)
-    page = 0
+    num=0
+    width, height = A4
+    myCanvas = canvas.Canvas(filename, pagesize=A4)
+    page = 1
+    offset=68
+    gap = 24
+    vOffset=20
+    myCanvas.setFont("SimSun", 10)
     for board in record:
         data=list(board)
         if data[14]=='None':
             data[14]=''
         if data[15]=='None':
             data[15]=''
+        UpdataPanelGlueLabelPageInDB(None, 1, orderID, data[16], page)
         for i in range(int(data[13])):
-            page += 1
-            myCanvas.setFont("SimSun", 16)
-            myCanvas.drawCentredString(width/2,735, text="伊纳克赛(南通)精致内饰材料有限公司胶水单")
-            myCanvas.drawImage(bitmapDir+"/logo.jpg", 30, 715,
-                                width=40, height=40)
-            tempCode='G'+'%05d'%int(orderID)+'-'+'%03d'%int(subOrderID)+'P%03d'%(i+1)
-            BarCodeGenerator(tempCode)
-            myCanvas.drawImage(dirName+"/tempBarcode.png", width-100, height-40,
-                                width=100, height=40)
-            myCanvas.drawCentredString(width/2,715, text="Inexa (NanTong) Interiors Co.Ltd Glue Sheet")
-            DrawLine(myCanvas,1,*coord(10, 31, height, mm),*coord(205, 31, height, mm))
-            DrawLine(myCanvas,1,*coord(10, 31, height, mm),*coord(10, 131, height, mm))
-            DrawLine(myCanvas,1,*coord(205, 31, height, mm),*coord(205, 131, height, mm))
-            DrawLine(myCanvas,1,*coord(10, 131, height, mm),*coord(205, 131, height, mm))
-            myCanvas.drawString(40,680, text="订单编号；%s-%03d"%(orderID,int(subOrderID)))
-            myCanvas.drawRightString(width-50, 680, '出单日期：%s' % (datetime.date.today()))
-            myCanvas.drawString(40,650, text="图纸编号；%s"%(data[6]))
-            myCanvas.drawRightString(width - 50, 650, '胶水单号：%s'%(data[16]))
-            DrawLine(myCanvas,1,*coord(10, 55, height, mm),*coord(205, 55, height, mm))
-            myCanvas.drawString(40,615, text="                X面颜色       Y面颜色       Z面颜色       V面颜色")
-            DrawLine(myCanvas,1,*coord(50, 65, height, mm),*coord(205, 65, height, mm))
-            DrawLine(myCanvas,1,*coord(50, 55, height, mm),*coord(50, 115, height, mm))
-            DrawLine(myCanvas,1,*coord(50+39, 55, height, mm),*coord(50+39, 115, height, mm))
-            DrawLine(myCanvas,1,*coord(50+39*2, 55, height, mm),*coord(50+39*2, 115, height, mm))
-            DrawLine(myCanvas,1,*coord(50+39*3, 55, height, mm),*coord(50+39*3, 115, height, mm))
-            myCanvas.setFont("SimSun", 22)
-            myCanvas.drawString(170,565, text="%s"%(data[8]))
-            myCanvas.drawString(170+110,565, text="%s"%(data[9]))
-            myCanvas.drawString(170+110*2,565, text="%s"%(data[14]))
-            myCanvas.drawString(170+110*3,565, text="%s"%(data[15]))
-            DrawLine(myCanvas,1,*coord(10, 90, height, mm),*coord(205, 90, height, mm))
-            myCanvas.setFont("SimSun", 16)
-            myCanvas.drawString(50,515, text="长(Length)")
-            myCanvas.drawString(50+110,515, text="宽(Width)")
-            myCanvas.drawString(60+110*2,515, text="厚(Thick)")
-            myCanvas.drawString(40+110*3,515, text="数量(Amount)")
-            myCanvas.drawString(40+110*4,515, text="重量(Weight)")
+            DrawLine(myCanvas,1,*coord(0, 2+num*gap, height, mm),*coord(220, 2+num*gap, height, mm))
+            myCanvas.drawString(20,798+vOffset-offset*num, text="项目名称(Project): %s"%("Stena W0272"))
 
-            myCanvas.setFont("SimSun", 20)
-            myCanvas.drawString(55,480, text="%s mm"%(data[10]))
-            myCanvas.drawString(55+110,480, text="%s mm"%(data[11]))
-            myCanvas.drawString(60+110*2,480, text="%s mm"%(data[12]))
-            myCanvas.drawString(60+110*3,480, text="%s Pcs."%(data[13]))
-            myCanvas.drawString(60+110*4,480, text="%s"%(""))
-            DrawLine(myCanvas,1,*coord(10, 115, height, mm),*coord(205, 115, height, mm))
-            myCanvas.setFont("SimSun", 16)
-            myCanvas.drawString(50,435, text="甲板(Deck): %s"%(data[3]))
-            myCanvas.drawString(220,435, text="区域(Zone): %s"%(data[4]))
-            myCanvas.drawString(380,435, text="房间(Room): %s"%(data[5]))
+            myCanvas.drawString(200,798+vOffset-offset*num, text="订单编号(OrderId): %s-%03d"%(orderID,int(subOrderID)))
 
-            offset = 410
-            offset2=145
-            DrawLine(myCanvas,1,*coord(0, 10+offset2, height, mm),*coord(220, 10+offset2, height, mm))
+            myCanvas.drawString(360,798+vOffset-offset*num, text="图纸号(Drawing No.): %s"%(data[6]))
 
-            myCanvas.setFont("SimSun", 18)
-            myCanvas.drawCentredString(width/2,735-offset, text="伊纳克赛(南通)精致内饰材料有限公司胶水单")
-            myCanvas.drawImage(bitmapDir+"/logo.jpg", 30, 715-offset,
-                                width=40, height=40)
-            tempCode='G'+'%05d'%int(orderID)+'-'+'%03d'%int(subOrderID)+'P%03d'%(i+1)
-            BarCodeGenerator(tempCode)
-            myCanvas.drawImage(dirName+"/tempBarcode.png", width-100, height-40-offset-35,
-                                width=100, height=40)
-            myCanvas.setFont("SimSun", 16)
-            myCanvas.drawCentredString(width/2,715-offset, text="Inexa (NanTong) Interiors Co.Ltd Glue Sheet")
-            DrawLine(myCanvas,1,*coord(10, 31+offset2, height, mm),*coord(205, 31+offset2, height, mm))
-            DrawLine(myCanvas,1,*coord(10, 31+offset2, height, mm),*coord(10, 131+offset2, height, mm))
-            DrawLine(myCanvas,1,*coord(205, 31+offset2, height, mm),*coord(205, 131+offset2, height, mm))
-            DrawLine(myCanvas,1,*coord(10, 131+offset2, height, mm),*coord(205, 131+offset2, height, mm))
-            myCanvas.drawString(40,680-offset, text="订单编号；%s-%03d"%(orderID,int(subOrderID)))
-            myCanvas.drawRightString(width-50, 680-offset, '出单日期：%s' % (datetime.date.today()))
-            myCanvas.drawString(40,650-offset, text="图纸编号；%s"%(data[6]))
-            myCanvas.drawRightString(width - 50, 650-offset, '胶水单号：%s'%(data[16]))
-            DrawLine(myCanvas,1,*coord(10, 55+offset2, height, mm),*coord(205, 55+offset2, height, mm))
-            myCanvas.drawString(40,615-offset, text="                X面颜色       Y面颜色       Z面颜色       V面颜色")
-            DrawLine(myCanvas,1,*coord(50, 65+offset2, height, mm),*coord(205, 65+offset2, height, mm))
-            DrawLine(myCanvas,1,*coord(50, 55+offset2, height, mm),*coord(50, 115+offset2, height, mm))
-            DrawLine(myCanvas,1,*coord(50+39, 55+offset2, height, mm),*coord(50+39, 115+offset2, height, mm))
-            DrawLine(myCanvas,1,*coord(50+39*2, 55+offset2, height, mm),*coord(50+39*2, 115+offset2, height, mm))
-            DrawLine(myCanvas,1,*coord(50+39*3, 55+offset2, height, mm),*coord(50+39*3, 115+offset2, height, mm))
-            myCanvas.setFont("SimSun", 22)
-            myCanvas.drawString(170,565-offset, text="%s"%(data[8]))
-            myCanvas.drawString(170+110,565-offset, text="%s"%(data[9]))
-            myCanvas.drawString(170+110*2,565-offset, text="%s"%(data[14]))
-            myCanvas.drawString(170+110*3,565-offset, text="%s"%(data[15]))
-            DrawLine(myCanvas,1,*coord(10, 90+offset2, height, mm),*coord(205, 90+offset2, height, mm))
-            myCanvas.setFont("SimSun", 16)
-            myCanvas.drawString(50,515-offset, text="长(Length)")
-            myCanvas.drawString(50+110,515-offset, text="宽(Width)")
-            myCanvas.drawString(60+110*2,515-offset, text="厚(Thick)")
-            myCanvas.drawString(40+110*3,515-offset, text="数量(Amount)")
-            myCanvas.drawString(40+110*4,515-offset, text="重量(Weight)")
+            # myCanvas.drawCentredString(80, 785, text="%s"%)
+            # myCanvas.drawCentredString(260, 785, text="%s-%03d"%(orderID,int(subOrderID)))
+            # myCanvas.drawCentredString(430, 785, text="%s"%())
+            myCanvas.drawString(20,778+vOffset-offset*num, text="胶水单编号(Glue Note): %s"%(data[-1]))
+            myCanvas.drawString(200,778+vOffset-offset*num, text="长度(Length): %s"%(data[10]))
+            myCanvas.drawString(320,778+vOffset-offset*num, text="宽度(Width): %s"%(data[11]))
+            myCanvas.drawString(440,778+vOffset-offset*num, text="厚度(Thick): %s"%(data[12]))
+            # myCanvas.drawCentredString(80, 760, text="%s"%)
+            # myCanvas.drawCentredString(160, 760, text="%s"%(data[10]))
+            # myCanvas.drawCentredString(200, 760, text="%s"%(data[11]))
+            # myCanvas.drawCentredString(300, 760, text="%s"%(data[12]))
+            # myCanvas.drawCentredString(400, 760, text="%s"%(data[13]))
+            myCanvas.drawString(20,757+vOffset-offset*num, text="颜色(Colour):  X: %s"%(data[8]))
+            myCanvas.drawString(200,757+vOffset-offset*num, text="Y: %s"%(data[9]))
+            myCanvas.drawString(320,757+vOffset-offset*num, text="Z: %s"%(data[14]))
+            myCanvas.drawString(440,757+vOffset-offset*num, text="V: %s"%(data[15]))
+            # myCanvas.drawCentredString(500, 760, text="%s//%s//%s//%s"%())
 
-            myCanvas.setFont("SimSun", 20)
-            myCanvas.drawString(55,480-offset, text="%s mm"%(data[10]))
-            myCanvas.drawString(55+110,480-offset, text="%s mm"%(data[11]))
-            myCanvas.drawString(60+110*2,480-offset, text="%s mm"%(data[12]))
-            myCanvas.drawString(60+110*3,480-offset, text="%s Pcs."%(data[13]))
-            myCanvas.drawString(60+110*4,480-offset, text="%s"%(""))
-            DrawLine(myCanvas,1,*coord(10, 115+offset2, height, mm),*coord(205, 115+offset2, height, mm))
-            myCanvas.setFont("SimSun", 16)
-            myCanvas.drawString(50,435-offset, text="甲板(Deck): %s"%(data[3]))
-            myCanvas.drawString(220,435-offset, text="区域(Zone): %s"%(data[4]))
-            myCanvas.drawString(380,435-offset, text="房间(Room): %s"%(data[5]))
-            # myCanvas.drawString(40,670-offset, text="订单号；%s-%03d"%(orderID,int(subOrderID)))
-            # myCanvas.drawRightString(width-50, 670-offset, '胶水单号：%s'%(data[16]))
-            # DrawLine(myCanvas,1,*coord(10, 50+offset2, height, mm),*coord(205, 50+offset2, height, mm))
-            myCanvas.showPage()#这句话相当于分页，显示页面即完成当前页面，开始新页面
-            UpdataPanelGluePageInDB(None,1,orderID,data[16],page)
+            # myCanvas.drawCentredString(width/2,735, text="伊纳克赛(南通)精致内饰材料有限公司胶水单")
+            # myCanvas.drawImage(bitmapDir+"/logo.jpg", 30, 715,
+            #                     width=40, height=40)
+            # tempCode='G'+'%05d'%int(orderID)+'-'+'%03d'%int(subOrderID)+'P%03d'%(i+1)
+            # BarCodeGenerator(tempCode)
+            # myCanvas.drawImage(dirName+"/tempBarcode.png", width-100, height-40,
+            #                     width=100, height=40)
+            # myCanvas.drawCentredString(width/2,715, text="Inexa (NanTong) Interiors Co.Ltd Glue Sheet")
+            # DrawLine(myCanvas,1,*coord(10, 31, height, mm),*coord(10, 131, height, mm))
+            # DrawLine(myCanvas,1,*coord(205, 31, height, mm),*coord(205, 131, height, mm))
+            # DrawLine(myCanvas,1,*coord(10, 131, height, mm),*coord(205, 131, height, mm))
+            # myCanvas.drawString(40,680, text="订单编号；%s-%03d"%(orderID,int(subOrderID)))
+            # myCanvas.drawRightString(width-50, 680, '出单日期：%s' % (datetime.date.today()))
+            # myCanvas.drawString(40,650, text="图纸编号；%s"%(data[6]))
+            # myCanvas.drawRightString(width - 50, 650, '胶水单号：%s'%(data[16]))
+            # DrawLine(myCanvas,1,*coord(10, 55, height, mm),*coord(205, 55, height, mm))
+            # myCanvas.drawString(40,615, text="                X面颜色       Y面颜色       Z面颜色       V面颜色")
+            # DrawLine(myCanvas,1,*coord(50, 65, height, mm),*coord(205, 65, height, mm))
+            # DrawLine(myCanvas,1,*coord(50, 55, height, mm),*coord(50, 115, height, mm))
+            # DrawLine(myCanvas,1,*coord(50+39, 55, height, mm),*coord(50+39, 115, height, mm))
+            # DrawLine(myCanvas,1,*coord(50+39*2, 55, height, mm),*coord(50+39*2, 115, height, mm))
+            # DrawLine(myCanvas,1,*coord(50+39*3, 55, height, mm),*coord(50+39*3, 115, height, mm))
+            # myCanvas.setFont("SimSun", 22)
+            # myCanvas.drawString(170+110,565, text="%s"%(data[9]))
+            # myCanvas.drawString(170+110*2,565, text="%s"%(data[14]))
+            # myCanvas.drawString(170+110*3,565, text="%s"%(data[15]))
+            # DrawLine(myCanvas,1,*coord(10, 90, height, mm),*coord(205, 90, height, mm))
+            # myCanvas.setFont("SimSun", 16)
+            # myCanvas.drawString(50,515, text="长(Length)")
+            # myCanvas.drawString(50+110,515, text="宽(Width)")
+            # myCanvas.drawString(60+110*2,515, text="厚(Thick)")
+            # myCanvas.drawString(40+110*3,515, text="数量(Amount)")
+            # myCanvas.drawString(40+110*4,515, text="重量(Weight)")
+            #
+            # myCanvas.setFont("SimSun", 20)
+            # myCanvas.drawString(55,480, text="%s mm"%(data[10]))
+            # myCanvas.drawString(55+110,480, text="%s mm"%(data[11]))
+            # myCanvas.drawString(60+110*2,480, text="%s mm"%(data[12]))
+            # myCanvas.drawString(60+110*3,480, text="%s Pcs."%(data[13]))
+            # myCanvas.drawString(60+110*4,480, text="%s"%(""))
+            # DrawLine(myCanvas,1,*coord(10, 115, height, mm),*coord(205, 115, height, mm))
+            # myCanvas.setFont("SimSun", 16)
+            # myCanvas.drawString(50,435, text="甲板(Deck): %s"%(data[3]))
+            # myCanvas.drawString(220,435, text="区域(Zone): %s"%(data[4]))
+            # myCanvas.drawString(380,435, text="房间(Room): %s"%(data[5]))
+            #
+            # offset = 410
+            # offset2=145
+            # DrawLine(myCanvas,1,*coord(0, 10+offset2, height, mm),*coord(220, 10+offset2, height, mm))
+            #
+            # myCanvas.setFont("SimSun", 18)
+            # myCanvas.drawCentredString(width/2,735-offset, text="伊纳克赛(南通)精致内饰材料有限公司胶水单")
+            # myCanvas.drawImage(bitmapDir+"/logo.jpg", 30, 715-offset,
+            #                     width=40, height=40)
+            # tempCode='G'+'%05d'%int(orderID)+'-'+'%03d'%int(subOrderID)+'P%03d'%(i+1)
+            # BarCodeGenerator(tempCode)
+            # myCanvas.drawImage(dirName+"/tempBarcode.png", width-100, height-40-offset-35,
+            #                     width=100, height=40)
+            # myCanvas.setFont("SimSun", 16)
+            # myCanvas.drawCentredString(width/2,715-offset, text="Inexa (NanTong) Interiors Co.Ltd Glue Sheet")
+            # DrawLine(myCanvas,1,*coord(10, 31+offset2, height, mm),*coord(205, 31+offset2, height, mm))
+            # DrawLine(myCanvas,1,*coord(10, 31+offset2, height, mm),*coord(10, 131+offset2, height, mm))
+            # DrawLine(myCanvas,1,*coord(205, 31+offset2, height, mm),*coord(205, 131+offset2, height, mm))
+            # DrawLine(myCanvas,1,*coord(10, 131+offset2, height, mm),*coord(205, 131+offset2, height, mm))
+            # myCanvas.drawString(40,680-offset, text="订单编号；%s-%03d"%(orderID,int(subOrderID)))
+            # myCanvas.drawRightString(width-50, 680-offset, '出单日期：%s' % (datetime.date.today()))
+            # myCanvas.drawString(40,650-offset, text="图纸编号；%s"%(data[6]))
+            # myCanvas.drawRightString(width - 50, 650-offset, '胶水单号：%s'%(data[16]))
+            # DrawLine(myCanvas,1,*coord(10, 55+offset2, height, mm),*coord(205, 55+offset2, height, mm))
+            # myCanvas.drawString(40,615-offset, text="                X面颜色       Y面颜色       Z面颜色       V面颜色")
+            # DrawLine(myCanvas,1,*coord(50, 65+offset2, height, mm),*coord(205, 65+offset2, height, mm))
+            # DrawLine(myCanvas,1,*coord(50, 55+offset2, height, mm),*coord(50, 115+offset2, height, mm))
+            # DrawLine(myCanvas,1,*coord(50+39, 55+offset2, height, mm),*coord(50+39, 115+offset2, height, mm))
+            # DrawLine(myCanvas,1,*coord(50+39*2, 55+offset2, height, mm),*coord(50+39*2, 115+offset2, height, mm))
+            # DrawLine(myCanvas,1,*coord(50+39*3, 55+offset2, height, mm),*coord(50+39*3, 115+offset2, height, mm))
+            # myCanvas.setFont("SimSun", 22)
+            # myCanvas.drawString(170,565-offset, text="%s"%(data[8]))
+            # myCanvas.drawString(170+110,565-offset, text="%s"%(data[9]))
+            # myCanvas.drawString(170+110*2,565-offset, text="%s"%(data[14]))
+            # myCanvas.drawString(170+110*3,565-offset, text="%s"%(data[15]))
+            # DrawLine(myCanvas,1,*coord(10, 90+offset2, height, mm),*coord(205, 90+offset2, height, mm))
+            # myCanvas.setFont("SimSun", 16)
+            # myCanvas.drawString(50,515-offset, text="长(Length)")
+            # myCanvas.drawString(50+110,515-offset, text="宽(Width)")
+            # myCanvas.drawString(60+110*2,515-offset, text="厚(Thick)")
+            # myCanvas.drawString(40+110*3,515-offset, text="数量(Amount)")
+            # myCanvas.drawString(40+110*4,515-offset, text="重量(Weight)")
+            #
+            # myCanvas.setFont("SimSun", 20)
+            # myCanvas.drawString(55,480-offset, text="%s mm"%(data[10]))
+            # myCanvas.drawString(55+110,480-offset, text="%s mm"%(data[11]))
+            # myCanvas.drawString(60+110*2,480-offset, text="%s mm"%(data[12]))
+            # myCanvas.drawString(60+110*3,480-offset, text="%s Pcs."%(data[13]))
+            # myCanvas.drawString(60+110*4,480-offset, text="%s"%(""))
+            # DrawLine(myCanvas,1,*coord(10, 115+offset2, height, mm),*coord(205, 115+offset2, height, mm))
+            # myCanvas.setFont("SimSun", 16)
+            # myCanvas.drawString(50,435-offset, text="甲板(Deck): %s"%(data[3]))
+            # myCanvas.drawString(220,435-offset, text="区域(Zone): %s"%(data[4]))
+            # myCanvas.drawString(380,435-offset, text="房间(Room): %s"%(data[5]))
+            # # myCanvas.drawString(40,670-offset, text="订单号；%s-%03d"%(orderID,int(subOrderID)))
+            # # myCanvas.drawRightString(width-50, 670-offset, '胶水单号：%s'%(data[16]))
+            # # DrawLine(myCanvas,1,*coord(10, 50+offset2, height, mm),*coord(205, 50+offset2, height, mm))
+            num += 1
+            if num>11:
+                DrawLine(myCanvas, 1, *coord(0, 2 + num * gap, height, mm), *coord(220, 2 + num * gap, height, mm))
+                num = 0
+                page += 1
+                myCanvas.showPage()#这句话相当于分页，显示页面即完成当前页面，开始新页面
+                myCanvas.setFont("SimSun", 10)
+    DrawLine(myCanvas, 1, *coord(0, 2 + num * gap, height, mm), *coord(220, 2 + num * gap, height, mm))
     myCanvas.save()
 
 def DrawFormingSchedule(c):

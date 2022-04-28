@@ -3,7 +3,7 @@ import os
 from wx.lib.pdfviewer import pdfViewer, pdfButtonPanel
 from ID_DEFINE import *
 from MakePdfReport import *
-from DBOperation import GetPropertySchedulePageRowNumber,GetOrderPanelRecord,GetGluepageFromGlueNum
+from DBOperation import GetPropertySchedulePageRowNumber,GetOrderPanelRecord,GetGluepageFromGlueNum,GetGlueLabelpageFromGlueNum
 from DataGrid import DataGrid
 import numpy as np
 import images
@@ -269,6 +269,7 @@ class GlueSheetManagementDailog(wx.Dialog):
         self.parent = parent
         self.log = log
         self.filename = scheduleDir + '%s/%s/GlueNoSheet.pdf' % (orderID,suborderID)
+        self.labelfilename = scheduleDir + '%s/%s/GlueLabelSheet.pdf' % (orderID,suborderID)
         if self.subOrderID == None:
             dirName = scheduleDir + '%s/' % self.orderID
         else:
@@ -343,7 +344,7 @@ class GlueSheetManagementDailog(wx.Dialog):
         self.glueLabelPDFViewerPanel = PDFViewerPanel(glueLabelPanel, self.log)
         vbox.Add(self.glueLabelPDFViewerPanel, 1, wx.EXPAND)
         glueLabelPanel.SetSizer(vbox)
-        # self.gluePDFViewerPanel.viewer.LoadFile(self.filename)
+        self.glueLabelPDFViewerPanel.viewer.LoadFile(self.labelfilename)
 
 
         # btnsizer = wx.BoxSizer()
@@ -363,8 +364,9 @@ class GlueSheetManagementDailog(wx.Dialog):
         evt.Skip()
         glueNum = self.panelsGrid.data[row][-1]
         _, gluePage = GetGluepageFromGlueNum(self.log,1,self.orderID,glueNum)
-        print("page=",gluePage)
         self.gluePDFViewerPanel.viewer.GoPage(int(gluePage) - 1)
+        _, glueLabelPage = GetGlueLabelpageFromGlueNum(self.log,1,self.orderID,glueNum)
+        self.glueLabelPDFViewerPanel.viewer.GoPage(int(glueLabelPage) - 1)
 
     # def OnCancel(self, event):
     #     # self.log.WriteText("操作员：'%s' 取消库存参数设置操作\r\n"%(self.parent.operator_name))

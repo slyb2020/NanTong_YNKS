@@ -668,6 +668,25 @@ def UpdataPanelGluePageInDB(log,whichDB,orderID,glueNo,gluePage):
         db.rollback()
     db.close()
 
+def UpdataPanelGlueLabelPageInDB(log,whichDB,orderID,glueNo,gluePage):
+    try:
+        db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
+                             passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
+    except:
+        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        if log:
+            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+        return -1, []
+    cursor = db.cursor()
+    sql = "UPDATE `%s` SET `备注`='%s'  where `胶水单编号`='%s'" %(orderID,gluePage,glueNo)
+    try:
+        cursor.execute(sql)
+        db.commit()  # 必须有，没有的话插入语句不会执行
+    except:
+        print("error1")
+        db.rollback()
+    db.close()
+
 def GetOrderDetailRecord(log, whichDB, orderDetailID,suborderNum=None):
     try:
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
@@ -708,9 +727,7 @@ def GetOrderPanelRecord(log, whichDB, orderDetailID,suborderNum=None):
     db.close()
     result = []
     for record in temp:
-        print("record[-1]=",record[-1])
         if not record[-1].isdigit():
-            print("mmsm",record[:-1])
             result.append(record[:-1])
     return 0, result
 
@@ -725,6 +742,23 @@ def GetGluepageFromGlueNum(log, whichDB, orderID,glueNum):
         return -1, []
     cursor = db.cursor()
     sql = """SELECT `胶水单注释` from `%s` where `胶水单编号`= '%s' """%(str(orderID),glueNum)
+
+    cursor.execute(sql)
+    temp = cursor.fetchone()  # 获得压条信息
+    db.close()
+    return 0, temp[0]
+
+def GetGlueLabelpageFromGlueNum(log, whichDB, orderID,glueNum):
+    try:
+        db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
+                             passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
+    except:
+        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        if log:
+            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+        return -1, []
+    cursor = db.cursor()
+    sql = """SELECT `备注` from `%s` where `胶水单编号`= '%s' """%(str(orderID),glueNum)
 
     cursor.execute(sql)
     temp = cursor.fetchone()  # 获得压条信息
