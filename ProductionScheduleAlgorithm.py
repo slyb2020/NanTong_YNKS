@@ -1,7 +1,7 @@
 import copy
 import wx
 from DBOperation import GetOrderDetailRecord,GetDeltaWithBluePrintNo,GetConstructionDetailWithDrawingNo,\
-    GetPropertyVerticalCuttingParameter,UpdataPanelGlueNoInDB
+    GetPropertyVerticalCuttingParameter,UpdataPanelGlueNoInDB,UpdataPanelWeightInDB
 import numpy as np
 from operator import itemgetter
 
@@ -20,6 +20,7 @@ class ProductionScheduleAlgorithm(object):
         self.constructionOrderData=[]
         self.DisassembleOrderData()#将全部订单数据拆分成墙板，天花板，构件等3个数据列表
         self.CreateGlueNoForOrder()#未全部订单生成胶水单号码
+        self.CalculateWeightForOrder()#计算子订单中全部面板的重量，为打包做准备
         for record in self.wallOrderData:
             #record->0:ID,1:订单号,2:子订单号,3:甲板号,4:区域,5:房间,6:图纸号,7:胶水单号,8:X面颜色,9:Y面颜色,10:长,11:宽,12:厚,13:数量,14:Z面颜色,15:V面颜色
             errorCode,delta = self.GetWalllBoardDelta(record)
@@ -332,16 +333,28 @@ class ProductionScheduleAlgorithm(object):
         for data in self.wallOrderData:
             glueNo="%05d-%04d"%(data[1],data[0])
             temp = list(data)
-            temp.append(glueNo)
+            temp[-1]=glueNo
             self.panelList.append(temp)
             UpdataPanelGlueNoInDB(self.log,1,self.orderID,data[0],glueNo)
         for data in self.ceilingOrderData:
             glueNo="%05d-%04d"%(data[1],data[0])
             temp = list(data)
-            temp.append(glueNo)
+            temp[-1]=glueNo
             self.panelList.append(temp)
             UpdataPanelGlueNoInDB(self.log,1,self.orderID,data[0],glueNo)
 
+    def CalculateWeightForOrder(self):#这里计算的是单板重量，并没有乘以Amount
+        for i, data in enumerate(self.panelList):
+            if data[6][2:5]=='C55':
+                weight = float(data[10])*float(data[11])/1.0E6*4.2
+            else:
+                if int(data[12])==25:
+                    weight = float(data[10]) * float(data[11]) / 1.0E6 * 4.2
+                elif int(data[12])==50:
+                    weight = float(data[10]) * float(data[11]) / 1.0E6 * 6.0
+                else:
+                    weight = float(data[10]) * float(data[11]) / 1.0E6 * 6.0 #100的板子应该还有一个新的重量系数
+            UpdataPanelWeightInDB(self.log,1,self.orderID,data[0],weight)
 
     def DisassembleOrderData(self):
         for data in self.orderDetailData:

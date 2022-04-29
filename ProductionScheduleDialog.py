@@ -239,7 +239,7 @@ class ProductionScheduleDialog(wx.Dialog):
         self.pdfViewerPanel.viewer.LoadFile(filename)
 
     def OnVacuumScheduleBTN(self, event):
-        filename = scheduleDir+'%s/%s/SpecialSchedule.pdf'%(self.orderID,int(self.subOrderID))
+        filename = scheduleDir+'%s/%s/VacuumSchedule.pdf'%(self.orderID,int(self.subOrderID))
         if not os.path.exists(filename):
             MakeVacuumScheduleTemplate(self.orderID,self.subOrderID,filename,self.parent.productionSchedule.vacuumScheduleList,PAGEROWNUMBER=self.pageRowNum)
         self.pdfViewerPanel.viewer.LoadFile(filename)

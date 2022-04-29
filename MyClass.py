@@ -699,7 +699,7 @@ class MainPanel(wx.Panel):
         self.work_zone_Panel.orderManagmentPanel.ReCreateOrderDetailTree()
 
     def OnPackageBTN(self,event):
-        dlg = PackageDialog(self, self.log, self.work_zone_Panel.orderManagmentPanel.data[0])
+        dlg = PackageDialog(self, self.log, self.work_zone_Panel.orderManagmentPanel.data)
         dlg.CenterOnScreen()
         if dlg.ShowModal() == wx.ID_OK:
             pass

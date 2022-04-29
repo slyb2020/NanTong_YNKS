@@ -504,6 +504,23 @@ def GetPropertySchedulePageRowNumber(log,whichDB):
     db.close()
     return 0, temp[0]
 
+def GetSubOrderPackageState(log,whichDB,orderID,suborderID):
+    try:
+        db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
+                             passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
+    except:
+        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        if log:
+            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+        return -1, []
+    cursor = db.cursor()
+    sql = """SELECT `状态` from `%s` where `子订单号`= '%s' """%(str(orderID),suborderID)
+
+    cursor.execute(sql)
+    temp = cursor.fetchone()  # 获得压条信息
+    db.close()
+    return 0, temp[0]
+
 def GetTableListFromDB(log,whichDB):
     try:
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
@@ -578,6 +595,25 @@ def CreateNewOrderSheet(log,whichDB,newOrderID):
         print("error")
         db.rollback()
     db.close()
+def GetSubOrderPanelsForPackage(log,whichDB,orderID,suborderID):
+    try:
+        db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
+                             passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
+    except:
+        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        if log:
+            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+        return -1, []
+    cursor = db.cursor()
+    sql = """SELECT `Index`,`订单号`,`子订单号`,`甲板`,`区域`,`房间`,`图纸`,`产品类型`,`面板代码`,`数量`,`高度`,`宽度`,`厚度`,`X面颜色`,`Y面颜色`,`Z面颜色`,`V面颜色`,`胶水单编号`,`重量`,`状态` from `%s` where `子订单号`='%s'""" %(str(orderID),str(suborderID))
+    cursor.execute(sql)
+    temp = cursor.fetchall()  # 获得压条信息
+    result =[]
+    for i in temp:
+        if not i[6][2:5].isdigit():
+            result.append(list(i))
+    db.close()
+    return 0, result
 
 
 def InsertNewOrderRecord(log,whichDB,newOrderID,newOrderName,subOrderIDList):
@@ -604,6 +640,26 @@ def InsertNewOrderRecord(log,whichDB,newOrderID,newOrderName,subOrderIDList):
         db.commit()  # 必须有，没有的话插入语句不会执行
     except:
         print("error")
+        db.rollback()
+    db.close()
+
+
+def UpdateSubOrderPackageState(log,whichDB,orderID,subOrderId,state):
+    try:
+        db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
+                             passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
+    except:
+        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        if log:
+            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+        return -1, []
+    cursor = db.cursor()
+    sql = "UPDATE `%s` SET `状态`='%s'  where `子订单号`='%s'" %(orderID,state,subOrderId)
+    try:
+        cursor.execute(sql)
+        db.commit()  # 必须有，没有的话插入语句不会执行
+    except:
+        print("error1")
         db.rollback()
     db.close()
 
@@ -641,6 +697,25 @@ def UpdataPanelGlueNoInDB(log,whichDB,orderID,index,glueNo):
         return -1, []
     cursor = db.cursor()
     sql = "UPDATE `%s` SET `胶水单编号`='%s'  where `Index`=%s" %(orderID,glueNo,int(index))
+    try:
+        cursor.execute(sql)
+        db.commit()  # 必须有，没有的话插入语句不会执行
+    except:
+        print("error1")
+        db.rollback()
+    db.close()
+
+def UpdataPanelWeightInDB(log,whichDB,orderID,index,weight):
+    try:
+        db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
+                             passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
+    except:
+        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        if log:
+            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+        return -1, []
+    cursor = db.cursor()
+    sql = "UPDATE `%s` SET `重量`='%.2f'  where `Index`=%s" %(orderID,weight,int(index))
     try:
         cursor.execute(sql)
         db.commit()  # 必须有，没有的话插入语句不会执行

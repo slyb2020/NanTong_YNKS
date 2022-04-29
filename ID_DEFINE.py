@@ -18,7 +18,7 @@ scheduleDir = os.path.join(dirName, '工单/')
 bluePrintDir = os.path.join(dirName, 'Stena 生产图纸/')
 # sys.path.append(os.path.split(dirName)[0])
 
-
+WHICHDB = 1
 
 dbHostName = ["127.0.0.1",'127.0.0.1']
 dbUserName = ['root','root']
