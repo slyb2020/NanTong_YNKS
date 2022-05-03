@@ -18,12 +18,13 @@ class BoxDetailViewPanel(wx.Panel):
         self.master = master
         self.direction = direction
         self.state=""
+        self.seperateSelectionNum=0
         vvbox=wx.BoxSizer(wx.VERTICAL)
         hhbox = wx.BoxSizer()
-        self.topDownloadBTN = wx.Button(self, label="▼ 将选定托盘下载到左侧工作区", size=(100, 50))
+        self.topDownloadBTN = wx.Button(self, label="▼ 将选定托盘下载到左侧工作区", size=(100, 50),name="将选定托盘下载到左侧工作区")
         self.topDownloadBTN.Bind(wx.EVT_BUTTON, self.OnTopDownloadBTN)
         self.topDownloadBTN.Enable(False)
-        self.topUploadBTN = wx.Button(self, label="▲ 将左侧工作区中的托盘上传到完成区", size=(100, 50))
+        self.topUploadBTN = wx.Button(self, label="▲ 将左侧工作区中的托盘上传到完成区", size=(100, 50),name="将左侧工作区中的托盘上传到完成区")
         self.topUploadBTN.Enable(False)
         hhbox.Add(self.topDownloadBTN, 1)
         hhbox.Add(self.topUploadBTN, 1)
@@ -39,8 +40,10 @@ class BoxDetailViewPanel(wx.Panel):
             hhbox.Add(self.frontViewPanel,1,wx.EXPAND)
         vvbox.Add(hhbox,1,wx.EXPAND)
         hhbox = wx.BoxSizer()
-        self.bottomDownloadBTN = wx.Button(self, label="▼", size=(100, 50))
-        self.bottonUploadBTN = wx.Button(self, label="▲", size=(100, 50))
+        self.bottomDownloadBTN = wx.Button(self, label="▼将所选面板打散至散板区", size=(100, 50))
+        self.bottomDownloadBTN.Enable(False)
+        self.bottonUploadBTN = wx.Button(self, label="▲将所选面板打包至当前托盘", size=(100, 50))
+        self.bottonUploadBTN.Enable(False)
         hhbox.Add(self.bottomDownloadBTN, 1)
         hhbox.Add(self.bottonUploadBTN, 1)
         vvbox.Add(hhbox,0,wx.EXPAND)
@@ -72,13 +75,21 @@ class BoxDetailViewPanel(wx.Panel):
                 error=False
                 if self.direction == wx.LEFT:
                     box.SetBackgroundColour(wx.Colour(234,124,233))
+                    self.master.boxList[i].state = "左"
                 else:
                     box.SetBackgroundColour(wx.Colour(234,233,124))
+                    self.master.boxList[i].state = "右"
                 self.state="占用"
-                self.master.boxList[i].state="左"
                 box.Refresh()
                 self.topDownloadBTN.Enable(False)
                 self.topUploadBTN.Enable(True)
+                if self.topViewPanel.panelSelection:
+                    self.bottomDownloadBTN.Enable(True)
+                else:
+                    self.bottomDownloadBTN.Enable(False)
+            if self.master.rightWorkingPackagePanel.state == '占用' and self.master.leftWorkingPackagePanel.state=='占用':
+                self.master.middleRightBTN.Enable(self.master.leftWorkingPackagePanel.topViewPanel.panelSelection)
+                self.master.middleLeftBTN.Enable(self.master.rightWorkingPackagePanel.topViewPanel.panelSelection)
         if error:
             wx.MessageBox("您还没有选择要移入左侧工作区的托盘！")
         # self.frame.SetBackgroundColour(wx.GREEN)
@@ -92,6 +103,7 @@ class TopViewPanel(wx.Panel):
         self.parent = parent
         self.data=data
         self.size=(0,0)
+        self.panelSelection = False
         # self.data = [
         #                 [(800,200),(500,200),(400,200)],
         #                 [(1000,200),(500,200),(500,200)],
@@ -155,8 +167,10 @@ class TopViewPanel(wx.Panel):
         for button in self.buttonList:
             button.SetBackgroundColour(wx.Colour(210,210,210))
         obj.SetBackgroundColour(wx.Colour(150,150,150))
-        # wx.MessageBox("面板编号: %d  订单号: %s-%s  甲板: %s  区域: %s  房间: %s\r\n图纸：%s  面板长：%s   面板宽：%s    "
-        #               "面板厚：%s\r\nX面颜色：%s      Y面颜色：%s    胶水单号：%s"%(data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[9],data[10],data[11],data[12],data[13],data[16]),"面板信息显示对话框")
+        if self.parent.state=="占用":
+            self.parent.bottomDownloadBTN.Enable(True)
+        self.panelSelection = True
+        event.Skip()
 
     def SetValue(self,size,data):
         self.size=size
@@ -170,7 +184,7 @@ class FrontViewPanel(wx.Panel):
         self.parent = parent
         self.state=""
         self.data = data
-        self.selectionNum=0
+        self.selectionNum=None
         # self.data = [
         #                 [
         #                     25,[
@@ -204,24 +218,6 @@ class FrontViewPanel(wx.Panel):
         btn.SetToolTip("整层打撒")
         btn.SetBitmap(bmp)
         hhbox.Add(btn,0)
-        bmp = wx.Bitmap(bitmapDir + '/view2.png')
-        btn = wx.Button(self, -1, size=(40, 40), name="重新计算托盘尺寸")
-        btn.SetBackgroundColour(wx.Colour(240,240,240))
-        btn.SetToolTip("重新计算托盘尺寸")
-        btn.SetBitmap(bmp)
-        hhbox.Add(btn,0)
-        bmp = wx.Bitmap(bitmapDir + '/up2.png')
-        btn = wx.Button(self, -1, size=(40, 40), name="上移一层")
-        btn.SetBackgroundColour(wx.Colour(240,240,240))
-        btn.SetToolTip("上移一层")
-        btn.SetBitmap(bmp)
-        hhbox.Add(btn,0)
-        bmp = wx.Bitmap(bitmapDir + '/down2.png')
-        btn = wx.Button(self, -1, size=(40, 40), name="下移一层")
-        btn.SetBackgroundColour(wx.Colour(240,240,240))
-        btn.SetToolTip("下移一层")
-        btn.SetBitmap(bmp)
-        hhbox.Add(btn,0)
 
         self.nameTXT = wx.TextCtrl(self,size=(10,40))
         self.nameTXT.SetBackgroundColour(wx.Colour(240,240,240))
@@ -238,9 +234,7 @@ class FrontViewPanel(wx.Panel):
     def OnButton(self,event):
         obj = event.GetEventObject()
         name = obj.GetName()
-        if not str(name).isdigit():
-            pass
-        else:
+        if str(name).isdigit():
             self.selectionNum = int(name)
             for button in self.occupyButtonList:
                 button.SetBackgroundColour(wx.Colour(111, 123, 245))
@@ -250,6 +244,20 @@ class FrontViewPanel(wx.Panel):
             self.freeButtonList[self.selectionNum].SetBackgroundColour(wx.RED)
             boxSize=(self.length,self.width)
             self.parent.topViewPanel.SetValue(boxSize,self.data[self.selectionNum])
+            self.parent.topViewPanel.panelSelection=False
+
+            if self.parent.master.rightWorkingPackagePanel.state == '占用' and self.parent.master.leftWorkingPackagePanel.state=='占用':
+                self.parent.master.middleRightBTN.Enable(self.parent.master.leftWorkingPackagePanel.topViewPanel.panelSelection)
+                self.parent.master.middleLeftBTN.Enable(self.parent.master.rightWorkingPackagePanel.topViewPanel.panelSelection)
+                # if self.parent.master.leftWorkingPackagePanel.topViewPanel.panelSelection:
+                #     self.parent.master.middleRightBTN.Enable(True)
+                # else:
+                #     self.parent.master.middleRightBTN.Enable(False)
+                # if self.parent.master.rightWorkingPackagePanel.topViewPanel.panelSelection:
+                #     self.parent.master.middleLeftBTN.Enable(True)
+                # else:
+                #     self.parent.master.middleLeftBTN.Enable(False)
+
 
 
     def ReCreate(self):
@@ -279,7 +287,6 @@ class FrontViewPanel(wx.Panel):
                 vbox.Add(hhbox,1,wx.EXPAND)
                 self.occupyButtonList.append(occupyButton)
                 self.freeButtonList.append(freeButton)
-
         self.panel.SetSizer(vbox)
         self.panel.Refresh()
         self.panel.SetAutoLayout(1)
@@ -287,6 +294,7 @@ class FrontViewPanel(wx.Panel):
 
     def SetValue(self,info):
         print("info=",info)
+        self.selectionNum = None
         self.name = info[0]
         self.length = info[1]
         self.width = info[2]
@@ -555,37 +563,18 @@ class PackageDialog(wx.Dialog):
         hhbox.Add(self.rightWorkingPackagePanel,1,wx.EXPAND)
         hhbox.Add((10,-1))
         vbox.Add(hhbox,0,wx.EXPAND)
-        self.bottomPackagePanel = scrolled.ScrolledPanel(self.panel,size=(100,150))
+        # self.bottomPackagePanel = scrolled.ScrolledPanel(self.panel,size=(100,150))
+        self.bottomPackagePanel = wx.Panel(self.panel,size=(100,150))
         vbox.Add(self.bottomPackagePanel,0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,10)
 
-        # vvbox=wx.BoxSizer(wx.VERTICAL)
-        # hhbox = wx.BoxSizer()
-        # self.rightTopDownloadBTN = wx.Button(self.rightWorkingPackagePanel,label="▼",size=(100,50))
-        # self.rightTopDownloadBTN.Bind(wx.EVT_BUTTON, self.OnRightTopDownloadBTN)
-        # self.rightTopUploadBTN = wx.Button(self.rightWorkingPackagePanel,label="▲",size=(100,50))
-        # self.rightTopDownloadBTN.Enable(False)
-        # self.rightTopUploadBTN.Enable(False)
-        # hhbox.Add(self.rightTopDownloadBTN,1)
-        # hhbox.Add(self.rightTopUploadBTN,1)
-        # vvbox.Add(hhbox,0,wx.EXPAND)
-        # hhbox = wx.BoxSizer()
-        # self.rightFrontViewPanel = FrontViewPanel(self.rightWorkingPackagePanel,size=(100,100))
-        # self.rightTopViewPanel = TopViewPanel(self.rightWorkingPackagePanel,size=(100,100))
-        # hhbox.Add(self.rightTopViewPanel,1,wx.EXPAND)
-        # hhbox.Add(self.rightFrontViewPanel,1,wx.EXPAND)
-        # vvbox.Add(hhbox,1,wx.EXPAND)
-        # hhbox = wx.BoxSizer()
-        # self.rightBottomDownloadBTN = wx.Button(self.rightWorkingPackagePanel,label="▼",size=(100,50))
-        # self.rightBottonUploadBTN = wx.Button(self.rightWorkingPackagePanel,label="▲",size=(100,50))
-        # hhbox.Add(self.rightBottomDownloadBTN,1)
-        # hhbox.Add(self.rightBottonUploadBTN,1)
-        # vvbox.Add(hhbox,0,wx.EXPAND)
-        # self.rightWorkingPackagePanel.SetSizer(vvbox)
-
         self.middleLeftAddBTN = wx.Button(self.middleControlPanel,label="<<+",size=(10,50))
+        self.middleLeftAddBTN.Enable(False)
         self.middleRightAddBTN = wx.Button(self.middleControlPanel,label="+>>",size=(10,50))
-        self.middleLeftBTN = wx.Button(self.middleControlPanel,label=">>",size=(10,20))
-        self.middleRightBTN = wx.Button(self.middleControlPanel,label="<<",size=(10,20))
+        self.middleRightAddBTN.Enable(False)
+        self.middleRightBTN = wx.Button(self.middleControlPanel,label=">>",size=(10,20))
+        self.middleRightBTN.Enable(False)
+        self.middleLeftBTN = wx.Button(self.middleControlPanel,label="<<",size=(10,20))
+        self.middleLeftBTN.Enable(False)
         vvbox = wx.BoxSizer(wx.VERTICAL)
         vvbox.Add(self.middleLeftAddBTN,0,wx.EXPAND)
         vvbox.Add(self.middleRightBTN,1,wx.EXPAND)
@@ -607,13 +596,40 @@ class PackageDialog(wx.Dialog):
         self.finishPackagePanel.SetupScrolling()
 
         hbox=wx.BoxSizer()
-        self.separatePanelCtrlList=[]
-        for i,board in enumerate(self.separatePanelList):
-            button=wx.Button(self.bottomPackagePanel,label=str(board[16]),size=(int(board[9])/12,int(board[10])/7),name=str(board[0]))
-            hbox.Add(button,0,wx.ALL,2)
+        vvbox = wx.BoxSizer(wx.VERTICAL)
+        bmp = wx.Bitmap(bitmapDir + '/e6.png')
+        self.SeperateRePackageBTN = wx.Button(self.bottomPackagePanel,size=(50,50))
+        self.SeperateRePackageBTN.SetToolTip("将所有散板自动打包")
+        self.SeperateRePackageBTN.SetBitmap(bmp)
+        vvbox.Add(self.SeperateRePackageBTN,0)
+        bmp = wx.Bitmap(bitmapDir + '/e4.png')
+        btn = wx.Button(self.bottomPackagePanel, -1, size=(50, 50), name="上移一层")
+        btn.SetToolTip("散板重新排序")
+        btn.SetBitmap(bmp)
+        vvbox.Add(btn,0)
+        bmp = wx.Bitmap(bitmapDir + '/e5.png')
+        btn = wx.Button(self.bottomPackagePanel, -1, size=(50, 50), name="下移一层")
+        btn.SetToolTip("参数设置")
+        btn.SetBitmap(bmp)
+        vvbox.Add(btn,0)
+        hbox.Add(vvbox,0)
+        hbox.Add((5,-1))
+        # bmp = wx.Bitmap(bitmapDir + '/icon4.jpg')
+        # btn = wx.Button(self, -1, size=(40, 40), name="上移一层")
+        # btn.SetBackgroundColour(wx.Colour(240,240,240))
+        # btn.SetToolTip("上移一层")
+        # btn.SetBitmap(bmp)
+        # hhbox.Add(btn,0)
+        # bmp = wx.Bitmap(bitmapDir + '/icon5.jpg')
+        # btn = wx.Button(self, -1, size=(40, 40), name="下移一层")
+        # btn.SetBackgroundColour(wx.Colour(240,240,240))
+        # btn.SetToolTip("下移一层")
+        # btn.SetBitmap(bmp)
+        # hhbox.Add(btn,0)
+        self.seperatePackagePanel = scrolled.ScrolledPanel(self.bottomPackagePanel)
+        hbox.Add(self.seperatePackagePanel,1,wx.EXPAND)
         self.bottomPackagePanel.SetSizer(hbox)
-        self.bottomPackagePanel.SetAutoLayout(1)
-        self.bottomPackagePanel.SetupScrolling()
+        self.SeperatePackagePanelReCreate()
 
         # self.panel.SetBackgroundColour(wx.Colour(234,219,212))
         self.panel.SetSizer(vbox)
@@ -643,6 +659,7 @@ class PackageDialog(wx.Dialog):
         sizer.Add(btnsizer, 0, wx.ALIGN_CENTER | wx.ALL, 10)
         self.SetSizer(sizer)
         sizer.Fit(self)
+        self.Bind(wx.EVT_BUTTON,self.OnButton)
         # btn_ok.Bind(wx.EVT_BUTTON, self.OnOk)
         # btn_cancel.Bind(wx.EVT_BUTTON, self.OnCancel)
         # manualInputBTN.Bind(wx.EVT_BUTTON, self.OnCancel)
@@ -653,6 +670,43 @@ class PackageDialog(wx.Dialog):
     # def OnCancel(self, event):
     #     # self.log.WriteText("操作员：'%s' 取消库存参数设置操作\r\n"%(self.parent.operator_name))
     #     event.Skip()
+    def OnButton(self,event):
+        obj = event.GetEventObject()
+        name = obj.GetName()
+        if ',' in name:#这说明按的是topViewPanel里的面板按钮
+            if self.rightWorkingPackagePanel.state == '占用' and self.leftWorkingPackagePanel.state=='占用':
+                if self.leftWorkingPackagePanel.topViewPanel.panelSelection:
+                    self.middleRightBTN.Enable(True)
+                if self.rightWorkingPackagePanel.topViewPanel.panelSelection:
+                    self.middleLeftBTN.Enable(True)
+        else:
+            if name.isdigit():#这说明按的是散板按钮
+                for i,button in enumerate(self.separatePanelCtrlList):
+                    if button.GetName()==name:
+                        self.seperateSelectionNum = i
+                        button.SetBackgroundColour(wx.Colour(240,150,150))
+                    else:
+                        button.SetBackgroundColour(wx.Colour(240,240,240))
+        event.Skip()
+        # print("here")
+        # print("self.leftWorkingPackagePanel.state=",self.leftWorkingPackagePanel.state)
+        # print("self.leftWorkingPackagePanel.frontViewPanel.selectionNum=",self.leftWorkingPackagePanel.frontViewPanel.selectionNum)
+        self.leftWorkingPackagePanel.bottonUploadBTN.Enable((self.leftWorkingPackagePanel.state == '占用' and self.leftWorkingPackagePanel.frontViewPanel.selectionNum!=None))
+        self.rightWorkingPackagePanel.bottonUploadBTN.Enable((self.rightWorkingPackagePanel.state == '占用' and self.rightWorkingPackagePanel.frontViewPanel.selectionNum!=None))
+    def SeperatePackagePanelReCreate(self):
+        self.seperatePackagePanel.DestroyChildren()
+        hbox=wx.BoxSizer()
+        self.separatePanelCtrlList=[]
+        for i,board in enumerate(self.separatePanelList):
+            button=wx.Button(self.seperatePackagePanel,label="%sX%sX%s"%(board[9],board[10],board[11]),size=(int(board[9])/12,int(board[10])/7),name=str(board[0]))
+            button.SetToolTip("面板编号: %d  订单号: %s-%s  甲板: %s  区域: %s  房间: %s\r\n图纸：%s  面板长：%s   "
+                              "面板宽：%s    面板厚：%s\r\nX面颜色：%s      Y面颜色：%s    胶水单号：%s" %
+                              (board[0],board[1],board[2],board[3],board[4],board[5],board[6],board[9],board[10],board[11],board[12],board[13],board[16]))
+            hbox.Add(button,0,wx.ALL,2)
+            self.separatePanelCtrlList.append(button)
+        self.seperatePackagePanel.SetSizer(hbox)
+        self.seperatePackagePanel.SetAutoLayout(1)
+        self.seperatePackagePanel.SetupScrolling()
 
     def ReCreateTopPanel(self):
         self.topPanel.DestroyChildren()
