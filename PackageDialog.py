@@ -18,7 +18,6 @@ class BoxDetailViewPanel(wx.Panel):
         self.master = master
         self.direction = direction
         self.state=""
-        self.seperateSelectionNum=0
         vvbox=wx.BoxSizer(wx.VERTICAL)
         hhbox = wx.BoxSizer()
         self.topDownloadBTN = wx.Button(self, label="▼ 将选定托盘下载到左侧工作区", size=(100, 50),name="将选定托盘下载到左侧工作区")
@@ -41,13 +40,57 @@ class BoxDetailViewPanel(wx.Panel):
         vvbox.Add(hhbox,1,wx.EXPAND)
         hhbox = wx.BoxSizer()
         self.bottomDownloadBTN = wx.Button(self, label="▼将所选面板打散至散板区", size=(100, 50))
+        self.bottomDownloadBTN.Bind(wx.EVT_BUTTON,self.OnBottomDownloadBTN)
         self.bottomDownloadBTN.Enable(False)
         self.bottonUploadBTN = wx.Button(self, label="▲将所选面板打包至当前托盘", size=(100, 50))
+        self.bottonUploadBTN.Bind(wx.EVT_BUTTON,self.OnBottomUploadBTN)
         self.bottonUploadBTN.Enable(False)
         hhbox.Add(self.bottomDownloadBTN, 1)
         hhbox.Add(self.bottonUploadBTN, 1)
         vvbox.Add(hhbox,0,wx.EXPAND)
         self.SetSizer(vvbox)
+
+    def OnBottomDownloadBTN(self,event):
+        self.master.seperatePanelList.append(self.data[self.frontViewPanel.selectionNum][self.topViewPanel.currentRow].pop(self.topViewPanel.currentCol))
+        for i,record in enumerate(self.data[self.frontViewPanel.selectionNum]):
+            if record==[]:
+                self.data[self.frontViewPanel.selectionNum].pop(i)
+        self.topViewPanel.currentRow=None
+        self.topViewPanel.currentCol=None
+        self.topViewPanel.ReCreate()
+        self.master.seperatePanelList.sort(key=itemgetter(11,10,9), reverse=True)
+        self.master.SeperatePackagePanelReCreate()
+
+    def OnBottomUploadBTN(self,event):
+        print("self.master.seperateSelectionNum=",self.master.seperateSelectionNum)
+        print("self.frontViewPanel.selectionNum",self.frontViewPanel.selectionNum)
+        print("self.length,self.width",self.length,self.width)
+        colWidth=0
+        for i, row in enumerate(self.data[self.frontViewPanel.selectionNum]):
+            rowLength = 0
+            colWidth+=int(row[0][10])
+            for j, col in enumerate(row):
+                rowLength+=int(col[9])
+            if int(col[10])>=int(self.master.seperatePanelList[self.master.seperateSelectionNum][10]):#如果新增的板宽不大于托盘此行的宽度
+                if (int(self.master.seperatePanelList[self.master.seperateSelectionNum][9]) + rowLength) <= self.length:
+                    print("We can drop it here!")
+                    self.data[self.frontViewPanel.selectionNum][i].append(
+                        self.master.seperatePanelList.pop(self.master.seperateSelectionNum))
+                    self.master.seperateSelectionNum = None
+                    self.master.SeperatePackagePanelReCreate()
+                    self.topViewPanel.ReCreate()
+                    return
+                else:
+                    print("Not long enough!")
+        if (colWidth+int(self.master.seperatePanelList[self.master.seperateSelectionNum][10]))<=self.width:
+            print("We can drop it in a new row")
+            self.data[self.frontViewPanel.selectionNum].append([self.master.seperatePanelList.pop(self.master.seperateSelectionNum)])
+            self.master.seperateSelectionNum=None
+            self.master.SeperatePackagePanelReCreate()
+            self.topViewPanel.ReCreate()
+
+        else:
+            wx.MessageBox("当前托盘的当前层无法容纳您所选的面板，请选择其它层或更换货盘后重试！")
 
     def SetValue(self,info):
         self.name = info[0]
@@ -104,6 +147,8 @@ class TopViewPanel(wx.Panel):
         self.data=data
         self.size=(0,0)
         self.panelSelection = False
+        self.currentRow=None
+        self.currentCol=None
         # self.data = [
         #                 [(800,200),(500,200),(400,200)],
         #                 [(1000,200),(500,200),(500,200)],
@@ -127,6 +172,7 @@ class TopViewPanel(wx.Panel):
         self.ReCreate()
 
     def ReCreate(self):
+        print("here",self.data)
         self.panel.DestroyChildren()
         (lengthPixel,widthPixel) = self.panel.GetClientSize()
         lengthCoef = float(self.size[0]/lengthPixel)
@@ -138,6 +184,8 @@ class TopViewPanel(wx.Panel):
             self.lengthTXT.SetLabel(str(self.size[0]))
             self.widthTXT.SetLabel(str(self.size[1]))
         vbox = wx.BoxSizer(wx.VERTICAL)
+        self.currentRow=None
+        self.currentCol=None
         totalRow = len(self.data)
         self.buttonList=[]
         if totalRow>0:
@@ -163,7 +211,9 @@ class TopViewPanel(wx.Panel):
         obj = event.GetEventObject()
         name = obj.GetName()
         name = name.split(',')
-        data = self.data[int(name[0])][int(name[1])]
+        self.currentRow = int(name[0])
+        self.currentCol = int(name[1])
+        data = self.data[self.currentRow][self.currentCol]
         for button in self.buttonList:
             button.SetBackgroundColour(wx.Colour(210,210,210))
         obj.SetBackgroundColour(wx.Colour(150,150,150))
@@ -471,7 +521,7 @@ class PackageDialog(wx.Dialog):
         self.panelTotalSquare=0
         self.boxTotalAmount=0
         self.boxList = []
-        self.separatePanelList=[
+        self.seperatePanelList=[
             [522, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', '2280', '300', '50', 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
             [523, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', '2100', '400', '50', 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
             [525, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', '1980', '350', '50', 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
@@ -488,8 +538,8 @@ class PackageDialog(wx.Dialog):
             [536, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', '680', '700', '50', 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
             [537, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', '680', '600', '50', 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
             [538, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', '680', '370', '50', 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
-            [539, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', '680', '450', '50', 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
-            [540, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', '680', '550', '50', 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
+            [539, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', '155', '300', '50', 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
+            [540, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', '395', '300', '50', 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
         ]
         dbName = "p%s"%self.orderID
         from DBOperation import GetTableListFromDB
@@ -597,17 +647,17 @@ class PackageDialog(wx.Dialog):
 
         hbox=wx.BoxSizer()
         vvbox = wx.BoxSizer(wx.VERTICAL)
-        bmp = wx.Bitmap(bitmapDir + '/e6.png')
+        bmp = wx.Bitmap(bitmapDir + '/package-add.png')
         self.SeperateRePackageBTN = wx.Button(self.bottomPackagePanel,size=(50,50))
-        self.SeperateRePackageBTN.SetToolTip("将所有散板自动打包")
+        self.SeperateRePackageBTN.SetToolTip("散板自动打包")
         self.SeperateRePackageBTN.SetBitmap(bmp)
         vvbox.Add(self.SeperateRePackageBTN,0)
-        bmp = wx.Bitmap(bitmapDir + '/e4.png')
+        bmp = wx.Bitmap(bitmapDir + '/e6.png')
         btn = wx.Button(self.bottomPackagePanel, -1, size=(50, 50), name="上移一层")
         btn.SetToolTip("散板重新排序")
         btn.SetBitmap(bmp)
         vvbox.Add(btn,0)
-        bmp = wx.Bitmap(bitmapDir + '/e5.png')
+        bmp = wx.Bitmap(bitmapDir + '/e4.png')
         btn = wx.Button(self.bottomPackagePanel, -1, size=(50, 50), name="下移一层")
         btn.SetToolTip("参数设置")
         btn.SetBitmap(bmp)
@@ -684,6 +734,7 @@ class PackageDialog(wx.Dialog):
                 for i,button in enumerate(self.separatePanelCtrlList):
                     if button.GetName()==name:
                         self.seperateSelectionNum = i
+                        print("self.seperateSelectionNum=",self.seperateSelectionNum)
                         button.SetBackgroundColour(wx.Colour(240,150,150))
                     else:
                         button.SetBackgroundColour(wx.Colour(240,240,240))
@@ -697,7 +748,7 @@ class PackageDialog(wx.Dialog):
         self.seperatePackagePanel.DestroyChildren()
         hbox=wx.BoxSizer()
         self.separatePanelCtrlList=[]
-        for i,board in enumerate(self.separatePanelList):
+        for i,board in enumerate(self.seperatePanelList):
             button=wx.Button(self.seperatePackagePanel,label="%sX%sX%s"%(board[9],board[10],board[11]),size=(int(board[9])/12,int(board[10])/7),name=str(board[0]))
             button.SetToolTip("面板编号: %d  订单号: %s-%s  甲板: %s  区域: %s  房间: %s\r\n图纸：%s  面板长：%s   "
                               "面板宽：%s    面板厚：%s\r\nX面颜色：%s      Y面颜色：%s    胶水单号：%s" %
