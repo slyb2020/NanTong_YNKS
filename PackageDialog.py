@@ -90,8 +90,13 @@ class BoxDetailViewPanel(wx.Panel):
             self.topViewPanel.ReCreate()
 
         else:
-            wx.MessageBox("当前托盘的当前层无法容纳您所选的面板，请选择其它层或更换货盘后重试！")
-
+            dlg = wx.MessageDialog(self, "当前托盘的当前层无法容纳您所选的面板，是否创建新的层？",
+                                   '信息提示窗口',
+                                   # wx.OK | wx.ICON_INFORMATION
+                                   wx.YES_NO | wx.NO_DEFAULT | wx.CANCEL | wx.ICON_INFORMATION
+                                   )
+            dlg.ShowModal()
+            dlg.Destroy()
     def SetValue(self,info):
         self.name = info[0]
         self.length = info[1]
@@ -266,6 +271,12 @@ class FrontViewPanel(wx.Panel):
         btn = wx.Button(self, -1, size=(40, 40), name="整层打撒")
         btn.SetBackgroundColour(wx.Colour(240,240,240))
         btn.SetToolTip("整层打撒")
+        btn.SetBitmap(bmp)
+        hhbox.Add(btn,0)
+        bmp = wx.Bitmap(bitmapDir + '/resize.png')
+        btn = wx.Button(self, -1, size=(40, 40), name="改变托盘尺寸")
+        btn.SetBackgroundColour(wx.Colour(240,240,240))
+        btn.SetToolTip("改变托盘尺寸")
         btn.SetBitmap(bmp)
         hhbox.Add(btn,0)
 
@@ -520,26 +531,27 @@ class PackageDialog(wx.Dialog):
         self.panelTotalWeight=0
         self.panelTotalSquare=0
         self.boxTotalAmount=0
+        self.sortTurn=0 #散板排序顺序0：按厚度优先，1:按长度很优先，2：按宽度优先
         self.boxList = []
         self.seperatePanelList=[
-            [522, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', '2280', '300', '50', 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
-            [523, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', '2100', '400', '50', 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
-            [525, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', '1980', '350', '50', 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
-            [526, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', '1980', '300', '50', 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
-            [527, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', '1500', '550', '50', 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
-            [528, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', '1500', '600', '50', 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
-            [529, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', '2280', '400', '50', 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
-            [530, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', '1480', '300', '50', 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
-            [531, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', '1300', '300', '50', 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
-            [532, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', '1280', '300', '50', 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
-            [533, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', '1180', '400', '50', 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
-            [534, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', '1080', '300', '50', 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
-            [535, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', '780', '500', '50', 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
-            [536, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', '680', '700', '50', 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
-            [537, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', '680', '600', '50', 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
-            [538, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', '680', '370', '50', 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
-            [539, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', '155', '300', '50', 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
-            [540, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', '395', '300', '50', 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
+            [522, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', 2280, 300, 50, 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
+            [523, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', 2100, 400, 50, 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
+            [525, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', 1980, 350, 50, 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
+            [526, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', 1980, 300, 50, 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
+            [527, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', 1500, 550, 50, 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
+            [528, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', 1500, 600, 50, 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
+            [529, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', 2280, 400, 50, 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
+            [530, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', 1480, 300, 50, 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
+            [531, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', 1300, 300, 50, 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
+            [532, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', 1280, 300, 50, 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
+            [533, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', 1180, 400, 50, 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
+            [534, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', 1080, 300, 50, 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
+            [535, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', 780, 500, 50, 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
+            [536, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', 680, 700, 50, 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
+            [537, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', 680, 600, 50, 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
+            [538, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', 680, 370, 50, 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
+            [539, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', 155, 300, 50, 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
+            [540, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', 395, 300, 50, 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
         ]
         dbName = "p%s"%self.orderID
         from DBOperation import GetTableListFromDB
@@ -653,10 +665,11 @@ class PackageDialog(wx.Dialog):
         self.SeperateRePackageBTN.SetBitmap(bmp)
         vvbox.Add(self.SeperateRePackageBTN,0)
         bmp = wx.Bitmap(bitmapDir + '/e6.png')
-        btn = wx.Button(self.bottomPackagePanel, -1, size=(50, 50), name="上移一层")
-        btn.SetToolTip("散板重新排序")
-        btn.SetBitmap(bmp)
-        vvbox.Add(btn,0)
+        self.reSortBTN = wx.Button(self.bottomPackagePanel, -1, size=(50, 50), name="上移一层")
+        self.reSortBTN.Bind(wx.EVT_BUTTON,self.OnReSortBTN)
+        self.reSortBTN.SetToolTip("散板重新排序")
+        self.reSortBTN.SetBitmap(bmp)
+        vvbox.Add(self.reSortBTN,0)
         bmp = wx.Bitmap(bitmapDir + '/e4.png')
         btn = wx.Button(self.bottomPackagePanel, -1, size=(50, 50), name="下移一层")
         btn.SetToolTip("参数设置")
@@ -720,6 +733,20 @@ class PackageDialog(wx.Dialog):
     # def OnCancel(self, event):
     #     # self.log.WriteText("操作员：'%s' 取消库存参数设置操作\r\n"%(self.parent.operator_name))
     #     event.Skip()
+
+    def OnReSortBTN(self,event):
+        if self.sortTurn==0:
+            self.seperatePanelList.sort(key=itemgetter(9,10,11), reverse=True)
+        elif self.sortTurn==1:
+            self.seperatePanelList.sort(key=itemgetter(10,9,11), reverse=True)
+        elif self.sortTurn==2:
+            self.seperatePanelList.sort(key=itemgetter(11,10,9), reverse=True)
+        self.SeperatePackagePanelReCreate()
+        self.sortTurn+=1
+        if self.sortTurn>2:
+            self.sortTurn=0
+
+
     def OnButton(self,event):
         obj = event.GetEventObject()
         name = obj.GetName()
