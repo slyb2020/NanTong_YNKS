@@ -41,7 +41,8 @@ from OrderManagementPanel import OrderManagementPanel
 from BoardManagementPanel import BoardManagementPanel
 from BluePrintManagementPanel import BluePrintManagementPanel
 from ExcelImport import XLSGridFrame
-from DBOperation import CreateNewOrderSheet,InsertNewOrderRecord,GetAllOrderList,GetOrderByOrderID,UpdateOrderStateInDB,GetPropertySchedulePageRowNumber
+from DBOperation import CreateNewOrderSheet,InsertNewOrderRecord,GetAllOrderList,GetOrderByOrderID,UpdateOrderStateInDB,\
+    GetPropertySchedulePageRowNumber,GetPackageListFromDB,CreatePackageSheetForOrder
 from ProductionScheduleAlgorithm import ProductionScheduleAlgorithm
 from ImportOrderDialog import ImportOrderFromExcelDialog
 from ProductionScheduleDialog import ProductionScheduleDialog,GlueSheetManagementDailog
@@ -699,7 +700,19 @@ class MainPanel(wx.Panel):
         self.work_zone_Panel.orderManagmentPanel.ReCreateOrderDetailTree()
 
     def OnPackageBTN(self,event):
-        dlg = PackageDialog(self, self.log, self.work_zone_Panel.orderManagmentPanel.data)
+        obj = event.GetEventObject()
+        name = obj.GetName()
+        suborderNumber = name[-1]
+        dbName = "%s"%self.currentOrderID
+        _,dbNameList = GetPackageListFromDB(self.log,WHICHDB)
+        print("dbNameList",dbNameList)
+        if dbName not in dbNameList:
+            print("No here")
+            CreatePackageSheetForOrder(self.log, WHICHDB, dbName)
+        else:
+            print("Exist")
+        print("data=",self.work_zone_Panel.orderManagmentPanel.data)
+        dlg = PackageDialog(self, self.log, self.work_zone_Panel.orderManagmentPanel.data,suborderNumber)
         dlg.CenterOnScreen()
         if dlg.ShowModal() == wx.ID_OK:
             pass

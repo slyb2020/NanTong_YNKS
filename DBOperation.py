@@ -519,7 +519,10 @@ def GetSubOrderPackageState(log,whichDB,orderID,suborderID):
     cursor.execute(sql)
     temp = cursor.fetchone()  # 获得压条信息
     db.close()
-    return 0, temp[0]
+    if temp==None:
+        return 0,[]
+    else:
+        return 0, temp[0]
 
 def GetTableListFromDB(log,whichDB):
     try:
@@ -532,6 +535,25 @@ def GetTableListFromDB(log,whichDB):
         return -1, []
     cursor = db.cursor()
     sql = "select table_name from information_schema.tables where table_schema='%s'"%orderDBName[whichDB]
+    cursor.execute(sql)
+    temp = cursor.fetchall()  # 获得压条信息
+    db.close()
+    result=[]
+    for i in temp:
+        result.append(i[0])
+    return 0, result
+
+def GetPackageListFromDB(log,whichDB):
+    try:
+        db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
+                             passwd='%s' % dbPassword[whichDB], db='%s' % packageDBName[whichDB], charset='utf8')
+    except:
+        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        if log:
+            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+        return -1, []
+    cursor = db.cursor()
+    sql = "select table_name from information_schema.tables where table_schema='%s'"%packageDBName[whichDB]
     cursor.execute(sql)
     temp = cursor.fetchall()  # 获得压条信息
     db.close()
@@ -644,6 +666,49 @@ def CreatePackagePanelSheetForOrder(log,whichDB,newOrderID):
         db.rollback()
     db.close()
 
+def CreatePackageSheetForOrder(log,whichDB,newOrderID):
+    try:
+        db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
+                             passwd='%s' % dbPassword[whichDB], db='%s' % packageDBName[whichDB], charset='utf8')
+    except:
+        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        if log:
+            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+        return -1, []
+    cursor = db.cursor()
+    sql = """CREATE TABLE `%s` (
+            `Index` INT(11) NOT NULL AUTO_INCREMENT,
+            `货盘编号` VARCHAR(50) NOT NULL COLLATE 'utf8_general_ci',
+            `货盘长` INT(10) UNSIGNED NOT NULL DEFAULT '0',
+            `货盘宽` INT(10) UNSIGNED NOT NULL DEFAULT '0',
+            `货盘高` INT(10) UNSIGNED NOT NULL DEFAULT '0',
+            `货盘层数` INT(10) UNSIGNED NOT NULL DEFAULT '0',
+            `货盘总重` VARCHAR(50) NOT NULL DEFAULT '0' COLLATE 'utf8_general_ci',
+            `货盘总面板数` VARCHAR(50) NOT NULL DEFAULT '0' COLLATE 'utf8_general_ci',
+            `货盘总面积` VARCHAR(50) NOT NULL DEFAULT '0' COLLATE 'utf8_general_ci',
+            `货盘所属子订单` VARCHAR(50) NOT NULL DEFAULT '0' COLLATE 'utf8_general_ci',
+            `货盘所属甲板` VARCHAR(50) NOT NULL DEFAULT '0' COLLATE 'utf8_general_ci',
+            `货盘所属区域` VARCHAR(50) NOT NULL DEFAULT '0' COLLATE 'utf8_general_ci',
+            `货盘所属房间` VARCHAR(50) NOT NULL DEFAULT '0' COLLATE 'utf8_general_ci',
+            `货盘打包方式` ENUM('区域','房间') NOT NULL COLLATE 'utf8_general_ci',
+            `货盘状态` VARCHAR(50) NOT NULL DEFAULT '0' COLLATE 'utf8_general_ci',
+            `货盘数据` TEXT NOT NULL COLLATE 'utf8_general_ci',
+            `备注` VARCHAR(50) NOT NULL DEFAULT '0' COLLATE 'utf8_general_ci',
+            PRIMARY KEY (`Index`) USING BTREE
+        )
+        COLLATE='utf8_general_ci'
+        ENGINE=InnoDB
+        AUTO_INCREMENT=0
+        ;
+        """%newOrderID
+    try:
+        cursor.execute(sql)
+        db.commit()  # 必须有，没有的话插入语句不会执行
+    except:
+        print("error new")
+        db.rollback()
+    db.close()
+
 def GetSubOrderPanelsForPackage(log,whichDB,orderID,suborderID=None):
     try:
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
@@ -667,6 +732,70 @@ def GetSubOrderPanelsForPackage(log,whichDB,orderID,suborderID=None):
     db.close()
     return 0, result
 
+def GetCurrentPackageData(log,whichDB,orderID,suborderID,deck,zone,room=None):
+    try:
+        db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
+                             passwd='%s' % dbPassword[whichDB], db='%s' % packageDBName[whichDB], charset='utf8')
+    except:
+        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        if log:
+            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+        return -1, []
+    cursor = db.cursor()
+    if deck == "全部":
+        if zone == "全部":
+            if room==None:
+                sql = """SELECT `货盘编号`, `货盘长`, `货盘宽`, `货盘高`, `货盘层数`, `货盘总重`, `货盘总面板数`, `货盘总面积`,  
+                `货盘所属子订单`,`货盘所属甲板`, `货盘所属区域`, `货盘所属房间`, `货盘打包方式`, `货盘状态`, `货盘数据` from `%s` 
+                where `货盘所属子订单`='%s' """ %(str(orderID), str(suborderID))
+            else:
+                sql = """SELECT `货盘编号`, `货盘长`, `货盘宽`, `货盘高`, `货盘层数`, `货盘总重`, `货盘总面板数`, `货盘总面积`,  
+                `货盘所属子订单`,`货盘所属甲板`, `货盘所属区域`, `货盘所属房间`, `货盘打包方式`, `货盘状态`, `货盘数据` from `%s` 
+                where `货盘所属子订单`='%s' and `货盘所属房间`='%s' """ \
+                      % (str(orderID), str(suborderID), str(room))
+        else:
+            if room==None:
+                sql = """SELECT `货盘编号`, `货盘长`, `货盘宽`, `货盘高`, `货盘层数`, `货盘总重`, `货盘总面板数`, `货盘总面积`,  
+                `货盘所属子订单`,`货盘所属甲板`, `货盘所属区域`, `货盘所属房间`, `货盘打包方式`, `货盘状态`, `货盘数据` from `%s` 
+                where `货盘所属子订单`='%s' and `货盘所属区域`='%s' """ \
+                      % (str(orderID), str(suborderID), str(zone))
+            else:
+                sql = """SELECT `货盘编号`, `货盘长`, `货盘宽`, `货盘高`, `货盘层数`, `货盘总重`, `货盘总面板数`, `货盘总面积`,  
+                `货盘所属子订单`,`货盘所属甲板`, `货盘所属区域`, `货盘所属房间`, `货盘打包方式`, `货盘状态`, `货盘数据` from `%s` 
+                where `货盘所属子订单`='%s' and `货盘所属区域`='%s' and `货盘所属房间`='%s' """ \
+                      % (str(orderID), str(suborderID), str(zone), str(room))
+    else:
+        if zone == "全部":
+            if room==None:
+                sql = """SELECT `货盘编号`, `货盘长`, `货盘宽`, `货盘高`, `货盘层数`, `货盘总重`, `货盘总面板数`, `货盘总面积`,  
+                `货盘所属子订单`,`货盘所属甲板`, `货盘所属区域`, `货盘所属房间`, `货盘打包方式`, `货盘状态`, `货盘数据` from `%s` 
+                where `货盘所属子订单`='%s' and `货盘所属甲板`='%s'  """ \
+                      % (str(orderID), str(suborderID), str(deck))
+            else:
+                sql = """SELECT `货盘编号`, `货盘长`, `货盘宽`, `货盘高`, `货盘层数`, `货盘总重`, `货盘总面板数`, `货盘总面积`,  
+                `货盘所属子订单`,`货盘所属甲板`, `货盘所属区域`, `货盘所属房间`, `货盘打包方式`, `货盘状态`, `货盘数据` from `%s` 
+                where `货盘所属子订单`='%s' and `货盘所属甲板`='%s'  and `货盘所属房间`='%s' """ \
+                      % (str(orderID), str(suborderID), str(deck), str(room))
+        else:
+            if room==None:
+                sql = """SELECT `货盘编号`, `货盘长`, `货盘宽`, `货盘高`, `货盘层数`, `货盘总重`, `货盘总面板数`, `货盘总面积`,  
+                `货盘所属子订单`,`货盘所属甲板`, `货盘所属区域`, `货盘所属房间`, `货盘打包方式`, `货盘状态`, `货盘数据` from `%s` 
+                where `货盘所属子订单`='%s' and `货盘所属甲板`='%s' and `货盘所属区域`='%s' """ \
+                      % (str(orderID), str(suborderID), str(deck), str(zone))
+            else:
+                sql = """SELECT `货盘编号`, `货盘长`, `货盘宽`, `货盘高`, `货盘层数`, `货盘总重`, `货盘总面板数`, `货盘总面积`,  
+                `货盘所属子订单`,`货盘所属甲板`, `货盘所属区域`, `货盘所属房间`, `货盘打包方式`, `货盘状态`, `货盘数据` from `%s` 
+                where `货盘所属子订单`='%s' and `货盘所属甲板`='%s' and `货盘所属区域`='%s' and `货盘所属房间`='%s' """ \
+                      % (str(orderID), str(suborderID), str(deck), str(zone), str(room))
+    cursor.execute(sql)
+    temp = cursor.fetchall()  # 获得压条信息
+    result =[]
+    for i in temp:
+        result.append(list(i))
+    db.close()
+    return 0, result
+
+
 def GetSubOrderPanelsForPackageFromPackageDB(log,whichDB,orderID,suborderID=None):
     try:
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
@@ -680,15 +809,19 @@ def GetSubOrderPanelsForPackageFromPackageDB(log,whichDB,orderID,suborderID=None
     dbName = "p%s"%orderID
     if suborderID == None:
 
-        sql = """SELECT `Index`,`订单号`, `子订单号`, `甲板`, `区域`, `房间`, `图纸`, `产品类型`, `面板代码`, `宽度`, `高度`, `厚度`, `X面颜色`, `Y面颜色`, `Z面颜色`, `V面颜色`, `备注`, `重量`, `胶水单编号`, `胶水单注释`, `状态`, `所属货盘` from `%s` """ % (str(dbName))
+        sql = """SELECT `Index`,`订单号`, `子订单号`, `甲板`, `区域`, `房间`, `图纸`, `产品类型`, `面板代码`,  `高度`,`宽度`, `厚度`, `X面颜色`, `Y面颜色`, `Z面颜色`, `V面颜色`, `备注`, `重量`, `胶水单编号`, `胶水单注释`, `状态`, `所属货盘` from `%s` """ % (str(dbName))
     else:
-        sql = """SELECT `Index`,`订单号`, `子订单号`, `甲板`, `区域`, `房间`, `图纸`, `产品类型`, `面板代码`, `宽度`, `高度`, `厚度`, `X面颜色`, `Y面颜色`, `Z面颜色`, `V面颜色`, `备注`, `重量`, `胶水单编号`, `胶水单注释`, `状态`, `所属货盘` from `%s` where `子订单号`='%s'""" %(str(dbName),str(suborderID))
+        sql = """SELECT `Index`,`订单号`, `子订单号`, `甲板`, `区域`, `房间`, `图纸`, `产品类型`, `面板代码`,  `高度`,`宽度`, `厚度`, `X面颜色`, `Y面颜色`, `Z面颜色`, `V面颜色`, `备注`, `重量`, `胶水单编号`, `胶水单注释`, `状态`, `所属货盘` from `%s` where `子订单号`='%s'""" %(str(dbName),str(suborderID))
     cursor.execute(sql)
     temp = cursor.fetchall()  # 获得压条信息
     result =[]
     for i in temp:
         if not i[6][2:5].isdigit():
-            result.append(list(i))
+            x = list(i)
+            x[9]=int(x[9])
+            x[10]=int(x[10])
+            x[11]=int(x[11])
+            result.append(x)
     db.close()
     return 0, result
 
@@ -999,11 +1132,12 @@ def InsertPanelDetailIntoPackageDB(log, whichDB, orderTabelName, orderDataList):
             log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
         return -1, []
     cursor = db.cursor()
+    print("here:indb",orderDataList[0])
                               # [64731,      '1',          '3', '9','Corridor','C.C72.0005', 'C72', 'H40RDA',  '400', '1280',  '50',  'RAL9010',    'G',   'None', 'None',     '',     '3.07', '64731-0102',  '',       '',      '']
     for data in orderDataList:
-        sql="""INSERT INTO `%s`(`订单号`,  `子订单号`      ,`甲板`,`区域`  ,`房间`,   `图纸`    ,`产品类型`,`面板代码`  ,`宽度` ,`高度`, `厚度`,  `X面颜色`, `Y面颜色`,`Z面颜色`,  `V面颜色`,`备注`,   `重量`, `胶水单编号`   ,`胶水单注释`,`状态`,`所属货盘`)
-        VALUES (                  %d,      '%s',          '%s', '%s',  '%s',     '%s',       '%s'  ,  '%s'    , '%s',  '%s',   '%s',   '%s',      '%s',     '%s',     '%s',   '%s',    '%s',    '%s',      '%s',      '%s',   '%s')"""\
-      %(orderTabelName    ,int(data[0]),int(data[1]),  data[2],data[3],data[4], data[5],   data[6] ,data[7],   data[8],data[9],data[10],data[11],data[12],data[13],data[14],data[15],data[16],data[17]   ,data[18],data[19],data[20])
+        sql="""INSERT INTO `%s`(`订单号`,  `子订单号`      ,`甲板`,`区域`  ,`房间`,   `图纸`    ,`产品类型`,`面板代码`  ,`高度` ,`宽度`, `厚度`,  `X面颜色`, `Y面颜色`,`Z面颜色`,  `V面颜色`, `胶水单编号`, `重量`   ,`胶水单注释`,`状态`,`所属货盘`)
+        VALUES (                  %d,      '%s',          '%s', '%s',  '%s',     '%s',       '%s'  ,  '%s'    , '%s',  '%s',   '%s',   '%s',      '%s',     '%s',     '%s',       '%s',    '%s',    '%s',      '%s',    '%s')"""\
+      %(orderTabelName    ,int(data[0]),int(data[1]),  data[2],data[3],data[4], data[5],   data[6] ,data[7],   data[8],data[9],data[10],data[11],data[12],data[13],  data[14], data[15],data[16] ,data[17], data[18], data[19])
         cursor.execute(sql)
         try:
             db.commit()  # 必须有，没有的话插入语句不会执行
