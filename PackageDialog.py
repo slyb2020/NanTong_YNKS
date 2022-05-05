@@ -4,10 +4,11 @@ import wx.lib.scrolledpanel as scrolled
 from ID_DEFINE import *
 from DBOperation import GetSubOrderPackageState,UpdateSubOrderPackageState,GetSubOrderPanelsForPackage,\
     CreatePackagePanelSheetForOrder,InsertPanelDetailIntoPackageDB,GetSubOrderPanelsForPackageFromPackageDB,\
-    GetCurrentPackageData
+    GetCurrentPackageData,CreateNewPackageBoxInBoxDB,GetSpecificPackageBoxData,UpdateSpecificPackageBoxInfo
 import numpy as np
 from operator import itemgetter
 import wx.lib.agw.pygauge as PG
+import json
 
 dirName = os.path.dirname(os.path.abspath(__file__))
 bitmapDir = os.path.join(dirName, 'bitmaps')
@@ -75,54 +76,59 @@ class BoxDetailViewPanel(wx.Panel):
         # print("self.frontViewPanel.selectionNum",self.frontViewPanel.selectionNum)
         # print("self.length,self.width",self.length,self.width)
         colWidth=0
-        for i, row in enumerate(self.data[self.frontViewPanel.selectionNum]):
-            rowLength = 0
-            colWidth+=int(row[0][10])
-            for j, col in enumerate(row):
-                rowLength+=int(col[9])
-            if int(col[10])>=int(self.master.currentSeperatePanelList[self.master.seperateSelectionNum][10]):#如果新增的板宽不大于托盘此行的宽度
-                if (int(self.master.currentSeperatePanelList[self.master.seperateSelectionNum][9]) + rowLength) <= self.length:
-                    print("We can drop it here!")
-                    self.data[self.frontViewPanel.selectionNum][i].append(
-                        self.master.currentSeperatePanelList.pop(self.master.seperateSelectionNum))
-                    panelID = self.data[self.frontViewPanel.selectionNum][i][-1][0]
-                    for k, record in enumerate(self.master.panelList):
-                        if record[0] == panelID:
-                            self.master.panelList[k][-1]=self.name
-                            break
-                    self.master.seperateSelectionNum = None
-                    self.master.SeperatePackagePanelReCreate()
-                    self.topViewPanel.ReCreate()
-                    return
-                else:
-                    print("Not long enough!")
-        if (colWidth+int(self.master.currentSeperatePanelList[self.master.seperateSelectionNum][10]))<=self.width:
-            print("We can drop it in a new row")
-            self.data[self.frontViewPanel.selectionNum].append([self.master.currentSeperatePanelList.pop(self.master.seperateSelectionNum)])
-            print("append no", self.data[self.frontViewPanel.selectionNum][-1][0])
-            panelID = self.data[self.frontViewPanel.selectionNum][-1][0][0]
-            print("here1")
-            for k, record in enumerate(self.master.panelList):
-                if record[0] == panelID:
-                    self.master.panelList[k][-1] = self.name
-                    break
-            print("here2")
-            self.master.seperateSelectionNum=None
-            self.master.SeperatePackagePanelReCreate()#################################################################################这个函数有问题，执行时间过长
-            print("here3")
-            self.topViewPanel.ReCreate()
-            print("here4")
-            self.frontViewPanel.ReCreate()
-            print("here5")
-            self.master.currentSeperatePanellAmountTXT.SetValue(str(len(self.master.currentSeperatePanelList)))
+        if int(self.master.currentSeperatePanelList[self.master.seperateSelectionNum][9])>self.length:
+            wx.MessageBox("面板长度超过托盘长度！")
+        elif int(self.master.currentSeperatePanelList[self.master.seperateSelectionNum][10])>self.width:
+            wx.MessageBox("面板宽度超过托盘宽度！")
         else:
-            dlg = wx.MessageDialog(self, "当前托盘的当前层无法容纳您所选的面板，是否创建新的层？",
-                                   '信息提示窗口',
-                                   # wx.OK | wx.ICON_INFORMATION
-                                   wx.YES_NO | wx.NO_DEFAULT | wx.CANCEL | wx.ICON_INFORMATION
-                                   )
-            dlg.ShowModal()
-            dlg.Destroy()
+            for i, row in enumerate(self.data[self.frontViewPanel.selectionNum]):
+                rowLength = 0
+                colWidth+=int(row[0][10])
+                for j, col in enumerate(row):
+                    rowLength+=int(col[9])
+                if int(col[10])>=int(self.master.currentSeperatePanelList[self.master.seperateSelectionNum][10]):#如果新增的板宽不大于托盘此行的宽度
+                    if (int(self.master.currentSeperatePanelList[self.master.seperateSelectionNum][9]) + rowLength) <= self.length:
+                        print("We can drop it here!")
+                        self.data[self.frontViewPanel.selectionNum][i].append(
+                            self.master.currentSeperatePanelList.pop(self.master.seperateSelectionNum))
+                        panelID = self.data[self.frontViewPanel.selectionNum][i][-1][0]
+                        for k, record in enumerate(self.master.panelList):
+                            if record[0] == panelID:
+                                self.master.panelList[k][-1]=self.name
+                                break
+                        self.master.seperateSelectionNum = None
+                        self.master.SeperatePackagePanelReCreate()
+                        self.topViewPanel.ReCreate()
+                        return
+                    else:
+                        print("Not long enough!")
+            if (colWidth+int(self.master.currentSeperatePanelList[self.master.seperateSelectionNum][10]))<=self.width:
+                print("We can drop it in a new row")
+                self.data[self.frontViewPanel.selectionNum].append([self.master.currentSeperatePanelList.pop(self.master.seperateSelectionNum)])
+                print("append no", self.data[self.frontViewPanel.selectionNum][-1][0])
+                panelID = self.data[self.frontViewPanel.selectionNum][-1][0][0]
+                print("here1")
+                for k, record in enumerate(self.master.panelList):
+                    if record[0] == panelID:
+                        self.master.panelList[k][-1] = self.name
+                        break
+                print("here2")
+                self.master.seperateSelectionNum=None
+                self.master.SeperatePackagePanelReCreate()#################################################################################这个函数有问题，执行时间过长
+                print("here3")
+                self.topViewPanel.ReCreate()
+                print("here4")
+                self.frontViewPanel.ReCreate()
+                print("here5")
+                self.master.currentSeperatePanellAmountTXT.SetValue(str(len(self.master.currentSeperatePanelList)))
+            else:
+                dlg = wx.MessageDialog(self, "当前托盘的当前层无法容纳您所选的面板，是否创建新的层？",
+                                       '信息提示窗口',
+                                       # wx.OK | wx.ICON_INFORMATION
+                                       wx.YES_NO | wx.NO_DEFAULT | wx.CANCEL | wx.ICON_INFORMATION
+                                       )
+                dlg.ShowModal()
+                dlg.Destroy()
     def SetValue(self,info):
         self.name = info[0]
         self.length = info[1]
@@ -349,7 +355,9 @@ class FrontViewPanel(wx.Panel):
     def ReCreate(self):
         self.panel.DestroyChildren()
         vbox = wx.BoxSizer(wx.VERTICAL)
+        print("self.data=",self.data)
         totalLayer = len(self.data)
+        print("totalLayer=",totalLayer)
         self.occupyButtonList=[]
         self.freeButtonList=[]
         (L,W)=self.panel.GetClientSize()
@@ -361,7 +369,9 @@ class FrontViewPanel(wx.Panel):
                 for row in self.data[i]:
                     for col in row:
                         square += (int(col[9])*int(col[10]))
+                print("square=",square)
                 percent = float(square/self.boxSquare)
+                print("percent=",percent)
                 occupyButton = wx.Button(self.panel,label="第%d层"%(i),size=(L*percent,-1),name="%s"%(i))
                 occupyButton.SetForegroundColour(wx.Colour(wx.WHITE))
                 occupyButton.SetBackgroundColour(wx.Colour(111, 123, 245))
@@ -397,6 +407,7 @@ class FrontViewPanel(wx.Panel):
         self.boxState = info[13]
         self.data = info[14]
         self.boxSquare = float(self.length)*float(self.width)
+        print( "float(self.length)*float(self.width)=",self.length,self.width)
         self.ReCreate()
 
 
@@ -444,6 +455,7 @@ class MyGauge(PG.PyGauge):
 
 class PackagePanel(wx.Panel):
     def __init__(self,parent,master,info=[]):
+        print("info=",info)
         self.info = info
         self.master = master
         self.name = info[0]
@@ -605,6 +617,7 @@ class PackageDialog(wx.Dialog):
                     self.data.append(temp)
             InsertPanelDetailIntoPackageDB(self.log,WHICHDB,dbName,self.data)
         _, self.packageState = GetSubOrderPackageState(self.log,WHICHDB,dbName,self.suborderID)
+        print("打包状态=",self.packageState)
         if self.packageState not in ["按房间打包","按区域打包"]:
             self.packageState = "未打包"
         _, self.panelList = GetSubOrderPanelsForPackageFromPackageDB(self.log,WHICHDB,self.orderID,self.suborderID)
@@ -774,7 +787,12 @@ class PackageDialog(wx.Dialog):
             else:
                 dlg = CreateNewPackageBoxDialog(self, self.orderID, self.suborderID, self.deckName, self.zoneName)
             dlg.CenterOnScreen()
-            if dlg.ShowModal() == wx.ID_OK:
+            reCode = dlg.ShowModal()
+            dlg.Destroy()
+            print("reCode=",reCode)
+            if reCode != wx.ID_CANCEL:
+                _,temp = GetSpecificPackageBoxData(self.log,WHICHDB, self.orderID,reCode)
+                print("temp=",temp)
                 data = [[], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [],
                         [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [],
                         [], [], [], [], [], [], [], [], [], [], [], []]
@@ -782,23 +800,24 @@ class PackageDialog(wx.Dialog):
                         data]
                 self.currentPackageData.append(temp)
                 self.FinishPackagePanelReCreate()
-            dlg.Destroy()
 
 
     def FinishPackagePanelReCreate(self):
+        self.finishPackagePanel.DestroyChildren()
+        self.packageList=[]
+        self.boxList=[]
         hbox = wx.BoxSizer()
-        self.packageList = []
-        # for i in range(20):
-        #     temp = ["托盘%s"%i,2280,600,600,11,'345','100','2000','1','3','9','Corridor','房间','','']
-        #     package = PackagePanel(self.finishPackagePanel,self,info=temp)
-        #     self.packageList.append(package)
-        #     self.boxList.append(package)
-        #     hbox.Add(package)
-        for data in self.currentPackageData:
-            package = PackagePanel(self.finishPackagePanel, self, info=data)
-            self.packageList.append(package)
-            self.boxList.append(package)
-            hbox.Add(package)
+        if self.packageState!="":
+            if self.packageState == "按房间打包":
+                _,self.currentPackageData = GetCurrentPackageData(self.log,WHICHDB,self.orderID,self.suborderID,self.deckName,self.zoneName,self.roomName)
+            elif self.packageState == "按区域打包":
+                _,self.currentPackageData = GetCurrentPackageData(self.log, WHICHDB, self.orderID, self.suborderID, self.deckName,
+                                                         self.zoneName, self.roomName)
+            for data in self.currentPackageData:
+                package = PackagePanel(self.finishPackagePanel, self, info=data)
+                self.packageList.append(package)
+                self.boxList.append(package)
+                hbox.Add(package)
         self.finishPackagePanel.SetSizer(hbox)
         self.finishPackagePanel.SetAutoLayout(1)
         self.finishPackagePanel.SetupScrolling()
@@ -964,6 +983,7 @@ class PackageDialog(wx.Dialog):
         hhbox.Add(wx.StaticText(self.topMiddlePanel, label='甲板:'), 0, wx.TOP, 5)
         temp=np.array(self.panelList)[:,3]
         choiceList = list(set(temp))
+        choiceList.sort()
         self.deckName = choiceList[0]
         self.deckCOMBO = wx.ComboBox(self.topMiddlePanel, value=self.deckName, size=(60, 25), choices=choiceList, style=wx.TE_READONLY)
         self.deckCOMBO.Bind(wx.EVT_COMBOBOX,self.OnDeckCOMBOChanged)
@@ -978,6 +998,7 @@ class PackageDialog(wx.Dialog):
             if str(record[3])==deck:
                 temp.append(str(record[4]))
         choiceList = list(set(temp))
+        choiceList.sort()
         self.zoneName = choiceList[0]
         self.zoneCOMBO = wx.ComboBox(self.topMiddlePanel, value=choiceList[0], size=(60, 25),choices=choiceList, style=wx.TE_READONLY)
         self.zoneCOMBO.Bind(wx.EVT_COMBOBOX,self.OnZoneCOMBOChanged)
@@ -993,6 +1014,7 @@ class PackageDialog(wx.Dialog):
             if str(record[4])==zone and str(record[3])==deck:
                 temp.append(str(record[5]))
         choiceList = list(set(temp))
+        choiceList.sort()
         self.roomName=choiceList[0]
         self.roomCOMBO = wx.ComboBox(self.topMiddlePanel, value=choiceList[0], size=(110, 25),choices=choiceList, style=wx.TE_READONLY)
         self.roomCOMBO.SetBackgroundColour(wx.WHITE)
@@ -1068,6 +1090,7 @@ class PackageDialog(wx.Dialog):
                     self.currentPanelList.append(record)
                     tempRoom.append(record[5])
             roomList = list(set(tempRoom))
+            roomList.sort()
             self.roomName=roomList[0]
             self.roomCOMBO.SetItems(roomList)
             self.roomCOMBO.SetValue(self.roomName)
@@ -1086,7 +1109,9 @@ class PackageDialog(wx.Dialog):
                     tempRoom.append(record[5])
                     self.currentPanelList.append(record)
             zoneList = list(set(tempZone))
+            zoneList.sort()
             roomList = list(set(tempRoom))
+            roomList.sort()
             self.zoneName=zoneList[0]
             self.zoneCOMBO.SetItems(zoneList)
             self.zoneCOMBO.SetValue(self.zoneName)
@@ -1189,6 +1214,7 @@ class PackageDialog(wx.Dialog):
                     self.packageState=self.packageStateCOMBO.GetValue()
                     self.ReCreateTopMiddlePanel()
                 else:
+                    self.packageState="未打包"
                     self.packageStateCOMBO.SetValue("未打包")
                 dlg.Destroy()
             elif self.packageStateCOMBO.GetValue()=="未打包":
@@ -1215,7 +1241,7 @@ class PackageDialog(wx.Dialog):
                 else:
                     self.packageStateCOMBO.SetValue(self.packageState)
                 dlg.Destroy()
-
+            UpdateSubOrderPackageState(self.log,WHICHDB,self.orderID,self.suborderID,self.packageState)
 
 
 
@@ -1274,12 +1300,15 @@ class CreateNewPackageBoxDialog(wx.Dialog):
     def __init__(self, parent, orderID, subOrderID, deckName, zoneName, roomName="", size=wx.DefaultSize, pos=wx.DefaultPosition,
                  style=wx.DEFAULT_DIALOG_STYLE):
         wx.Dialog.__init__(self)
-        print("roomName=",roomName)
+        self.parent = parent
+        self.orderID = orderID
+        self.subOrderID = subOrderID
         if roomName == "":
             self.packageMode = "按区域打包"
+            self.boxNum = CreateNewPackageBoxInBoxDB(self.parent.log,WHICHDB,orderID, subOrderID, deckName, zoneName)
         else:
             self.packageMode = "按房间打包"
-        print("self.packageMode=",self.packageMode)
+            self.boxNum = CreateNewPackageBoxInBoxDB(self.parent.log,WHICHDB,orderID, subOrderID, deckName, zoneName, roomName)
         self.SetExtraStyle(wx.DIALOG_EX_METAL)
         self.Create(parent, -1, "新建托盘参数输入对话框", pos, size, style)
         sizer = wx.BoxSizer(wx.VERTICAL)
@@ -1336,26 +1365,26 @@ class CreateNewPackageBoxDialog(wx.Dialog):
         hhbox = wx.BoxSizer()
         hhbox.Add((20,-1))
         hhbox.Add(wx.StaticText(self.panel, label="托盘编号：", size=(80, -1)), 0, wx.TOP, 5)
-        boxNameTXT = wx.TextCtrl(self.panel, value=deckName, size=(100, 25), style=wx.TE_READONLY)
+        boxNameTXT = wx.TextCtrl(self.panel, value="托盘%s"%self.boxNum, size=(100, 25), style=wx.TE_READONLY)
         hhbox.Add(boxNameTXT, 0)
 
         hhbox.Add((40, -1))
         hhbox.Add(wx.StaticText(self.panel, label="托盘层数：", size=(80, -1)), 0, wx.TOP, 5)
-        boxLayerSPIN = wx.SpinCtrl(self.panel, value=str(10), size=(120, 25), min=1,max=80)
-        hhbox.Add(boxLayerSPIN, 0)
+        self.boxLayerSPIN = wx.SpinCtrl(self.panel, value=str(50), size=(120, 25), min=1,max=80)
+        hhbox.Add(self.boxLayerSPIN, 0)
         vbox.Add(hhbox, 0)
 
         vbox.Add((-1,20))
         hhbox = wx.BoxSizer()
         hhbox.Add((20,-1))
         hhbox.Add(wx.StaticText(self.panel, label="托盘长：", size=(80, -1)), 0, wx.TOP, 5)
-        boxLengthSPIN = wx.SpinCtrl(self.panel, value=str(2600), size=(100, 25),min=100,max=4000)
-        hhbox.Add(boxLengthSPIN, 0)
+        self.boxLengthSPIN = wx.SpinCtrl(self.panel, value=str(2600), size=(100, 25),min=100,max=4000)
+        hhbox.Add(self.boxLengthSPIN, 0)
 
         hhbox.Add((40, -1))
         hhbox.Add(wx.StaticText(self.panel, label="托盘宽：", size=(80, -1)), 0, wx.TOP, 5)
-        boxWidthSPIN = wx.SpinCtrl(self.panel, value=str(700), size=(120, 25),min=100,max=1200)
-        hhbox.Add(boxWidthSPIN, 0)
+        self.boxWidthSPIN = wx.SpinCtrl(self.panel, value=str(700), size=(120, 25),min=100,max=1200)
+        hhbox.Add(self.boxWidthSPIN, 0)
         vbox.Add(hhbox, 0)
 
         self.panel.SetSizer(vbox)
@@ -1373,3 +1402,15 @@ class CreateNewPackageBoxDialog(wx.Dialog):
         sizer.Add(btnsizer, 0, wx.ALIGN_CENTER | wx.ALL, 10)
         self.SetSizer(sizer)
         sizer.Fit(self)
+        btn_ok.Bind(wx.EVT_BUTTON,self.OnOkButton)
+
+    def OnOkButton(self,event):
+        boxLayer = int(self.boxLayerSPIN.GetValue())
+        boxLength = int(self.boxLengthSPIN.GetValue())
+        boxWidth = int(self.boxWidthSPIN.GetValue())
+        boxHeight = 25*boxLayer
+        data=[]
+        for i in range(boxLayer):
+            data.append([])
+        UpdateSpecificPackageBoxInfo(self.parent.log,WHICHDB,self.orderID,self.boxNum,boxLength,boxWidth,boxHeight,boxLayer,data)
+        self.EndModal(self.boxNum)

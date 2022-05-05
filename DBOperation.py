@@ -2,6 +2,7 @@ from ID_DEFINE import *
 import pymysql as MySQLdb
 import time
 import datetime
+import json
 
 
 def GetEnterpriseInfo(log, whichDB):
@@ -732,7 +733,7 @@ def GetSubOrderPanelsForPackage(log,whichDB,orderID,suborderID=None):
     db.close()
     return 0, result
 
-def GetCurrentPackageData(log,whichDB,orderID,suborderID,deck,zone,room=None):
+def UpdateSpecificPackageBoxInfo(log,whichDB,orderID,index,boxLength,boxWidth,boxHeight,boxLayer,data):
     try:
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % packageDBName[whichDB], charset='utf8')
@@ -742,56 +743,67 @@ def GetCurrentPackageData(log,whichDB,orderID,suborderID,deck,zone,room=None):
             log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
         return -1, []
     cursor = db.cursor()
-    if deck == "全部":
-        if zone == "全部":
-            if room==None:
-                sql = """SELECT `货盘编号`, `货盘长`, `货盘宽`, `货盘高`, `货盘层数`, `货盘总重`, `货盘总面板数`, `货盘总面积`,  
-                `货盘所属子订单`,`货盘所属甲板`, `货盘所属区域`, `货盘所属房间`, `货盘打包方式`, `货盘状态`, `货盘数据` from `%s` 
-                where `货盘所属子订单`='%s' """ %(str(orderID), str(suborderID))
-            else:
-                sql = """SELECT `货盘编号`, `货盘长`, `货盘宽`, `货盘高`, `货盘层数`, `货盘总重`, `货盘总面板数`, `货盘总面积`,  
-                `货盘所属子订单`,`货盘所属甲板`, `货盘所属区域`, `货盘所属房间`, `货盘打包方式`, `货盘状态`, `货盘数据` from `%s` 
-                where `货盘所属子订单`='%s' and `货盘所属房间`='%s' """ \
-                      % (str(orderID), str(suborderID), str(room))
-        else:
-            if room==None:
-                sql = """SELECT `货盘编号`, `货盘长`, `货盘宽`, `货盘高`, `货盘层数`, `货盘总重`, `货盘总面板数`, `货盘总面积`,  
-                `货盘所属子订单`,`货盘所属甲板`, `货盘所属区域`, `货盘所属房间`, `货盘打包方式`, `货盘状态`, `货盘数据` from `%s` 
-                where `货盘所属子订单`='%s' and `货盘所属区域`='%s' """ \
-                      % (str(orderID), str(suborderID), str(zone))
-            else:
-                sql = """SELECT `货盘编号`, `货盘长`, `货盘宽`, `货盘高`, `货盘层数`, `货盘总重`, `货盘总面板数`, `货盘总面积`,  
-                `货盘所属子订单`,`货盘所属甲板`, `货盘所属区域`, `货盘所属房间`, `货盘打包方式`, `货盘状态`, `货盘数据` from `%s` 
-                where `货盘所属子订单`='%s' and `货盘所属区域`='%s' and `货盘所属房间`='%s' """ \
-                      % (str(orderID), str(suborderID), str(zone), str(room))
+    sql ="""UPDATE `%s` SET `货盘长`=%s, `货盘宽`=%s, `货盘高`=%s, `货盘层数`=%s ,`货盘数据`='%s' where `Index`=%s""" \
+          %(str(orderID),boxLength,boxWidth,boxHeight,boxLayer,json.dumps(data),index)
+    try:
+        cursor.execute(sql)
+        db.commit()  # 必须有，没有的话插入语句不会执行
+    except:
+        print("error1")
+        db.rollback()
+    db.close()
+
+
+
+def GetSpecificPackageBoxData(log,whichDB,orderID,index):
+    try:
+        db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
+                             passwd='%s' % dbPassword[whichDB], db='%s' % packageDBName[whichDB], charset='utf8')
+    except:
+        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        if log:
+            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+        return -1, []
+    cursor = db.cursor()
+    sql = """SELECT `货盘编号`, `货盘长`, `货盘宽`, `货盘高`, `货盘层数`, `货盘总重`, `货盘总面板数`, `货盘总面积`,  
+    `货盘所属子订单`,`货盘所属甲板`, `货盘所属区域`, `货盘所属房间`, `货盘打包方式`, `货盘状态`, `货盘数据` from `%s` 
+    where `Index`=%s """ \
+          % (str(orderID), index)
+    cursor.execute(sql)
+    temp = cursor.fetchone()  # 获得压条信息
+    db.close()
+    return 0, temp
+
+
+
+def GetCurrentPackageData(log,whichDB,orderID,suborderID,deck,zone,room=None):
+    print("orderID,suborderID,deck,zone,room",orderID,suborderID,deck,zone,room)
+    try:
+        db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
+                             passwd='%s' % dbPassword[whichDB], db='%s' % packageDBName[whichDB], charset='utf8')
+    except:
+        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        if log:
+            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+        return -1, []
+    cursor = db.cursor()
+    if room==None:
+        sql = """SELECT `货盘编号`, `货盘长`, `货盘宽`, `货盘高`, `货盘层数`, `货盘总重`, `货盘总面板数`, `货盘总面积`,  
+        `货盘所属子订单`,`货盘所属甲板`, `货盘所属区域`, `货盘所属房间`, `货盘打包方式`, `货盘状态`, `货盘数据` from `%s` 
+        where `货盘所属子订单`='%s' and `货盘所属甲板`='%s' and `货盘所属区域`='%s' """ \
+              % (str(orderID), str(suborderID), str(deck), str(zone))
     else:
-        if zone == "全部":
-            if room==None:
-                sql = """SELECT `货盘编号`, `货盘长`, `货盘宽`, `货盘高`, `货盘层数`, `货盘总重`, `货盘总面板数`, `货盘总面积`,  
-                `货盘所属子订单`,`货盘所属甲板`, `货盘所属区域`, `货盘所属房间`, `货盘打包方式`, `货盘状态`, `货盘数据` from `%s` 
-                where `货盘所属子订单`='%s' and `货盘所属甲板`='%s'  """ \
-                      % (str(orderID), str(suborderID), str(deck))
-            else:
-                sql = """SELECT `货盘编号`, `货盘长`, `货盘宽`, `货盘高`, `货盘层数`, `货盘总重`, `货盘总面板数`, `货盘总面积`,  
-                `货盘所属子订单`,`货盘所属甲板`, `货盘所属区域`, `货盘所属房间`, `货盘打包方式`, `货盘状态`, `货盘数据` from `%s` 
-                where `货盘所属子订单`='%s' and `货盘所属甲板`='%s'  and `货盘所属房间`='%s' """ \
-                      % (str(orderID), str(suborderID), str(deck), str(room))
-        else:
-            if room==None:
-                sql = """SELECT `货盘编号`, `货盘长`, `货盘宽`, `货盘高`, `货盘层数`, `货盘总重`, `货盘总面板数`, `货盘总面积`,  
-                `货盘所属子订单`,`货盘所属甲板`, `货盘所属区域`, `货盘所属房间`, `货盘打包方式`, `货盘状态`, `货盘数据` from `%s` 
-                where `货盘所属子订单`='%s' and `货盘所属甲板`='%s' and `货盘所属区域`='%s' """ \
-                      % (str(orderID), str(suborderID), str(deck), str(zone))
-            else:
-                sql = """SELECT `货盘编号`, `货盘长`, `货盘宽`, `货盘高`, `货盘层数`, `货盘总重`, `货盘总面板数`, `货盘总面积`,  
-                `货盘所属子订单`,`货盘所属甲板`, `货盘所属区域`, `货盘所属房间`, `货盘打包方式`, `货盘状态`, `货盘数据` from `%s` 
-                where `货盘所属子订单`='%s' and `货盘所属甲板`='%s' and `货盘所属区域`='%s' and `货盘所属房间`='%s' """ \
-                      % (str(orderID), str(suborderID), str(deck), str(zone), str(room))
+        sql = """SELECT `货盘编号`, `货盘长`, `货盘宽`, `货盘高`, `货盘层数`, `货盘总重`, `货盘总面板数`, `货盘总面积`,  
+        `货盘所属子订单`,`货盘所属甲板`, `货盘所属区域`, `货盘所属房间`, `货盘打包方式`, `货盘状态`, `货盘数据` from `%s` 
+        where `货盘所属子订单`='%s' and `货盘所属甲板`='%s' and `货盘所属区域`='%s' and `货盘所属房间`='%s' """ \
+              % (str(orderID), str(suborderID), str(deck), str(zone), str(room))
     cursor.execute(sql)
     temp = cursor.fetchall()  # 获得压条信息
     result =[]
-    for i in temp:
-        result.append(list(i))
+    for record in temp:
+        record = list(record)
+        record[-1] = json.loads(record[-1])
+        result.append(list(record))
     db.close()
     return 0, result
 
@@ -855,6 +867,7 @@ def InsertNewOrderRecord(log,whichDB,newOrderID,newOrderName,subOrderIDList):
 
 
 def UpdateSubOrderPackageState(log,whichDB,orderID,subOrderId,state):
+    name="p%s"%str(orderID)
     try:
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
@@ -864,7 +877,7 @@ def UpdateSubOrderPackageState(log,whichDB,orderID,subOrderId,state):
             log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
         return -1, []
     cursor = db.cursor()
-    sql = "UPDATE `%s` SET `状态`='%s'  where `子订单号`='%s'" %(orderID,state,subOrderId)
+    sql = "UPDATE `%s` SET `状态`='%s'  where `子订单号`='%s'" %(name,state,subOrderId)
     try:
         cursor.execute(sql)
         db.commit()  # 必须有，没有的话插入语句不会执行
@@ -1121,6 +1134,51 @@ def InsertBatchOrderDataIntoDB(log, whichDB, orderTabelName, orderDataList):
         except:
             db.rollback()
     db.close()
+
+def CreateNewPackageBoxInBoxDB(log, whichDB,orderID,suborderID,deck,zone,room=""):
+    try:
+        db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
+                             passwd='%s' % dbPassword[whichDB], db='%s' % packageDBName[whichDB], charset='utf8')
+    except:
+        wx.MessageBox("无法连接%s数据库!"% packageDBName[whichDB], "错误信息")
+        if log:
+            log.WriteText("无法连接%s数据库"% packageDBName[whichDB], colour=wx.RED)
+        return -1, []
+    cursor = db.cursor()
+    if room=="":
+        mode = "按区域打包"
+    else:
+        mode = "按房间打包"
+    sql="""INSERT INTO `%s`(`货盘所属子订单`,`货盘所属甲板`,`货盘所属区域`  ,`货盘所属房间`,`货盘打包方式`)
+    VALUES (                 '%s',         '%s',               '%s',       '%s'     ,'%s')"""\
+         %(str(orderID),str(suborderID),      deck,         zone,         room,       mode)
+    cursor.execute(sql)
+    try:
+        db.commit()  # 必须有，没有的话插入语句不会执行
+    except:
+        db.rollback()
+        print("erro box new")
+    sql = """SELECT `Index` from `%s` where `货盘编号`= '' and `货盘所属子订单`= '%s' and `货盘所属甲板`= '%s' 
+                and `货盘所属区域`= '%s' and `货盘所属房间`= '%s'"""\
+          %(str(orderID),str(suborderID),deck,zone,room)
+    cursor.execute(sql)
+    boxNum = cursor.fetchone()
+    if boxNum!=None:
+        boxNum=boxNum[0]
+        sql = "UPDATE `%s` SET `货盘编号`='托盘%s' where `Index`= %s "% (str(orderID),str(boxNum),boxNum)
+        # sql = "INSERT INTO 图纸信息(`图纸号`,`面板增量`,`中板增量`,`背板增量`,`剪板505`,`成型405`,`成型409`,`成型406`,`折弯652`," \
+        #       "`热压100`,`热压306`,`冲铣`,`图纸状态`,`创建人`,`中板`,`打包9000`,`图纸大类`,`创建时间`,`备注`)" \
+        #       "VALUES ('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')"\
+        #       % (data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],data[12],data[13],data[14],data[15],data[16],datetime.date.today(),data[17])
+        try:
+            cursor.execute(sql)
+            db.commit()  # 必须有，没有的话插入语句不会执行
+        except:
+            db.rollback()
+    else:
+        boxNum = -1
+    db.close()
+    return boxNum
 
 def InsertPanelDetailIntoPackageDB(log, whichDB, orderTabelName, orderDataList):
     try:
