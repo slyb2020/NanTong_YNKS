@@ -771,9 +771,10 @@ def GetSpecificPackageBoxData(log,whichDB,orderID,index):
           % (str(orderID), index)
     cursor.execute(sql)
     temp = cursor.fetchone()  # 获得压条信息
+    temp = list(temp)
+    temp[14] = json.loads(temp[14])
     db.close()
     return 0, temp
-
 def GetSubOrderPackageNumber(log,whichDB,orderID,suborderID):
     try:
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
