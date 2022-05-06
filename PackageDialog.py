@@ -4,7 +4,8 @@ import wx.lib.scrolledpanel as scrolled
 from ID_DEFINE import *
 from DBOperation import GetSubOrderPackageState,UpdateSubOrderPackageState,GetSubOrderPanelsForPackage,\
     CreatePackagePanelSheetForOrder,InsertPanelDetailIntoPackageDB,GetSubOrderPanelsForPackageFromPackageDB,\
-    GetCurrentPackageData,CreateNewPackageBoxInBoxDB,GetSpecificPackageBoxData,UpdateSpecificPackageBoxInfo
+    GetCurrentPackageData,CreateNewPackageBoxInBoxDB,GetSpecificPackageBoxData,UpdateSpecificPackageBoxInfo,\
+    GetSubOrderPackageNumber
 import numpy as np
 from operator import itemgetter
 import wx.lib.agw.pygauge as PG
@@ -25,10 +26,17 @@ class BoxDetailViewPanel(wx.Panel):
         self.info = info
         vvbox=wx.BoxSizer(wx.VERTICAL)
         hhbox = wx.BoxSizer()
-        self.topDownloadBTN = wx.Button(self, label="▼ 将选定托盘下载到左侧工作区", size=(100, 50),name="将选定托盘下载到左侧工作区")
+        if self.direction == wx.LEFT:
+            self.topDownloadBTN = wx.Button(self, label="|▼ 将选定托盘下载到左侧工作区", size=(100, 50),name="将选定托盘下载到左侧工作区")
+        else:
+            self.topDownloadBTN = wx.Button(self, label="▼| 将选定托盘下载到右侧工作区", size=(100, 50),name="将选定托盘下载到右侧工作区")
         self.topDownloadBTN.Bind(wx.EVT_BUTTON, self.OnTopDownloadBTN)
         self.topDownloadBTN.Enable(False)
-        self.topUploadBTN = wx.Button(self, label="▲ 将左侧工作区中的托盘上传到完成区", size=(100, 50),name="将左侧工作区中的托盘上传到完成区")
+        if self.direction == wx.LEFT:
+            self.topUploadBTN = wx.Button(self, label="|▲ 将左侧工作区中的托盘上传到完成区", size=(100, 50),name="将左侧工作区中的托盘上传到完成区")
+        else:
+            self.topUploadBTN = wx.Button(self, label="▲| 将右侧工作区中的托盘上传到完成区", size=(100, 50),name="将右侧侧工作区中的托盘上传到完成区")
+        self.topUploadBTN.Bind(wx.EVT_BUTTON, self.OnTopUploadBTN)
         self.topUploadBTN.Enable(False)
         hhbox.Add(self.topDownloadBTN, 1)
         hhbox.Add(self.topUploadBTN, 1)
@@ -154,15 +162,15 @@ class BoxDetailViewPanel(wx.Panel):
 
     def OnTopDownloadBTN(self, event):
         error=True
-        for i, box in enumerate(self.master.boxList):
+        for i, box in enumerate(self.master.packageList):
             if box.state=='选定':
                 error=False
                 if self.direction == wx.LEFT:
                     box.SetBackgroundColour(wx.Colour(234,124,233))
-                    self.master.boxList[i].state = "左"
+                    self.master.packageList[i].state = "左"
                 else:
                     box.SetBackgroundColour(wx.Colour(234,233,124))
-                    self.master.boxList[i].state = "右"
+                    self.master.packageList[i].state = "右"
                 self.state="占用"
                 box.Refresh()
                 self.topDownloadBTN.Enable(False)
@@ -176,6 +184,30 @@ class BoxDetailViewPanel(wx.Panel):
                 self.master.middleLeftBTN.Enable(self.master.rightWorkingPackagePanel.topViewPanel.panelSelection)
         if error:
             wx.MessageBox("您还没有选择要移入左侧工作区的托盘！")
+        # self.frame.SetBackgroundColour(wx.GREEN)
+        # self.frame.Refresh()
+        event.Skip()
+    def OnTopUploadBTN(self, event):
+        print("here Upload")
+        for i, box in enumerate(self.master.packageList):
+            if self.direction == wx.LEFT:
+                if self.master.packageList[i].state == "左":
+                    print("detail data before upload",self.data)
+                    print("topdata after upload:",self.master.packageList[i].info)
+                    box.SetBackgroundColour(wx.Colour(240,240,240))
+                    self.master.packageList[i].state = ""
+                    break
+            else:
+                if self.master.packageList[i].state == "右":
+                    box.SetBackgroundColour(wx.Colour(240,240,240))
+                    self.master.packageList[i].state = ""
+                    break
+        self.state=""
+        box.Refresh()#########################################################finishPanel似乎没及时更新
+        self.topUploadBTN.Enable(False)
+        # self.topUploadBTN.Enable(True)
+        self.bottomDownloadBTN.Enable(False)
+
         # self.frame.SetBackgroundColour(wx.GREEN)
         # self.frame.Refresh()
         event.Skip()
@@ -373,9 +405,7 @@ class FrontViewPanel(wx.Panel):
                 for row in self.data[i]:
                     for col in row:
                         square += (int(col[9])*int(col[10]))
-                print("square=",square)
                 percent = float(square/self.boxSquare)
-                print("percent=",percent)
                 occupyButton = wx.Button(self.panel,label="第%d层"%(i+1),size=(L*percent,-1),name="%s"%(i))
                 occupyButton.SetForegroundColour(wx.Colour(wx.WHITE))
                 occupyButton.SetBackgroundColour(wx.Colour(111, 123, 245))
@@ -428,12 +458,12 @@ class MyGauge(PG.PyGauge):
     def OnLeftClick(self, event):
         obj = event.GetEventObject()
         name = obj.GetName()
-        for i, box in enumerate(self.master.boxList):
+        for i, box in enumerate(self.master.packageList):
             if box.GetName() == name:
                 if box.state == "":
                     if self.master.leftWorkingPackagePanel.state != "占用" or self.master.rightWorkingPackagePanel.state != "占用":
                         box.SetBackgroundColour(wx.Colour(124, 234, 233))
-                        self.master.boxList[i].state = '选定'
+                        self.master.packageList[i].state = '选定'
                         if self.master.leftWorkingPackagePanel.state != "占用":
                             self.master.leftWorkingPackagePanel.topDownloadBTN.Enable(True)
                             self.master.leftWorkingPackagePanel.SetValue(self.master.packageList[i].info)
@@ -456,7 +486,7 @@ class MyGauge(PG.PyGauge):
                         if self.master.rightWorkingPackagePanel.state != "占用":
                             self.master.rightWorkingPackagePanel.topDownloadBTN.Enable(True)
             elif box.state == "选定":
-                self.master.boxList[i].state = ""
+                self.master.packageList[i].state = ""
                 box.SetBackgroundColour(wx.Colour(240, 240, 240))
             box.Refresh()
         # self.frame.SetBackgroundColour(wx.GREEN)
@@ -586,9 +616,9 @@ class PackageDialog(wx.Dialog):
         self.panelTotalAmount=0
         self.panelTotalWeight=0
         self.panelTotalSquare=0
-        self.boxTotalAmount=0
+        _, self.boxTotalAmount=GetSubOrderPackageNumber(self.log,WHICHDB,self.orderID,self.suborderID)
         self.sortTurn=0 #散板排序顺序0：按厚度优先，1:按长度很优先，2：按宽度优先
-        self.boxList = []
+        self.packageList = []
         self.currentPanelList = []
         self.currentPanelTotalAmount = 0
         self.currentSeperatePanelList = []
@@ -618,7 +648,7 @@ class PackageDialog(wx.Dialog):
         _,dbNameList = GetTableListFromDB(self.log,WHICHDB)
         if dbName not in dbNameList:
             CreatePackagePanelSheetForOrder(log,WHICHDB,dbName)
-            _, self.panelList = GetSubOrderPanelsForPackage(self.log, WHICHDB, self.orderID)#读取订单中所有子订单数据
+            _, self.panelList = GetSubOrderPanelsForPackage(self.log, WHICHDB, self.orderID)#读取订单中所有子订单数据，这个数据有些记录代表好几块面板
             self.data=[]
             for record in self.panelList:
                 print("ini record=",record)
@@ -632,7 +662,7 @@ class PackageDialog(wx.Dialog):
         print("打包状态=",self.packageState)
         if self.packageState not in ["按房间打包","按区域打包"]:
             self.packageState = "未打包"
-        _, self.panelList = GetSubOrderPanelsForPackageFromPackageDB(self.log,WHICHDB,self.orderID,self.suborderID)
+        _, self.panelList = GetSubOrderPanelsForPackageFromPackageDB(self.log,WHICHDB,self.orderID,self.suborderID)#读取打包数据库中的面板，这个数据每条记录对应1块面板，不会有重复
         self.panelTotalAmount = len(self.panelList)
         self.panelList.sort(key=itemgetter(11,10,9), reverse=True)#先将墙板按厚度，宽度，长度排序
         #角墙板怎么打包？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？
@@ -719,7 +749,7 @@ class PackageDialog(wx.Dialog):
         #     temp = ["托盘%s"%i,2280,600,600,11,'345','100','2000','1','3','9','Corridor','房间','','']
         #     package = PackagePanel(self.finishPackagePanel,self,info=temp)
         #     self.packageList.append(package)
-        #     self.boxList.append(package)
+        #     self.packageList.append(package)
         #     hbox.Add(package)
         # self.finishPackagePanel.SetSizer(hbox)
         # self.finishPackagePanel.SetAutoLayout(1)
@@ -759,6 +789,7 @@ class PackageDialog(wx.Dialog):
         btnsizer = wx.BoxSizer()
         bitmap1 = wx.Bitmap(bitmapDir + "/packages.png", wx.BITMAP_TYPE_PNG)
         bitmap2 = wx.Bitmap(bitmapDir + "/save2.png", wx.BITMAP_TYPE_PNG)
+        bitmap5 = wx.Bitmap(bitmapDir + "/save.png", wx.BITMAP_TYPE_PNG)
         bitmap3 = wx.Bitmap(bitmapDir + "/ok3.png", wx.BITMAP_TYPE_PNG)
         bitmap4 = wx.Bitmap(bitmapDir + "/cancel1.png", wx.BITMAP_TYPE_PNG)
         # bitmap = wx.Bitmap(bitmapDir + "/aquabutton.png",
@@ -766,7 +797,8 @@ class PackageDialog(wx.Dialog):
         btn_repack = GB.GradientButton(self, wx.ID_ANY, bitmap1, "  全部重新打包（Repackage）", size=(300, 55))
         # btn_repack = wx.Button(self, label="全部重新打包（Repackage）", size=(250, 55))
         # btn_repack.SetBitmap(bitmap1, wx.LEFT)
-        btn_save = GB.GradientButton(self, wx.ID_ANY, bitmap2, "  保存 (Save)", size=(300, 55))
+        btn_save = GB.GradientButton(self, wx.ID_ANY, bitmap5, "  保存 (Save)", size=(300, 55))
+        makePackageSheetBTN = GB.GradientButton(self, wx.ID_ANY, bitmap2, "  生成打包单 (Package Sheet)", size=(300, 55))
         # btn_save.SetBitmap(bitmap2, wx.LEFT)
         # GB.GradientButton(title, -1, bitmap, '追加子订单', size=(-1, 40))
         btn_ok = AB.AquaButton(self,  wx.ID_OK,bitmap3, "  保存并退出（Save & Exit）", size=(300, 60))
@@ -777,11 +809,13 @@ class PackageDialog(wx.Dialog):
         btn_cancel.SetForegroundColour(wx.BLACK)
         # btn_cancel.SetBitmap(bitmap4, wx.LEFT)
         btnsizer.Add(btn_repack, 0)
-        btnsizer.Add((100, -1), 0)
+        btnsizer.Add((50, -1), 0)
         btnsizer.Add(btn_save, 0)
-        btnsizer.Add((100, -1), 0)
+        btnsizer.Add((50, -1), 0)
+        btnsizer.Add(makePackageSheetBTN, 0)
+        btnsizer.Add((50, -1), 0)
         btnsizer.Add(btn_ok, 0)
-        btnsizer.Add((100, -1), 0)
+        btnsizer.Add((50, -1), 0)
         btnsizer.Add(btn_cancel, 0)
         sizer.Add((-1,5))
         sizer.Add(btnsizer, 0, wx.ALIGN_CENTER | wx.ALL, 5)
@@ -826,7 +860,6 @@ class PackageDialog(wx.Dialog):
     def FinishPackagePanelReCreate(self):
         self.finishPackagePanel.DestroyChildren()
         self.packageList=[]
-        self.boxList=[]
         hbox = wx.BoxSizer()
         if self.packageState!="":
             if self.packageState == "按房间打包":
@@ -837,7 +870,6 @@ class PackageDialog(wx.Dialog):
             for data in self.currentPackageData:
                 package = PackagePanel(self.finishPackagePanel, self, info=data)
                 self.packageList.append(package)
-                self.boxList.append(package)
                 hbox.Add(package)
         self.finishPackagePanel.SetSizer(hbox)
         self.finishPackagePanel.SetAutoLayout(1)
@@ -890,7 +922,6 @@ class PackageDialog(wx.Dialog):
         self.seperatePackagePanel.DestroyChildren()
         hbox=wx.BoxSizer()
         self.separatePanelCtrlList=[]
-        print("hereA")
         for i,board in enumerate(self.currentSeperatePanelList[:300]):
             button=wx.Button(self.seperatePackagePanel,label="%sX%sX%s"%(board[9],board[10],board[11]),size=(int(board[9])/12,int(board[10])/7),name=str(board[0]))
             button.SetToolTip("面板编号: %d  订单号: %s-%s  甲板: %s  区域: %s  房间: %s\r\n图纸：%s  面板长：%s   "
@@ -898,13 +929,10 @@ class PackageDialog(wx.Dialog):
                               (board[0],board[1],board[2],board[3],board[4],board[5],board[6],board[9],board[10],board[11],board[12],board[13],board[16]))
             hbox.Add(button,0,wx.ALL,2)
             self.separatePanelCtrlList.append(button)
-        print("hereB")
         self.seperatePackagePanel.SetSizer(hbox)
-        print("hereC")
         self.seperatePackagePanel.SetAutoLayout(1)
-        print("hereD")
         self.seperatePackagePanel.SetupScrolling()
-        print("hereE")
+        # print("hereE")
 
     def ReCreateTopPanel(self):
         self.topPanel.DestroyChildren()
@@ -1355,12 +1383,12 @@ class PackageDialog(wx.Dialog):
 
     # def OnLeftTopDownloadBTN(self, event):
     #     error=True
-    #     for i, box in enumerate(self.boxList):
+    #     for i, box in enumerate(self.packageList):
     #         if box.state=='选定':
     #             error=False
     #             box.SetBackgroundColour(wx.Colour(234,124,233))
     #             self.leftFrontViewPanel.state="占用"
-    #             self.boxList[i].state="左"
+    #             self.packageList[i].state="左"
     #             box.Refresh()
     #             self.leftTopDownloadBTN.Enable(False)
     #             self.leftTopUploadBTN.Enable(True)
@@ -1371,12 +1399,12 @@ class PackageDialog(wx.Dialog):
     #     event.Skip()
     def OnRightTopDownloadBTN(self, event):
         error=True
-        for i, box in enumerate(self.boxList):
+        for i, box in enumerate(self.packageList):
             if box.state=='选定':
                 error=False
                 box.SetBackgroundColour(wx.Colour(189,174,233))
                 self.rightFrontViewPanel.state="占用"
-                self.boxList[i].state="右"
+                self.packageList[i].state="右"
                 box.Refresh()
                 self.rightTopDownloadBTN.Enable(False)
                 self.rightTopUploadBTN.Enable(True)

@@ -774,10 +774,49 @@ def GetSpecificPackageBoxData(log,whichDB,orderID,index):
     db.close()
     return 0, temp
 
+def GetSubOrderPackageNumber(log,whichDB,orderID,suborderID):
+    try:
+        db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
+                             passwd='%s' % dbPassword[whichDB], db='%s' % packageDBName[whichDB], charset='utf8')
+    except:
+        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        if log:
+            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+        return -1, []
+    cursor = db.cursor()
+    sql = """SELECT `货盘编号` from `%s` where `货盘所属子订单`='%s' """ % (str(orderID), str(suborderID))
+    cursor.execute(sql)
+    temp = cursor.fetchall()  # 获得压条信息
+    result = len(temp)
+    db.close()
+    return 0, result
+
+def GetSubOrderPackageData(log,whichDB,orderID,suborderID):
+    try:
+        db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
+                             passwd='%s' % dbPassword[whichDB], db='%s' % packageDBName[whichDB], charset='utf8')
+    except:
+        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        if log:
+            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+        return -1, []
+    cursor = db.cursor()
+    sql = """SELECT `货盘编号`, `货盘长`, `货盘宽`, `货盘高`, `货盘层数`, `货盘总重`, `货盘总面板数`, `货盘总面积`,  
+    `货盘所属子订单`,`货盘所属甲板`, `货盘所属区域`, `货盘所属房间`, `货盘打包方式`, `货盘状态`, `货盘数据` from `%s` 
+    where `货盘所属子订单`='%s' """ \
+          % (str(orderID), str(suborderID))
+    cursor.execute(sql)
+    temp = cursor.fetchall()  # 获得压条信息
+    result =[]
+    for record in temp:
+        record = list(record)
+        record[-1] = json.loads(record[-1])
+        result.append(list(record))
+    db.close()
+    return 0, result
 
 
 def GetCurrentPackageData(log,whichDB,orderID,suborderID,deck,zone,room=None):
-    print("orderID,suborderID,deck,zone,room",orderID,suborderID,deck,zone,room)
     try:
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % packageDBName[whichDB], charset='utf8')
