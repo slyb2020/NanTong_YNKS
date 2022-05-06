@@ -9,6 +9,8 @@ import numpy as np
 from operator import itemgetter
 import wx.lib.agw.pygauge as PG
 import json
+import wx.lib.agw.aquabutton as AB
+import wx.lib.agw.gradientbutton as GB
 
 dirName = os.path.dirname(os.path.abspath(__file__))
 bitmapDir = os.path.join(dirName, 'bitmaps')
@@ -67,9 +69,10 @@ class BoxDetailViewPanel(wx.Panel):
                 self.data[self.frontViewPanel.selectionNum].pop(i)
         self.topViewPanel.currentRow=None
         self.topViewPanel.currentCol=None
-        self.topViewPanel.ReCreate()
         self.master.currentSeperatePanelList.sort(key=itemgetter(11, 10, 9), reverse=True)
         self.master.SeperatePackagePanelReCreate()
+        self.topViewPanel.ReCreate()
+        self.frontViewPanel.ReCreate()
 
     def OnBottomUploadBTN(self,event):
         # print("self.master.seperateSelectionNum=",self.master.seperateSelectionNum)
@@ -99,6 +102,7 @@ class BoxDetailViewPanel(wx.Panel):
                         self.master.seperateSelectionNum = None
                         self.master.SeperatePackagePanelReCreate()
                         self.topViewPanel.ReCreate()
+                        self.frontViewPanel.ReCreate()
                         return
                     else:
                         print("Not long enough!")
@@ -372,7 +376,7 @@ class FrontViewPanel(wx.Panel):
                 print("square=",square)
                 percent = float(square/self.boxSquare)
                 print("percent=",percent)
-                occupyButton = wx.Button(self.panel,label="第%d层"%(i),size=(L*percent,-1),name="%s"%(i))
+                occupyButton = wx.Button(self.panel,label="第%d层"%(i+1),size=(L*percent,-1),name="%s"%(i))
                 occupyButton.SetForegroundColour(wx.Colour(wx.WHITE))
                 occupyButton.SetBackgroundColour(wx.Colour(111, 123, 245))
                 freeButton = wx.Button(self.panel,size=(L*(1-percent),-1),name="%s"%(i))
@@ -428,20 +432,27 @@ class MyGauge(PG.PyGauge):
             if box.GetName() == name:
                 if box.state == "":
                     if self.master.leftWorkingPackagePanel.state != "占用" or self.master.rightWorkingPackagePanel.state != "占用":
-                        self.master.selectionBoxIDTXT.SetValue(str(self.master.packageList[i].info[0]))
-                        self.master.selectionPanelTotalAmountTXT.SetValue(str(self.master.packageList[i].info[6]))
-                        self.master.selectionPanelTotalWeightTXT.SetValue(str(self.master.packageList[i].info[5]))
-                        self.master.boxLayerNumTXT.SetValue(str(self.master.packageList[i].info[4]))
-                        self.master.boxLengthTXT.SetValue(str(self.master.packageList[i].info[1]))
-                        self.master.boxWidthTXT.SetValue(str(self.master.packageList[i].info[2]))
-                        self.master.boxHeightTXT.SetValue(str(self.master.packageList[i].info[3]))
                         box.SetBackgroundColour(wx.Colour(124, 234, 233))
                         self.master.boxList[i].state = '选定'
                         if self.master.leftWorkingPackagePanel.state != "占用":
                             self.master.leftWorkingPackagePanel.topDownloadBTN.Enable(True)
                             self.master.leftWorkingPackagePanel.SetValue(self.master.packageList[i].info)
+                            self.master.selectionBoxIDTXT1.SetValue(str(self.master.packageList[i].info[0]))
+                            self.master.selectionPanelTotalAmountTXT1.SetValue(str(self.master.packageList[i].info[6]))
+                            self.master.selectionPanelTotalWeightTXT1.SetValue(str(self.master.packageList[i].info[5]))
+                            self.master.boxLayerNumTXT1.SetValue(str(self.master.packageList[i].info[4]))
+                            self.master.boxLengthTXT1.SetValue(str(self.master.packageList[i].info[1]))
+                            self.master.boxWidthTXT1.SetValue(str(self.master.packageList[i].info[2]))
+                            self.master.boxHeightTXT1.SetValue(str(self.master.packageList[i].info[3]))
                         else:
                             self.master.rightWorkingPackagePanel.SetValue(self.master.packageList[i].info)
+                            self.master.selectionBoxIDTXT2.SetValue(str(self.master.packageList[i].info[0]))
+                            self.master.selectionPanelTotalAmountTXT2.SetValue(str(self.master.packageList[i].info[6]))
+                            self.master.selectionPanelTotalWeightTXT2.SetValue(str(self.master.packageList[i].info[5]))
+                            self.master.boxLayerNumTXT2.SetValue(str(self.master.packageList[i].info[4]))
+                            self.master.boxLengthTXT2.SetValue(str(self.master.packageList[i].info[1]))
+                            self.master.boxWidthTXT2.SetValue(str(self.master.packageList[i].info[2]))
+                            self.master.boxHeightTXT2.SetValue(str(self.master.packageList[i].info[3]))
                         if self.master.rightWorkingPackagePanel.state != "占用":
                             self.master.rightWorkingPackagePanel.topDownloadBTN.Enable(True)
             elif box.state == "选定":
@@ -473,7 +484,7 @@ class PackagePanel(wx.Panel):
         self.mode = info[12]
         self.state = info[13]
         self.data = info[14]
-        self.size = (120,self.layer*7+20)
+        self.size = (120,self.layer*7+50)
         wx.Panel.__init__(self, parent, size=self.size)
         print("self.data=",self.data)
         # self.data = [
@@ -524,11 +535,12 @@ class PackagePanel(wx.Panel):
         #             ]
         # self.info[14]= self.data
         self.layer=len(self.data)
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        vbox.Add((-1,8))
+        vbox.Add(wx.StaticText(self,label=self.name),1,wx.LEFT,40)
         self.panel = wx.Panel(self)
-        self.panel.SetBackgroundColour(wx.Colour(210,210,210))
-        hbox = wx.BoxSizer()
-        hbox.Add(self.panel,1,wx.EXPAND|wx.ALL,10)
-        self.SetSizer(hbox)
+        vbox.Add(self.panel,1,wx.EXPAND|wx.ALL,10)
+        self.SetSizer(vbox)
         self.SetBackgroundColour(wx.Colour(240,240,240))
         self.state = ""
         self.layerGaugeList=[]
@@ -745,25 +757,34 @@ class PackageDialog(wx.Dialog):
         sizer.Add(line, 0, wx.GROW | wx.RIGHT | wx.TOP, 5)
 
         btnsizer = wx.BoxSizer()
-        bitmap1 = wx.Bitmap(bitmapDir + "/ok3.png", wx.BITMAP_TYPE_PNG)
-        bitmap2 = wx.Bitmap(bitmapDir + "/cancel1.png", wx.BITMAP_TYPE_PNG)
-        bitmap3 = wx.Bitmap(bitmapDir + "/33.png", wx.BITMAP_TYPE_PNG)
-        btn_repack = wx.Button(self, label="全部重新打包", size=(200, 50))
-        btn_repack.SetBitmap(bitmap1, wx.LEFT)
-        btn_save = wx.Button(self, label="保存 (Save)", size=(200, 50))
-        btn_save.SetBitmap(bitmap2, wx.LEFT)
-        btn_ok = wx.Button(self, wx.ID_OK, "确  定", size=(200, 50))
-        btn_ok.SetBitmap(bitmap1, wx.LEFT)
-        btn_cancel = wx.Button(self, wx.ID_CANCEL, "取  消", size=(200, 50))
-        btn_cancel.SetBitmap(bitmap2, wx.LEFT)
+        bitmap1 = wx.Bitmap(bitmapDir + "/packages.png", wx.BITMAP_TYPE_PNG)
+        bitmap2 = wx.Bitmap(bitmapDir + "/save2.png", wx.BITMAP_TYPE_PNG)
+        bitmap3 = wx.Bitmap(bitmapDir + "/ok3.png", wx.BITMAP_TYPE_PNG)
+        bitmap4 = wx.Bitmap(bitmapDir + "/cancel1.png", wx.BITMAP_TYPE_PNG)
+        # bitmap = wx.Bitmap(bitmapDir + "/aquabutton.png",
+        #                    wx.BITMAP_TYPE_PNG)
+        btn_repack = GB.GradientButton(self, wx.ID_ANY, bitmap1, "  全部重新打包（Repackage）", size=(300, 55))
+        # btn_repack = wx.Button(self, label="全部重新打包（Repackage）", size=(250, 55))
+        # btn_repack.SetBitmap(bitmap1, wx.LEFT)
+        btn_save = GB.GradientButton(self, wx.ID_ANY, bitmap2, "  保存 (Save)", size=(300, 55))
+        # btn_save.SetBitmap(bitmap2, wx.LEFT)
+        # GB.GradientButton(title, -1, bitmap, '追加子订单', size=(-1, 40))
+        btn_ok = AB.AquaButton(self,  wx.ID_OK,bitmap3, "  保存并退出（Save & Exit）", size=(300, 60))
+        btn_ok.SetForegroundColour(wx.BLACK)
+        # btn_ok = wx.Button(self, wx.ID_OK, "保存并退出（Save & Exit）", size=(250, 55))
+        # btn_ok.SetBitmap(bitmap3, wx.LEFT)
+        btn_cancel = AB.AquaButton(self, wx.ID_CANCEL,bitmap4, "  取  消（Exit）", size=(300, 60))
+        btn_cancel.SetForegroundColour(wx.BLACK)
+        # btn_cancel.SetBitmap(bitmap4, wx.LEFT)
         btnsizer.Add(btn_repack, 0)
-        btnsizer.Add((40, -1), 0)
+        btnsizer.Add((100, -1), 0)
         btnsizer.Add(btn_save, 0)
-        btnsizer.Add((40, -1), 0)
+        btnsizer.Add((100, -1), 0)
         btnsizer.Add(btn_ok, 0)
-        btnsizer.Add((40, -1), 0)
+        btnsizer.Add((100, -1), 0)
         btnsizer.Add(btn_cancel, 0)
-        sizer.Add(btnsizer, 0, wx.ALIGN_CENTER | wx.ALL, 10)
+        sizer.Add((-1,5))
+        sizer.Add(btnsizer, 0, wx.ALIGN_CENTER | wx.ALL, 5)
         self.SetSizer(sizer)
         sizer.Fit(self)
         self.Bind(wx.EVT_BUTTON,self.OnButton)
@@ -870,7 +891,7 @@ class PackageDialog(wx.Dialog):
         hbox=wx.BoxSizer()
         self.separatePanelCtrlList=[]
         print("hereA")
-        for i,board in enumerate(self.currentSeperatePanelList):
+        for i,board in enumerate(self.currentSeperatePanelList[:300]):
             button=wx.Button(self.seperatePackagePanel,label="%sX%sX%s"%(board[9],board[10],board[11]),size=(int(board[9])/12,int(board[10])/7),name=str(board[0]))
             button.SetToolTip("面板编号: %d  订单号: %s-%s  甲板: %s  区域: %s  房间: %s\r\n图纸：%s  面板长：%s   "
                               "面板宽：%s    面板厚：%s\r\nX面颜色：%s      Y面颜色：%s    胶水单号：%s" %
@@ -888,34 +909,32 @@ class PackageDialog(wx.Dialog):
     def ReCreateTopPanel(self):
         self.topPanel.DestroyChildren()
         hbox = wx.BoxSizer()
-        hbox.Add(10, -1)
         vvbox = wx.BoxSizer(wx.VERTICAL)
         vvbox.Add((-1,20))
         hhbox = wx.BoxSizer()
-        hbox.Add((10,-1))
-        hhbox.Add(wx.StaticText(self.topPanel, label='订单号：',size=(67,-1)), 0, wx.TOP, 5)
+        hhbox.Add(wx.StaticText(self.topPanel, label='订单号'), 0, wx.TOP, 5)
         self.orderIDTXT = wx.TextCtrl(self.topPanel, size=(70, 25), style=wx.TE_READONLY)
         self.orderIDTXT.SetValue('%05d-%03d' % (int(self.orderID),int(self.suborderID)))
         # self.orderIDTXT.SetBackgroundColour(wx.GREEN)
-        hhbox.Add(self.orderIDTXT, 0, wx.LEFT | wx.RIGHT, 10)
+        hhbox.Add(self.orderIDTXT, 0, wx.LEFT | wx.RIGHT, 1)
 
         hhbox.Add((10,-1))
-        hhbox.Add(wx.StaticText(self.topPanel, label='订单名称：',size=(64,-1)), 0, wx.TOP, 5)
+        hhbox.Add(wx.StaticText(self.topPanel, label='订单名称'), 0, wx.TOP, 5)
         self.orderNameTXT = wx.TextCtrl(self.topPanel, size=(90, 25), style=wx.TE_READONLY)
         self.orderNameTXT.SetValue("需处理")
         self.orderNameTXT.SetBackgroundColour(wx.WHITE)
-        hhbox.Add(self.orderNameTXT, 0, wx.LEFT | wx.RIGHT, 10)
+        hhbox.Add(self.orderNameTXT, 0, wx.LEFT | wx.RIGHT, 1)
 
         hhbox.Add((10,-1))
         hhbox.Add(wx.StaticText(self.topPanel, label='打包状态'), 0, wx.TOP, 5)
-        self.packageStateCOMBO = wx.ComboBox(self.topPanel, size=(80, 25), choices=["未打包","按区域打包","按房间打包"],style=wx.TE_READONLY)
+        self.packageStateCOMBO = wx.ComboBox(self.topPanel, size=(100, 25), choices=["未打包","按区域打包","按房间打包"],style=wx.TE_READONLY)
         self.packageStateCOMBO.SetValue(self.packageState)
         self.packageStateCOMBO.Bind(wx.EVT_COMBOBOX,self.OnPackageStateCOMBOChanged)
         if self.packageState=='未打包':
             self.packageStateCOMBO.SetBackgroundColour(wx.RED)
         else:
             self.packageStateCOMBO.SetBackgroundColour(wx.GREEN)
-        hhbox.Add(self.packageStateCOMBO, 0, wx.LEFT | wx.RIGHT, 10)
+        hhbox.Add(self.packageStateCOMBO, 0, wx.LEFT | wx.RIGHT, 1)
 
         vvbox.Add(hhbox,0,wx.EXPAND)
         hhbox = wx.BoxSizer()
@@ -923,25 +942,25 @@ class PackageDialog(wx.Dialog):
         hhbox.Add(wx.StaticText(self.topPanel, label='面板总数'), 0, wx.TOP, 5)
         self.panelTotalAmountTXT = wx.TextCtrl(self.topPanel, size=(45, 25), style=wx.TE_READONLY)
         self.panelTotalAmountTXT.SetBackgroundColour(wx.WHITE)
-        hhbox.Add(self.panelTotalAmountTXT, 0, wx.LEFT | wx.RIGHT, 10)
+        hhbox.Add(self.panelTotalAmountTXT, 0, wx.LEFT | wx.RIGHT, 1)
 
         hhbox.Add((10,-1))
         hhbox.Add(wx.StaticText(self.topPanel, label='总重量'), 0, wx.TOP, 5)
         self.panelTotalWeightTXT = wx.TextCtrl(self.topPanel, size=(60, 25), style=wx.TE_READONLY)
         self.panelTotalWeightTXT.SetValue("%.2f" % self.panelTotalWeight)
         self.panelTotalWeightTXT.SetBackgroundColour(wx.WHITE)
-        hhbox.Add(self.panelTotalWeightTXT, 0, wx.LEFT | wx.RIGHT, 10)
+        hhbox.Add(self.panelTotalWeightTXT, 0, wx.LEFT | wx.RIGHT, 1)
 
         hhbox.Add((10,-1))
         hhbox.Add(wx.StaticText(self.topPanel, label='面板总面积'), 0, wx.TOP, 5)
         self.panelTotalSquareTXT = wx.TextCtrl(self.topPanel, size=(60, 25), style=wx.TE_READONLY)
         self.panelTotalSquareTXT.SetBackgroundColour(wx.WHITE)
-        hhbox.Add(self.panelTotalSquareTXT, 0, wx.LEFT | wx.RIGHT, 10)
+        hhbox.Add(self.panelTotalSquareTXT, 0, wx.LEFT | wx.RIGHT, 1)
 
         hhbox.Add(wx.StaticText(self.topPanel, label='托盘总数'), 0, wx.TOP, 5)
-        self.boxTotalAmountTXT = wx.TextCtrl(self.topPanel, size=(40, 25), style=wx.TE_READONLY)
+        self.boxTotalAmountTXT = wx.TextCtrl(self.topPanel, size=(35, 25), style=wx.TE_READONLY)
         self.boxTotalAmountTXT.SetBackgroundColour(wx.WHITE)
-        hhbox.Add(self.boxTotalAmountTXT, 0, wx.LEFT | wx.RIGHT, 10)
+        hhbox.Add(self.boxTotalAmountTXT, 0, wx.LEFT | wx.RIGHT, 1)
         self.panelTotalAmountTXT.SetValue(str(self.panelTotalAmount))
         self.panelTotalSquareTXT.SetValue("%.2f"%self.panelTotalSquare)
         self.boxTotalAmountTXT.SetValue(str(self.boxTotalAmount))
@@ -951,18 +970,23 @@ class PackageDialog(wx.Dialog):
 
         hbox.Add(vvbox,0)
 
-        hbox.Add(wx.StaticLine(self.topPanel,style=wx.VERTICAL),0,wx.EXPAND|wx.LEFT|wx.RIGHT,10)
+        hbox.Add(wx.StaticLine(self.topPanel,style=wx.VERTICAL),0,wx.EXPAND|wx.LEFT|wx.RIGHT,5)
 
-        self.topMiddlePanel=wx.Panel(self.topPanel,size=(500,-1))
+        self.topMiddlePanel=wx.Panel(self.topPanel,size=(400,-1))
         self.ReCreateTopMiddlePanel()
         hbox.Add(self.topMiddlePanel,0,wx.EXPAND)
 
-        hbox.Add(wx.StaticLine(self.topPanel,style=wx.VERTICAL),0,wx.EXPAND|wx.LEFT|wx.RIGHT,10)
+        hbox.Add(wx.StaticLine(self.topPanel,style=wx.VERTICAL),0,wx.EXPAND|wx.LEFT|wx.RIGHT,5)
 
-        self.topRightPanel = wx.Panel(self.topPanel,size=(500,-1))
-        self.ReCreateTopRightPanel()
-        hbox.Add(self.topRightPanel)
-        hbox.Add(wx.StaticLine(self.topPanel,style=wx.VERTICAL),0,wx.EXPAND|wx.LEFT,10)
+        self.topRightPanel1 = wx.Panel(self.topPanel,size=(370,-1))
+        self.ReCreateTopRightPanel1()
+        hbox.Add(self.topRightPanel1)
+        hbox.Add(wx.StaticLine(self.topPanel,style=wx.VERTICAL),0,wx.EXPAND|wx.LEFT,5)
+
+        self.topRightPanel2 = wx.Panel(self.topPanel,size=(370,-1))
+        self.ReCreateTopRightPanel2()
+        hbox.Add(self.topRightPanel2)
+        hbox.Add(wx.StaticLine(self.topPanel,style=wx.VERTICAL),0,wx.EXPAND|wx.LEFT,5)
 
         bitmap = wx.Bitmap(bitmapDir + "/box.jpg", wx.BITMAP_TYPE_JPEG)
         # startAutoPackageBTN.SetFont()
@@ -977,10 +1001,9 @@ class PackageDialog(wx.Dialog):
     def ReCreateTopMiddlePanel(self):
         self.topMiddlePanel.DestroyChildren()
         hbox = wx.BoxSizer()
-        hbox.Add((5,-1))
         vvbox =wx.BoxSizer(wx.VERTICAL)
         hhbox = wx.BoxSizer()
-        hhbox.Add(wx.StaticText(self.topMiddlePanel, label='甲板:'), 0, wx.TOP, 5)
+        hhbox.Add(wx.StaticText(self.topMiddlePanel, label='甲板'), 0, wx.TOP, 5)
         temp=np.array(self.panelList)[:,3]
         choiceList = list(set(temp))
         choiceList.sort()
@@ -991,7 +1014,7 @@ class PackageDialog(wx.Dialog):
         hhbox.Add(self.deckCOMBO, 0)
 
         hhbox.Add((5,-1))
-        hhbox.Add(wx.StaticText(self.topMiddlePanel, label='区域:'), 0, wx.TOP, 5)
+        hhbox.Add(wx.StaticText(self.topMiddlePanel, label='区域'), 0, wx.TOP, 5)
         deck = self.deckCOMBO.GetValue()
         temp = []
         for record in self.panelList:
@@ -1006,7 +1029,7 @@ class PackageDialog(wx.Dialog):
         hhbox.Add(self.zoneCOMBO, 0)
 
         hhbox.Add((5,-1))
-        hhbox.Add(wx.StaticText(self.topMiddlePanel, label='房间:'), 0, wx.TOP, 5)
+        hhbox.Add(wx.StaticText(self.topMiddlePanel, label='房间'), 0, wx.TOP, 5)
         deck = self.deckCOMBO.GetValue()
         zone = self.zoneCOMBO.GetValue()
         temp=[]
@@ -1025,13 +1048,7 @@ class PackageDialog(wx.Dialog):
             self.roomCOMBO.Enable(True)
 
         hhbox.Add((5,-1))
-        hhbox.Add(wx.StaticText(self.topMiddlePanel, label='托盘数:'), 0, wx.TOP, 5)
-        self.currentBoxTotalAmountTXT = wx.TextCtrl(self.topMiddlePanel, size=(32, 25), style=wx.TE_READONLY)
-        self.currentBoxTotalAmountTXT.SetBackgroundColour(wx.WHITE)
-        hhbox.Add(self.currentBoxTotalAmountTXT, 0)
-
-        hhbox.Add((5,-1))
-        hhbox.Add(wx.StaticText(self.topMiddlePanel, label='散板数:'), 0, wx.TOP, 5)
+        hhbox.Add(wx.StaticText(self.topMiddlePanel, label='散板数'), 0, wx.TOP, 5)
         self.currentSeperatePanellAmountTXT = wx.TextCtrl(self.topMiddlePanel, size=(50, 25), style=wx.TE_READONLY)
         self.currentSeperatePanellAmountTXT.SetValue(str(self.currentSeperatePanellAmount))
         self.currentSeperatePanellAmountTXT.SetBackgroundColour(wx.WHITE)
@@ -1041,25 +1058,32 @@ class PackageDialog(wx.Dialog):
         vvbox.Add(hhbox,0,wx.EXPAND)
 
         hhbox = wx.BoxSizer()
-        hhbox.Add(wx.StaticText(self.topMiddlePanel, label='当前面板数:'), 0, wx.TOP, 5)
-        self.currentPanelTotalAmountTXT = wx.TextCtrl(self.topMiddlePanel, size=(67, 25), style=wx.TE_READONLY)
+        hhbox.Add(wx.StaticText(self.topMiddlePanel, label='当前面板数'), 0, wx.TOP, 5)
+        self.currentPanelTotalAmountTXT = wx.TextCtrl(self.topMiddlePanel, size=(45, 25), style=wx.TE_READONLY)
         self.currentPanelTotalAmountTXT.SetValue(str(self.currentPanelTotalAmount))
         self.currentPanelTotalAmountTXT.SetBackgroundColour(wx.WHITE)
         hhbox.Add(self.currentPanelTotalAmountTXT, 0)
 
         hhbox.Add((5,-1))
-        hhbox.Add(wx.StaticText(self.topMiddlePanel, label='当前面板重量:'), 0, wx.TOP, 5)
-        self.currentPanelTotalWeightTXT = wx.TextCtrl(self.topMiddlePanel, size=(67, 25), style=wx.TE_READONLY)
+        hhbox.Add(wx.StaticText(self.topMiddlePanel, label='当前重量'), 0, wx.TOP, 5)
+        self.currentPanelTotalWeightTXT = wx.TextCtrl(self.topMiddlePanel, size=(60, 25), style=wx.TE_READONLY)
         # self.currentPanelTotalWeightTXT.SetValue("%.2f"%self.currentPanelTotalWeight)
         self.currentPanelTotalWeightTXT.SetBackgroundColour(wx.WHITE)
         hhbox.Add(self.currentPanelTotalWeightTXT, 0)
 
         hhbox.Add((5,-1))
-        hhbox.Add(wx.StaticText(self.topMiddlePanel, label='当前面板面积:'), 0, wx.TOP, 5)
-        self.currentPanelTotalSquareTXT = wx.TextCtrl(self.topMiddlePanel, size=(67, 25), style=wx.TE_READONLY)
+        hhbox.Add(wx.StaticText(self.topMiddlePanel, label='当前面积'), 0, wx.TOP, 5)
+        self.currentPanelTotalSquareTXT = wx.TextCtrl(self.topMiddlePanel, size=(60, 25), style=wx.TE_READONLY)
         # self.currentPanelTotalSquareTXT.SetValue(str(currentPanelTotalSquare))
         self.currentPanelTotalSquareTXT.SetBackgroundColour(wx.WHITE)
+
         hhbox.Add(self.currentPanelTotalSquareTXT)
+        hhbox.Add((5,-1))
+        hhbox.Add(wx.StaticText(self.topMiddlePanel, label='托盘数'), 0, wx.TOP, 5)
+        self.currentBoxTotalAmountTXT = wx.TextCtrl(self.topMiddlePanel, size=(30, 25), style=wx.TE_READONLY)
+        self.currentBoxTotalAmountTXT.SetBackgroundColour(wx.WHITE)
+        hhbox.Add(self.currentBoxTotalAmountTXT, 0)
+
         self.CalculateAndShowCurrentValue()
         vvbox.Add((-1,10))
         vvbox.Add(hhbox,0,wx.EXPAND)
@@ -1137,69 +1161,135 @@ class PackageDialog(wx.Dialog):
     def ReLoadCurrentPanelData(self):
         self.currentPanelList=[]
 
-    def ReCreateTopRightPanel(self):
-        self.topRightPanel.DestroyChildren()
+    def ReCreateTopRightPanel1(self):
+        self.topRightPanel1.DestroyChildren()
+        hbox=wx.BoxSizer()
+        frame = wx.StaticBox(self.topRightPanel1,label="左侧工作区：")
+        hbox.Add(frame,1,wx.EXPAND|wx.TOP,5)
+        self.topRightPanel1.SetSizer(hbox)
+        self.topRightPanel1.Layout()
+
         hbox = wx.BoxSizer()
-        hbox.Add((10,-1))
         vvbox = wx.BoxSizer(wx.VERTICAL)
         hhbox = wx.BoxSizer()
-        hhbox.Add(wx.StaticText(self.topRightPanel, label='选中托盘名'), 0, wx.TOP, 5)
-        self.selectionBoxIDTXT = wx.TextCtrl(self.topRightPanel, size=(57, 25), style=wx.TE_READONLY)
-        self.selectionBoxIDTXT.SetValue("")
-        self.selectionBoxIDTXT.SetBackgroundColour(wx.WHITE)
-        hhbox.Add(self.selectionBoxIDTXT, 0, wx.LEFT | wx.RIGHT, 10)
-        hhbox.Add((10,-1))
-        hhbox.Add(wx.StaticText(self.topRightPanel, label='托盘内面板总数'), 0, wx.TOP, 5)
-        self.selectionPanelTotalAmountTXT = wx.TextCtrl(self.topRightPanel, size=(50, 25), style=wx.TE_READONLY)
-        self.selectionPanelTotalAmountTXT.SetValue("")
-        self.selectionPanelTotalAmountTXT.SetBackgroundColour(wx.WHITE)
-        hhbox.Add(self.selectionPanelTotalAmountTXT, 0, wx.LEFT | wx.RIGHT, 10)
+        hhbox.Add(wx.StaticText(frame, label='选中托盘名'), 0, wx.TOP, 5)
+        self.selectionBoxIDTXT1 = wx.TextCtrl(frame, size=(50, 25), style=wx.TE_READONLY)
+        self.selectionBoxIDTXT1.SetValue("")
+        self.selectionBoxIDTXT1.SetBackgroundColour(wx.WHITE)
+        hhbox.Add(self.selectionBoxIDTXT1, 0, wx.LEFT | wx.RIGHT, 1)
+        hhbox.Add((3,-1))
+        hhbox.Add(wx.StaticText(frame, label='托盘内面板数'), 0, wx.TOP, 5)
+        self.selectionPanelTotalAmountTXT1 = wx.TextCtrl(frame, size=(30, 25), style=wx.TE_READONLY)
+        self.selectionPanelTotalAmountTXT1.SetValue("")
+        self.selectionPanelTotalAmountTXT1.SetBackgroundColour(wx.WHITE)
+        hhbox.Add(self.selectionPanelTotalAmountTXT1, 0, wx.LEFT | wx.RIGHT, 1)
 
-        hhbox.Add((10,-1))
-        hhbox.Add(wx.StaticText(self.topRightPanel, label='托盘内面板总重量'), 0, wx.TOP, 5)
-        self.selectionPanelTotalWeightTXT = wx.TextCtrl(self.topRightPanel, size=(60, 25), style=wx.TE_READONLY)
-        self.selectionPanelTotalWeightTXT.SetValue("")
-        self.selectionPanelTotalWeightTXT.SetBackgroundColour(wx.WHITE)
-        hhbox.Add(self.selectionPanelTotalWeightTXT, 0, wx.LEFT | wx.RIGHT, 10)
+        hhbox.Add((3,-1))
+        hhbox.Add(wx.StaticText(frame, label='托盘内面板重'), 0, wx.TOP, 5)
+        self.selectionPanelTotalWeightTXT1 = wx.TextCtrl(frame, size=(60, 25), style=wx.TE_READONLY)
+        self.selectionPanelTotalWeightTXT1.SetValue("")
+        self.selectionPanelTotalWeightTXT1.SetBackgroundColour(wx.WHITE)
+        hhbox.Add(self.selectionPanelTotalWeightTXT1, 0, wx.LEFT | wx.RIGHT, 1)
 
         vvbox.Add((-1,20))
         vvbox.Add(hhbox,0,wx.EXPAND)
 
         hhbox=wx.BoxSizer()
         hbox.Add((10,-1))
-        hhbox.Add(wx.StaticText(self.topRightPanel, label='托盘层数'), 0, wx.TOP, 5)
-        self.boxLayerNumTXT = wx.TextCtrl(self.topRightPanel, size=(40, 25), style=wx.TE_READONLY)
-        self.boxLayerNumTXT.SetValue(str(10))
-        self.boxLayerNumTXT.SetBackgroundColour(wx.WHITE)
-        hhbox.Add(self.boxLayerNumTXT, 0, wx.LEFT | wx.RIGHT, 10)
+        hhbox.Add(wx.StaticText(frame, label='托盘层数'), 0, wx.TOP, 5)
+        self.boxLayerNumTXT1 = wx.TextCtrl(frame, size=(30, 25), style=wx.TE_READONLY)
+        self.boxLayerNumTXT1.SetBackgroundColour(wx.WHITE)
+        hhbox.Add(self.boxLayerNumTXT1, 0, wx.LEFT | wx.RIGHT, 1)
 
-        hhbox.Add((20,-1))
-        hhbox.Add(wx.StaticText(self.topRightPanel, label='托盘长'), 0, wx.TOP, 5)
-        self.boxLengthTXT = wx.TextCtrl(self.topRightPanel, size=(50, 25), style=wx.TE_READONLY)
-        self.boxLengthTXT.SetValue(str(2345))
-        self.boxLengthTXT.SetBackgroundColour(wx.WHITE)
-        hhbox.Add(self.boxLengthTXT, 0, wx.LEFT | wx.RIGHT, 10)
+        hhbox.Add((10,-1))
+        hhbox.Add(wx.StaticText(frame, label='托盘长'), 0, wx.TOP, 5)
+        self.boxLengthTXT1 = wx.TextCtrl(frame, size=(45, 25), style=wx.TE_READONLY)
+        self.boxLengthTXT1.SetBackgroundColour(wx.WHITE)
+        hhbox.Add(self.boxLengthTXT1, 0, wx.LEFT | wx.RIGHT, 1)
 
-        hhbox.Add((20,-1))
-        hhbox.Add(wx.StaticText(self.topRightPanel, label='托盘宽'), 0, wx.TOP, 5)
-        self.boxWidthTXT = wx.TextCtrl(self.topRightPanel, size=(50, 25), style=wx.TE_READONLY)
-        self.boxWidthTXT.SetValue(str(550))
-        self.boxWidthTXT.SetBackgroundColour(wx.WHITE)
-        hhbox.Add(self.boxWidthTXT, 0, wx.LEFT | wx.RIGHT, 10)
+        hhbox.Add((10,-1))
+        hhbox.Add(wx.StaticText(frame, label='托盘宽'), 0, wx.TOP, 5)
+        self.boxWidthTXT1 = wx.TextCtrl(frame, size=(40, 25), style=wx.TE_READONLY)
+        self.boxWidthTXT1.SetBackgroundColour(wx.WHITE)
+        hhbox.Add(self.boxWidthTXT1, 0, wx.LEFT | wx.RIGHT, 1)
 
-        hhbox.Add((20,-1))
-        hhbox.Add(wx.StaticText(self.topRightPanel, label='托盘高'), 0, wx.TOP, 5)
-        self.boxHeightTXT = wx.TextCtrl(self.topRightPanel, size=(50, 25), style=wx.TE_READONLY)
-        self.boxHeightTXT.SetValue(str(1500))
-        self.boxHeightTXT.SetBackgroundColour(wx.WHITE)
-        hhbox.Add(self.boxHeightTXT, 0, wx.LEFT | wx.RIGHT, 10)
+        hhbox.Add((10,-1))
+        hhbox.Add(wx.StaticText(frame, label='托盘高'), 0, wx.TOP, 5)
+        self.boxHeightTXT1 = wx.TextCtrl(frame, size=(45, 25), style=wx.TE_READONLY)
+        self.boxHeightTXT1.SetBackgroundColour(wx.WHITE)
+        hhbox.Add(self.boxHeightTXT1, 0, wx.LEFT | wx.RIGHT, 1)
 
         vvbox.Add((-1,10))
         vvbox.Add(hhbox,0,wx.EXPAND)
+        vvbox.Add((-1,10))
 
         hbox.Add(vvbox,0)
-        self.topRightPanel.SetSizer(hbox)
-        self.topRightPanel.Layout()
+        frame.SetSizer(hbox)
+        
+    def ReCreateTopRightPanel2(self):
+        self.topRightPanel2.DestroyChildren()
+        hbox=wx.BoxSizer()
+        frame = wx.StaticBox(self.topRightPanel2,label="右侧工作区：")
+        hbox.Add(frame,1,wx.EXPAND|wx.TOP,5)
+        self.topRightPanel2.SetSizer(hbox)
+        self.topRightPanel2.Layout()
+
+        hbox = wx.BoxSizer()
+        vvbox = wx.BoxSizer(wx.VERTICAL)
+        hhbox = wx.BoxSizer()
+        hhbox.Add(wx.StaticText(frame, label='选中托盘名'), 0, wx.TOP, 5)
+        self.selectionBoxIDTXT2 = wx.TextCtrl(frame, size=(50, 25), style=wx.TE_READONLY)
+        self.selectionBoxIDTXT2.SetValue("")
+        self.selectionBoxIDTXT2.SetBackgroundColour(wx.WHITE)
+        hhbox.Add(self.selectionBoxIDTXT2, 0, wx.LEFT | wx.RIGHT, 1)
+        hhbox.Add((3,-1))
+        hhbox.Add(wx.StaticText(frame, label='托盘内面板数'), 0, wx.TOP, 5)
+        self.selectionPanelTotalAmountTXT2 = wx.TextCtrl(frame, size=(30, 25), style=wx.TE_READONLY)
+        self.selectionPanelTotalAmountTXT2.SetValue("")
+        self.selectionPanelTotalAmountTXT2.SetBackgroundColour(wx.WHITE)
+        hhbox.Add(self.selectionPanelTotalAmountTXT2, 0, wx.LEFT | wx.RIGHT, 1)
+
+        hhbox.Add((3,-1))
+        hhbox.Add(wx.StaticText(frame, label='托盘内面板重'), 0, wx.TOP, 5)
+        self.selectionPanelTotalWeightTXT2 = wx.TextCtrl(frame, size=(60, 25), style=wx.TE_READONLY)
+        self.selectionPanelTotalWeightTXT2.SetValue("")
+        self.selectionPanelTotalWeightTXT2.SetBackgroundColour(wx.WHITE)
+        hhbox.Add(self.selectionPanelTotalWeightTXT2, 0, wx.LEFT | wx.RIGHT, 1)
+
+        vvbox.Add((-1,20))
+        vvbox.Add(hhbox,0,wx.EXPAND)
+
+        hhbox=wx.BoxSizer()
+        hbox.Add((10,-1))
+        hhbox.Add(wx.StaticText(frame, label='托盘层数'), 0, wx.TOP, 5)
+        self.boxLayerNumTXT2 = wx.TextCtrl(frame, size=(30, 25), style=wx.TE_READONLY)
+        self.boxLayerNumTXT2.SetBackgroundColour(wx.WHITE)
+        hhbox.Add(self.boxLayerNumTXT2, 0, wx.LEFT | wx.RIGHT, 1)
+
+        hhbox.Add((10,-1))
+        hhbox.Add(wx.StaticText(frame, label='托盘长'), 0, wx.TOP, 5)
+        self.boxLengthTXT2 = wx.TextCtrl(frame, size=(45, 25), style=wx.TE_READONLY)
+        self.boxLengthTXT2.SetBackgroundColour(wx.WHITE)
+        hhbox.Add(self.boxLengthTXT2, 0, wx.LEFT | wx.RIGHT, 1)
+
+        hhbox.Add((10,-1))
+        hhbox.Add(wx.StaticText(frame, label='托盘宽'), 0, wx.TOP, 5)
+        self.boxWidthTXT2 = wx.TextCtrl(frame, size=(40, 25), style=wx.TE_READONLY)
+        self.boxWidthTXT2.SetBackgroundColour(wx.WHITE)
+        hhbox.Add(self.boxWidthTXT2, 0, wx.LEFT | wx.RIGHT, 1)
+
+        hhbox.Add((10,-1))
+        hhbox.Add(wx.StaticText(frame, label='托盘高'), 0, wx.TOP, 5)
+        self.boxHeightTXT2 = wx.TextCtrl(frame, size=(45, 25), style=wx.TE_READONLY)
+        self.boxHeightTXT2.SetBackgroundColour(wx.WHITE)
+        hhbox.Add(self.boxHeightTXT2, 0, wx.LEFT | wx.RIGHT, 1)
+
+        vvbox.Add((-1,10))
+        vvbox.Add(hhbox,0,wx.EXPAND)
+        vvbox.Add((-1,10))
+
+        hbox.Add(vvbox,0)
+        frame.SetSizer(hbox)
 
     def OnPackageStateCOMBOChanged(self,event):
         print("self.packageState,GetValue=",self.packageState,self.packageStateCOMBO.GetValue())
