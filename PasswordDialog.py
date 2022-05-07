@@ -13,7 +13,7 @@ class PasswordDialog(wx.Dialog):
         self.parent = parent
         # self.log.WriteText("操作员：'%s' 开始执行库存参数设置操作。。。\r\n"%(self.parent.operator_name))
         self.SetExtraStyle(wx.DIALOG_EX_METAL)
-        self.Create(parent, -1, "惭怍员登录对话框", pos, size, style)
+        self.Create(parent, -1, "操作员登录对话框", pos, size, style)
         sizer = wx.BoxSizer(wx.VERTICAL)
         panel = wx.Panel(self, -1, size=(300, 60))
         vbox = wx.BoxSizer(wx.VERTICAL)
@@ -33,6 +33,7 @@ class PasswordDialog(wx.Dialog):
         bitmap1 = wx.Bitmap("bitmaps/ok4.png", wx.BITMAP_TYPE_PNG)
         bitmap2 = wx.Bitmap("bitmaps/cancel1.png", wx.BITMAP_TYPE_PNG)
         btn_ok = wx.Button(self, wx.ID_OK, "确定", size=(120, 35))
+        btn_ok.SetDefault()
         btn_ok.SetBitmap(bitmap1, wx.LEFT)
         btn_cancel = wx.Button(self, wx.ID_CANCEL, "取消", size=(120, 35))
         btn_cancel.SetBitmap(bitmap2, wx.LEFT)

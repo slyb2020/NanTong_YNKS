@@ -129,6 +129,7 @@ class BoxDetailViewPanel(wx.Panel):
             else:
                 wx.MessageBox("当前托盘的当前层无法容纳您所选的面板，请选择其它层重试！",'信息提示窗口')
     def SetValue(self,info):
+        print("setValue info=",info)
         self.name = info[0]
         self.length = info[1]
         self.width = info[2]
@@ -201,16 +202,16 @@ class BoxDetailViewPanel(wx.Panel):
                     box.SetBackgroundColour(wx.Colour(240,240,240))
                     self.master.packageList[i].state = ""
                     break
-        for i, record in enumerate(self.master.currentPackageData):
-            if record[0]==self.name:
-                print("before modify record=",record)
-                # print("before modify:totalLayer,totalPanelWeight,totalPanelAmount,totalPanelSquare=",totalLayer,totalPanelWeight,totalPanelAmount,totalPanelSquare)
-                # self.master.currentPackageData[i][4]=totalLayer
-                # self.master.currentPackageData[i][5]="%.2f"%(totalPanelWeight)
-                # self.master.currentPackageData[i][6]=str(totalPanelAmount)
-                # self.master.currentPackageData[i][7]="%2.f"%(totalPanelSquare/1e6)
-                print("after modify:", record)
-                break
+        # for i, record in enumerate(self.master.currentPackageData):
+        #     if record[0]==self.name:
+        #         print("before modify record=",record)
+        #         # print("before modify:totalLayer,totalPanelWeight,totalPanelAmount,totalPanelSquare=",totalLayer,totalPanelWeight,totalPanelAmount,totalPanelSquare)
+        #         # self.master.currentPackageData[i][4]=totalLayer
+        #         # self.master.currentPackageData[i][5]="%.2f"%(totalPanelWeight)
+        #         # self.master.currentPackageData[i][6]=str(totalPanelAmount)
+        #         # self.master.currentPackageData[i][7]="%2.f"%(totalPanelSquare/1e6)
+        #         print("after modify:", record)
+        #         break
         self.state=""
         self.frontViewPanel.addNewLayerBTN.Enable(False)
         self.frontViewPanel.delEmptyLayerBTN.Enable(False)
@@ -352,7 +353,7 @@ class FrontViewPanel(wx.Panel):
         hhbox.Add(self.addNewLayerBTN,0)
         bmp = wx.Bitmap(bitmapDir + '/new_folder.png')
         self.delEmptyLayerBTN = wx.Button(self, -1, size=(40, 40), name="删除空的层")
-        self.delEmptyLayerBTN.Bind(wx.EVT_BUTTON,self.OnDelThisLayerBTN)
+        self.delEmptyLayerBTN.Bind(wx.EVT_BUTTON, self.OnDelEmpyLayerBTN)
         self.delEmptyLayerBTN.Enable(False)
         self.delEmptyLayerBTN.SetBackgroundColour(wx.Colour(240,240,240))
         self.delEmptyLayerBTN.SetToolTip("删除空的层")
@@ -367,6 +368,7 @@ class FrontViewPanel(wx.Panel):
         hhbox.Add(self.dismissThisLayerBTN,0)
         bmp = wx.Bitmap(bitmapDir + '/resize.png')
         self.resizeBoxBTN = wx.Button(self, -1, size=(40, 40), name="改变托盘尺寸")
+        self.resizeBoxBTN.Bind(wx.EVT_BUTTON,self.OnResizeBoxBTN)
         self.resizeBoxBTN.Enable(False)
         self.resizeBoxBTN.SetBackgroundColour(wx.Colour(240,240,240))
         self.resizeBoxBTN.SetToolTip("改变托盘尺寸")
@@ -390,7 +392,46 @@ class FrontViewPanel(wx.Panel):
         self.panel.SetAutoLayout(1)
         self.panel.SetupScrolling()
         self.Bind(wx.EVT_BUTTON,self.OnButton)
-    def OnDelThisLayerBTN(self,event):
+
+    def OnResizeBoxBTN(self,event):
+        if len(self.data)>0:
+            maxWidth = 0
+            maxLength = 0
+            for layer in self.data:
+                if layer!=[]:
+                    layerMaxWidth = 0
+                    layerMaxLength = 0
+                    for row in layer:
+                        rowMaxLength = 0
+                        rowMaxWidth = 0
+                        for col in row:
+                            rowMaxLength += int(col[9])
+                            if int(col[10])>rowMaxWidth:
+                                rowMaxWidth = int(col[10])
+                        layerMaxWidth+=rowMaxWidth
+                        if rowMaxLength>layerMaxLength:
+                            layerMaxLength = rowMaxLength
+                if layerMaxWidth>maxWidth:
+                    maxWidth = layerMaxWidth
+                if layerMaxLength>maxLength:
+                    maxLength = layerMaxLength
+            print("maxLength,maxWidth=",maxLength,maxWidth)
+            for i,record in enumerate(self.parent.master.currentPackageData):
+                print("record[0],nmae=",record[0],self.name)
+                if record[0]==self.name:
+                    if int(self.parent.master.currentPackageData[i][1])>maxLength:
+                        self.parent.master.currentPackageData[i][1]=maxLength
+                        self.parent.length = maxLength
+                    if int(self.parent.master.currentPackageData[i][2])>maxWidth:
+                        self.parent.master.currentPackageData[i][2]=maxWidth
+                        self.parent.width = maxWidth
+                    self.parent.master.currentPackageData[i][14]=self.data
+                    self.parent.master.currentPackageData[i][4]=len(self.data)
+                    self.parent.SetValue(self.parent.master.currentPackageData[i])
+                    break
+        wx.MessageBox("已完成排序！","信息提示窗口")
+
+    def OnDelEmpyLayerBTN(self, event):
         if len(self.data)>0:
             temp=[]
             for layer in self.data:
@@ -492,14 +533,25 @@ class FrontViewPanel(wx.Panel):
                 vbox.Add(hhbox,0,wx.EXPAND)
                 self.occupyButtonList.append(occupyButton)
                 self.freeButtonList.append(freeButton)
+        for i,box in enumerate(self.parent.master.currentPackageData):
+            if box[0]==self.parent.name:
+                num = i
+                break
         if self.parent.direction==wx.LEFT:
             self.parent.master.boxLayerNumTXT1.SetValue(str(totalLayer))
+            # self.parent.master.currentPackageData[]
             self.parent.master.selectionPanelTotalAmountTXT1.SetValue(str(totalPanelAmount))
             self.parent.master.selectionPanelTotalWeightTXT1.SetValue("%.2f"%totalPanelWeight)
+            self.parent.master.boxLengthTXT1.SetValue(str(self.parent.master.currentPackageData[num][1]))
+            self.parent.master.boxWidthTXT1.SetValue(str(self.parent.master.currentPackageData[num][2]))
+            self.parent.master.boxHeightTXT1.SetValue(str(self.parent.master.currentPackageData[num][3]))
         else:
             self.parent.master.boxLayerNumTXT2.SetValue(str(totalLayer))
             self.parent.master.selectionPanelTotalAmountTXT2.SetValue(str(totalPanelAmount))
             self.parent.master.selectionPanelTotalWeightTXT2.SetValue("%.2f"%totalPanelWeight)
+            self.parent.master.boxLengthTXT2.SetValue(str(self.parent.master.currentPackageData[num][1]))
+            self.parent.master.boxWidthTXT2.SetValue(str(self.parent.master.currentPackageData[num][2]))
+            self.parent.master.boxHeightTXT2.SetValue(str(self.parent.master.currentPackageData[num][3]))
         # self.parent.master.selectionBoxIDTXT1.SetValule(str(totalLayer))
         self.panel.SetSizer(vbox)
         self.panel.Refresh()
@@ -946,17 +998,26 @@ class PackageDialog(wx.Dialog):
             boxLength = int(record[1])
             boxWidth = int(record[2])
             boxHeight = int(record[3])
-            boxLayer = int(record[4])
             data = record[14]
-            weight = float(record[5])
-            amount = int(record[6])
-            square = float(record[7])
+            boxLayer = len(data)#这里的层数有可能在程序运行过程中被改了，所以需要重新根据data里的数据进行计算
+            weight = 0#这里的重量、数量以及面积等数据有可能在程序运行过程中被改了，所以需要重新根据data里的数据进行计算
+            amount = 0
+            square = 0
+            for layer in data:
+                for row in layer:
+                    for col in row:
+                        amount+=1
+                        weight+=float(col[17])
+                        square+=(int(col[9])*int(col[10]))
+            square = square/1e6
             UpdateSpecificPackageBoxInfo(self.log, WHICHDB, self.orderID, index, boxLength, boxWidth, boxHeight, boxLayer, data,weight,amount,square)
             for layer in data:
                 for row in layer:
                     for col in row:
                         if len(col)>0:
                             UpdatePanelPackageStateInPOrderDB(self.log,WHICHDB,record[0],col)
+        if event!=None:
+            wx.MessageBox("数据已保存完毕，请继续进行操作")
     # def OnOk(self, event):
     #     event.Skip()
     #
@@ -1004,7 +1065,6 @@ class PackageDialog(wx.Dialog):
         self.packageList=[]
         hbox = wx.BoxSizer()
         for data in self.currentPackageData:
-            print("in Finish Recreate:",data)
             package = PackagePanel(self.finishPackagePanel, self, info=data)
             self.packageList.append(package)
             hbox.Add(package)
@@ -1293,6 +1353,8 @@ class PackageDialog(wx.Dialog):
 
     def OnDeckCOMBOChanged(self,event):
         if self.deckName != self.deckCOMBO.GetValue():
+            #现存盘，再变换
+            self.OnSaveBTN(None)
             self.deckName = self.deckCOMBO.GetValue()
             tempZone = []
             tempRoom = []
