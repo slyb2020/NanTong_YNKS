@@ -432,6 +432,7 @@ class SpecificBoardManagementPanel(wx.Panel):
 class BoardManagementPanel(wx.Panel):
     def __init__(self, parent, master, log):
         wx.Panel.__init__(self, parent, -1)
+        self.Freeze()
         self.master = master
         self.log = log
         self.notebook = wx.Notebook(self, -1, size=(21, 21), style=
@@ -466,3 +467,4 @@ class BoardManagementPanel(wx.Panel):
         self.notebook.AddPage(self.sparyBoardManagementPanel, "喷涂板管理")
 
         self.notebook.SetSelection(0)
+        self.Thaw()

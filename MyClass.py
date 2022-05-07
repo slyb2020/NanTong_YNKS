@@ -901,6 +901,7 @@ class WorkZonePanel(wx.Panel):
                                     # wx.BK_RIGHT
                                     # | wx.NB_MULTILINE
                                     ,name="MainNoteBook")
+        self.notebook.Freeze()
         il = wx.ImageList(16, 16)
         idx1 = il.Add(images._rt_smiley.GetBitmap())
         self.total_page_num = 0
@@ -913,6 +914,7 @@ class WorkZonePanel(wx.Panel):
         hbox = wx.BoxSizer()
         hbox.Add(self.notebook, 1, wx.EXPAND)
         self.SetSizer(hbox)
+        self.Freeze()
         self.systemIntroductionPanel = SystemIntroductionPanel(self.notebook)
         self.notebook.AddPage(self.systemIntroductionPanel,"系统介绍")
         if self.master.operatorCharacter in ["技术员","管理员"]:
@@ -928,4 +930,6 @@ class WorkZonePanel(wx.Panel):
             self.notebook.SetSelection(1)
         elif self.master.operatorCharacter in ["技术员","管理员"]:
             self.notebook.SetSelection(2)
+        self.Thaw()
+        self.notebook.Thaw()
 

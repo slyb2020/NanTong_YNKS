@@ -463,6 +463,7 @@ class OrderGrid(gridlib.Grid):  ##, mixins.GridAutoEditMixin):
 class OrderManagementPanel(wx.Panel):
     def __init__(self, parent, master, log):
         wx.Panel.__init__(self, parent, -1)
+        self.Freeze()
         self.master = master
         self.log = log
         self.busy = False
@@ -534,6 +535,7 @@ class OrderManagementPanel(wx.Panel):
         # self.filter.Bind(wx.EVT_TEXT_ENTER, self.OnSearch)
         # self.ReCreateRightPanel()
         self.orderGrid.Bind(gridlib.EVT_GRID_CELL_LEFT_CLICK, self.OnCellLeftClick)
+        self.Thaw()
 
     def ReCreateOrderDetailTree(self):
         self.orderDetailTreePanel.DestroyChildren()

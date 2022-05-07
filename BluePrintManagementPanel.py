@@ -2085,6 +2085,7 @@ class ConstructionManagementPanel(wx.Panel):
 class BluePrintManagementPanel(wx.Panel):
     def __init__(self, parent, master, log):
         wx.Panel.__init__(self, parent, -1)
+        self.Freeze()
         self.master = master
         self.log = log
         self.processList=["505","405","409","406","652","100","306","9000"]
@@ -2119,3 +2120,4 @@ class BluePrintManagementPanel(wx.Panel):
         self.sparyBoardManagementPanel = wx.Panel(self.notebook)
         self.notebook.AddPage(self.sparyBoardManagementPanel, "检修口图纸管理")
         self.notebook.SetSelection(0)
+        self.Thaw()

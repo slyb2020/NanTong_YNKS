@@ -223,6 +223,7 @@ def main():
     win.Show()
     # win.ShowFullScreen(True)
     win.Center(wx.BOTH)
+    win.OnCheckIn(None)
     app.MainLoop()
 
 
