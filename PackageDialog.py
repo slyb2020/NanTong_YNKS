@@ -129,7 +129,6 @@ class BoxDetailViewPanel(wx.Panel):
             else:
                 wx.MessageBox("当前托盘的当前层无法容纳您所选的面板，请选择其它层重试！",'信息提示窗口')
     def SetValue(self,info):
-        print("setValue info=",info)
         self.name = info[0]
         self.length = info[1]
         self.width = info[2]
@@ -179,15 +178,18 @@ class BoxDetailViewPanel(wx.Panel):
         else:
             self.frontViewPanel.addNewLayerBTN.Enable(True)
             self.frontViewPanel.delEmptyLayerBTN.Enable(True)
-            self.frontViewPanel.dismissThisLayerBTN.Enable(True)
+            self.frontViewPanel.dismissThisLayerBTN.Enable(False)
             self.frontViewPanel.resizeBoxBTN.Enable(True)
             self.frontViewPanel.sortBoxBTN.Enable(True)
-        # self.frame.SetBackgroundColour(wx.GREEN)
+        self.frontViewPanel.ReCreate()
+        self.topViewPanel.ReCreate()
         # self.frame.Refresh()
         event.Skip()
 
     def OnTopUploadBTN(self, event):
         self.master.Freeze()
+        self.master.middleLeftAddBTN.Enable(False)
+        self.master.middleRightAddBTN.Enable(False)
         for i, box in enumerate(self.master.packageList):
             if self.direction == wx.LEFT:
                 if self.master.packageList[i].state == "左":
@@ -270,12 +272,51 @@ class TopViewPanel(wx.Panel):
         (lengthPixel,widthPixel) = self.panel.GetClientSize()
         lengthCoef = float(self.size[0]/lengthPixel)
         widthCoef = float(self.size[1]/widthPixel)
-        if self.size[0]==0 and self.size[1]==0:
+        if self.parent.frontViewPanel.selectionNum!=-1:#代表本工作取有层被选取
+            if self.parent.master.leftWorkingPackagePanel.state=='占用' and self.parent.master.rightWorkingPackagePanel.state=='占用':
+                if self.parent.direction == wx.LEFT:#如果本工作区是左侧工作区
+                    if self.parent.master.rightWorkingPackagePanel.frontViewPanel.selectionNum!=-1 and self.parent.master.rightWorkingPackagePanel.topViewPanel.data==[]:
+                        self.parent.master.middleLeftAddBTN.Enable(False)
+                        if self.parent.topViewPanel.data!=[]:
+                            self.parent.master.middleRightAddBTN.Enable(True)
+                        else:
+                            self.parent.master.middleRightAddBTN.Enable(False)
+                    elif self.parent.frontViewPanel.selectionNum!=-1 and self.data==[]:
+                        self.parent.master.middleLeftAddBTN.Enable(False)
+                        if self.parent.master.rightWorkingPackagePanel.topViewPanel.data!=[]:
+                            self.parent.master.middleLeftAddBTN.Enable(True)
+                        else:
+                            self.parent.master.middleLeftAddBTN.Enable(False)
+                    else:
+                        self.parent.master.middleLeftAddBTN.Enable(False)
+                        self.parent.master.middleRightAddBTN.Enable(False)
+                else:#如果本工作区是右侧工作区
+                    if self.parent.master.leftWorkingPackagePanel.frontViewPanel.selectionNum!=-1 and self.parent.master.leftWorkingPackagePanel.topViewPanel.data==[]:
+                        self.parent.master.middleRightAddBTN.Enable(False)
+                        if self.parent.topViewPanel.data!=[]:
+                            self.parent.master.middleLeftAddBTN.Enable(True)
+                        else:
+                            self.parent.master.middleLeftAddBTN.Enable(False)
+                    elif self.parent.frontViewPanel.selectionNum!=-1 and self.data==[]:
+                        self.parent.master.middleLeftAddBTN.Enable(False)
+                        if self.parent.master.leftWorkingPackagePanel.topViewPanel.data!=[]:
+                            self.parent.master.middleRightAddBTN.Enable(True)
+                        else:
+                            self.parent.master.middleRightAddBTN.Enable(False)
+                    else:
+                        self.parent.master.middleLeftAddBTN.Enable(False)
+                        self.parent.master.middleRightAddBTN.Enable(False)
+            else:
+                self.parent.master.middleLeftAddBTN.Enable(False)
+                self.parent.master.middleRightAddBTN.Enable(False)
+
+        if self.size[0]==0 and self.size[1]==0:#这表示现在工作区里没有托盘
             self.lengthTXT.SetLabel("")
             self.widthTXT.SetLabel("")
         else:
             self.lengthTXT.SetLabel(str(self.size[0]))
             self.widthTXT.SetLabel(str(self.size[1]))
+
         vbox = wx.BoxSizer(wx.VERTICAL)
         self.currentRow=None
         self.currentCol=None
@@ -295,6 +336,10 @@ class TopViewPanel(wx.Panel):
                     self.buttonList.append(button)
                 # vbox.Add(hbox,int(self.data[row][0][10]),wx.EXPAND)
                 vbox.Add(hbox,0)
+        if self.parent.state=="占用":
+            self.parent.frontViewPanel.dismissThisLayerBTN.Enable(False if self.parent.frontViewPanel.selectionNum==-1 else True)
+        else:
+            self.parent.frontViewPanel.dismissThisLayerBTN.Enable(False)
         self.panel.SetSizer(vbox)
         self.panel.Refresh()
         self.panel.Layout()
@@ -327,7 +372,7 @@ class FrontViewPanel(wx.Panel):
         self.parent = parent
         self.state=""
         self.data = data
-        self.selectionNum=None
+        self.selectionNum=-1
         # self.data = [
         #                 [
         #                     25,[
@@ -376,6 +421,7 @@ class FrontViewPanel(wx.Panel):
         hhbox.Add(self.resizeBoxBTN,0)
         bmp = wx.Bitmap(bitmapDir + '/sort2.png')
         self.sortBoxBTN = wx.Button(self, -1, size=(40, 40), name="托盘重新排序")
+        self.sortBoxBTN.Bind(wx.EVT_BUTTON,self.OnSortBoxBTN)
         self.sortBoxBTN.Enable(False)
         self.sortBoxBTN.SetBackgroundColour(wx.Colour(240,240,240))
         self.sortBoxBTN.SetToolTip("托盘重新排序")
@@ -392,6 +438,27 @@ class FrontViewPanel(wx.Panel):
         self.panel.SetAutoLayout(1)
         self.panel.SetupScrolling()
         self.Bind(wx.EVT_BUTTON,self.OnButton)
+    def OnSortBoxBTN(self,event):
+        if len(self.data)>0:
+            layerSquares = []
+            for layer in self.data:
+                square=0
+                for row in layer:
+                    for col in row:
+                        square += int(col[9])*int(col[10])
+                layerSquares.append(square)
+            layerSquares = np.array(layerSquares)
+            b = np.argsort(layerSquares)
+            data = np.array(self.data)
+            self.data = data[b]
+            self.data = list(self.data)
+            for i,record in enumerate(self.parent.master.currentPackageData):
+                if record[0]==self.name:
+                    self.parent.master.currentPackageData[i][14]=self.data
+                    self.parent.SetValue(self.parent.master.currentPackageData[i])
+                    self.parent.master.FinishPackagePanelReCreate()
+                    break
+            wx.MessageBox("已完成排序！","信息提示窗口")
 
     def OnResizeBoxBTN(self,event):
         if len(self.data)>0:
@@ -429,7 +496,7 @@ class FrontViewPanel(wx.Panel):
                     self.parent.master.currentPackageData[i][4]=len(self.data)
                     self.parent.SetValue(self.parent.master.currentPackageData[i])
                     break
-        wx.MessageBox("已完成排序！","信息提示窗口")
+            wx.MessageBox("已完成改变托盘尺寸操作！","信息提示窗口")
 
     def OnDelEmpyLayerBTN(self, event):
         if len(self.data)>0:
@@ -490,7 +557,13 @@ class FrontViewPanel(wx.Panel):
                 #     self.parent.master.middleLeftBTN.Enable(False)
             if self.parent.state=='占用' and self.parent.master.seperateSelectionNum>=0:
                 self.parent.bottomUploadBTN.Enable(True)
-
+            if self.parent.state=="占用":
+                if self.selectionNum==-1:
+                    self.dismissThisLayerBTN.Enable(False)
+                elif self.parent.topViewPanel.data!=[]:
+                    self.dismissThisLayerBTN.Enable(True)
+                else:
+                    self.dismissThisLayerBTN.Enable(False)
 
     def ReCreate(self):
         self.panel.DestroyChildren()
@@ -508,7 +581,8 @@ class FrontViewPanel(wx.Panel):
             for i in range(totalLayer):
                 hhbox = wx.BoxSizer()
                 square=0
-                layerHeight=25
+                layerHeight=25#空层必须设定为25，否则在FrontView里面画不出来，没法操作了
+                # layerHeight=0
                 for row in self.data[i]:
                     for col in row:
                         totalPanelAmount+=1
@@ -517,7 +591,7 @@ class FrontViewPanel(wx.Panel):
                         totalPanelWeight+=float(col[17])
                         if int(col[11])>layerHeight:
                             layerHeight = int(col[11])
-                        boxHeight+=layerHeight
+                boxHeight+=layerHeight
                 percent = float(square/self.boxSquare)
                 occupyButton = wx.Button(self.panel,label="第%d层"%(i+1),size=(L*percent,layerHeight*12/25),name="%s"%(i))
                 # occupyButton.SetForegroundColour(wx.Colour(wx.BLACK) if self.selectionNum==i else wx.Colour(wx.WHITE))
@@ -537,6 +611,7 @@ class FrontViewPanel(wx.Panel):
             if box[0]==self.parent.name:
                 num = i
                 break
+        self.parent.master.currentPackageData[num][3]=boxHeight
         if self.parent.direction==wx.LEFT:
             self.parent.master.boxLayerNumTXT1.SetValue(str(totalLayer))
             # self.parent.master.currentPackageData[]
@@ -553,6 +628,10 @@ class FrontViewPanel(wx.Panel):
             self.parent.master.boxWidthTXT2.SetValue(str(self.parent.master.currentPackageData[num][2]))
             self.parent.master.boxHeightTXT2.SetValue(str(self.parent.master.currentPackageData[num][3]))
         # self.parent.master.selectionBoxIDTXT1.SetValule(str(totalLayer))
+        if self.parent.state=="占用":
+            self.dismissThisLayerBTN.Enable(False if self.selectionNum==-1 else True)
+        else:
+            self.dismissThisLayerBTN.Enable(False)
         self.panel.SetSizer(vbox)
         self.panel.Refresh()
         self.panel.SetAutoLayout(1)
@@ -560,7 +639,7 @@ class FrontViewPanel(wx.Panel):
 
     def SetValue(self,info):
         if info == []:
-            self.selectionNum = None
+            self.selectionNum = -1
             self.name = ""
             self.length = 0
             self.width = 0
@@ -578,7 +657,7 @@ class FrontViewPanel(wx.Panel):
             self.data = []
             self.boxSquare = 1
         else:
-            self.selectionNum = None
+            self.selectionNum = -1
             self.name = info[0]
             self.length = info[1]
             self.width = info[2]
@@ -686,35 +765,6 @@ class PackagePanel(wx.Panel):
         vbox.Add(self.panel,1,wx.EXPAND|wx.LEFT|wx.RIGHT,10)
         self.SetSizer(vbox)
         self.ReCreate()
-        # self.SetBackgroundColour(wx.Colour(240,240,240))
-        # self.state = ""
-        # self.layerGaugeList=[]
-        # vvbox = wx.BoxSizer(wx.VERTICAL)
-        # boxSquare = float(self.length) * float(self.width)
-        #
-        # for i, layer in enumerate(self.data[::-1]):
-        #     square = 0
-        #     gauge = MyGauge(self.panel,self.master,self.name)
-        #     if layer==[]:
-        #         percent=0
-        #     else:
-        #         for j, row in enumerate(layer):
-        #             for k, col in enumerate(row):
-        #                 length= float(col[9])
-        #                 width = float(col[10])
-        #                 square+=(length*width)
-        #         percent = 100.0*square/boxSquare
-        #     gauge.SetValue(percent)
-        #     gauge.SetBackgroundColour(wx.WHITE)
-        #     gauge.SetBorderColor(wx.BLACK)
-        #     self.layerGaugeList.append(gauge)
-        #     # if layer==[]:#根据层厚画出gauge的高度
-        #     #     temp=1
-        #     # else:
-        #     #     temp = int(layer[0][0][11])/25
-        #     vvbox.Add(gauge,0,wx.EXPAND)
-        # self.panel.SetSizer(vvbox)
-        # self.panel.Refresh()
 
     def ReCreate(self):
         self.panel.DestroyChildren()
@@ -723,7 +773,8 @@ class PackagePanel(wx.Panel):
         self.layerGaugeList=[]
         vvbox = wx.BoxSizer(wx.VERTICAL)
         boxSquare = float(self.length) * float(self.width)
-        for i, layer in enumerate(self.data[::-1]):
+        # for i, layer in enumerate(self.data[::-1]):
+        for i, layer in enumerate(self.data):
             square = 0
             gauge = MyGauge(self.panel,self.master,self.name)
             if layer==[]:
@@ -1118,8 +1169,8 @@ class PackageDialog(wx.Dialog):
                     else:
                         button.SetBackgroundColour(wx.Colour(240,240,240))
         event.Skip()
-        self.leftWorkingPackagePanel.bottomUploadBTN.Enable((self.leftWorkingPackagePanel.state == '占用' and self.leftWorkingPackagePanel.frontViewPanel.selectionNum != None))
-        self.rightWorkingPackagePanel.bottomUploadBTN.Enable((self.rightWorkingPackagePanel.state == '占用' and self.rightWorkingPackagePanel.frontViewPanel.selectionNum != None))
+        self.leftWorkingPackagePanel.bottomUploadBTN.Enable((self.leftWorkingPackagePanel.state == '占用' and self.leftWorkingPackagePanel.frontViewPanel.selectionNum != -1))
+        self.rightWorkingPackagePanel.bottomUploadBTN.Enable((self.rightWorkingPackagePanel.state == '占用' and self.rightWorkingPackagePanel.frontViewPanel.selectionNum != -1))
     def SeperatePackagePanelReCreate(self):
         self.seperatePackagePanel.DestroyChildren()
         hbox=wx.BoxSizer()
