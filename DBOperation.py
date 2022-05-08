@@ -906,6 +906,25 @@ def InsertNewOrderRecord(log,whichDB,newOrderID,newOrderName,subOrderIDList):
         db.rollback()
     db.close()
 
+def UpdateSeperatePanelBoxNumberAndState(log, whichDB, orderID, index, state, boxNum):
+    name="p%s"%str(orderID)
+    try:
+        db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
+                             passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
+    except:
+        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        if log:
+            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+        return -1, []
+    cursor = db.cursor()
+    sql = "UPDATE `%s` SET `状态`='%s', `所属货盘`='%s'  where `Index`=%s" %(name,state,boxNum,index)
+    try:
+        cursor.execute(sql)
+        db.commit()  # 必须有，没有的话插入语句不会执行
+    except:
+        print("error2")
+        db.rollback()
+    db.close()
 
 def UpdateSubOrderPackageState(log,whichDB,orderID,subOrderId,state):
     name="p%s"%str(orderID)
@@ -972,7 +991,7 @@ def UpdateOrderRecord(log,whichDB,OrderID,subOrderIdStr,subOrderStateStr):
         db.rollback()
     db.close()
 
-def UpdataPanelGlueNoInDB(log,whichDB,orderID,index,glueNo):
+def UpdatePanelGlueNoInDB(log, whichDB, orderID, index, glueNo):
     try:
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
@@ -991,7 +1010,7 @@ def UpdataPanelGlueNoInDB(log,whichDB,orderID,index,glueNo):
         db.rollback()
     db.close()
 
-def UpdataPanelWeightInDB(log,whichDB,orderID,index,weight):
+def UpdatePanelWeightInDB(log, whichDB, orderID, index, weight):
     try:
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
@@ -1010,7 +1029,7 @@ def UpdataPanelWeightInDB(log,whichDB,orderID,index,weight):
         db.rollback()
     db.close()
 
-def UpdataPanelGluePageInDB(log,whichDB,orderID,glueNo,gluePage):
+def UpdatePanelGluePageInDB(log, whichDB, orderID, glueNo, gluePage):
     try:
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
@@ -1029,7 +1048,7 @@ def UpdataPanelGluePageInDB(log,whichDB,orderID,glueNo,gluePage):
         db.rollback()
     db.close()
 
-def UpdataPanelGlueLabelPageInDB(log,whichDB,orderID,glueNo,gluePage):
+def UpdatePanelGlueLabelPageInDB(log, whichDB, orderID, glueNo, gluePage):
     try:
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')

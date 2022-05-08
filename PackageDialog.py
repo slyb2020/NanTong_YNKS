@@ -6,13 +6,15 @@ from ID_DEFINE import *
 from DBOperation import GetSubOrderPackageState,UpdateSubOrderPackageState,GetSubOrderPanelsForPackage,\
     CreatePackagePanelSheetForOrder,InsertPanelDetailIntoPackageDB,GetSubOrderPanelsForPackageFromPackageDB,\
     GetCurrentPackageData,CreateNewPackageBoxInBoxDB,GetSpecificPackageBoxData,UpdateSpecificPackageBoxInfo,\
-    GetSubOrderPackageNumber,UpdatePanelPackageStateInPOrderDB
+    GetSubOrderPackageNumber,UpdatePanelPackageStateInPOrderDB,UpdateSeperatePanelBoxNumberAndState
 import numpy as np
 from operator import itemgetter
 import wx.lib.agw.pygauge as PG
 import json
 import wx.lib.agw.aquabutton as AB
 import wx.lib.agw.gradientbutton as GB
+import wx.lib.agw.pybusyinfo as PBI
+import images
 
 dirName = os.path.dirname(os.path.abspath(__file__))
 bitmapDir = os.path.join(dirName, 'bitmaps')
@@ -129,6 +131,7 @@ class BoxDetailViewPanel(wx.Panel):
             else:
                 wx.MessageBox("当前托盘的当前层无法容纳您所选的面板，请选择其它层重试！",'信息提示窗口')
     def SetValue(self,info):
+        self.info = info
         self.name = info[0]
         self.length = info[1]
         self.width = info[2]
@@ -932,8 +935,10 @@ class PackageDialog(wx.Dialog):
         vbox.Add(self.bottomPackagePanel,0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,10)
 
         self.middleLeftAddBTN = wx.Button(self.middleControlPanel,label="<<+",size=(10,50))
+        self.middleLeftAddBTN.Bind(wx.EVT_BUTTON,self.OnMiddleLeftAddBTN)
         self.middleLeftAddBTN.Enable(False)
         self.middleRightAddBTN = wx.Button(self.middleControlPanel,label="+>>",size=(10,50))
+        self.middleRightAddBTN.Bind(wx.EVT_BUTTON,self.OnMiddleRightAddBTN)
         self.middleRightAddBTN.Enable(False)
         self.middleRightBTN = wx.Button(self.middleControlPanel,label=">>",size=(10,20))
         self.middleRightBTN.Enable(False)
@@ -1042,8 +1047,67 @@ class PackageDialog(wx.Dialog):
         # btn_ok.Bind(wx.EVT_BUTTON, self.OnOk)
         # btn_cancel.Bind(wx.EVT_BUTTON, self.OnCancel)
         # manualInputBTN.Bind(wx.EVT_BUTTON, self.OnCancel)
+    def OnMiddleRightAddBTN(self,event):
+        layerLength = 0
+        layerWidth = 0
+        for row in self.leftWorkingPackagePanel.data[self.leftWorkingPackagePanel.frontViewPanel.selectionNum]:#先计算源板子的外面积
+            rowLength = 0
+            rowWidth = 0
+            for col in row:
+                rowLength+=int(col[9])
+                if rowWidth<int(col[10]):
+                    rowWidth=int(col[10])
+            if layerLength<rowLength:
+                layerLength = rowLength
+            layerWidth+=rowWidth
+        if layerWidth<=self.rightWorkingPackagePanel.width and layerLength<=self.rightWorkingPackagePanel.length:#与目标托盘的长宽比较，能放下再放1
+            self.rightWorkingPackagePanel.data[self.rightWorkingPackagePanel.frontViewPanel.selectionNum]=\
+                self.leftWorkingPackagePanel.data.pop(self.leftWorkingPackagePanel.frontViewPanel.selectionNum)
+            self.leftWorkingPackagePanel.info[14]=self.leftWorkingPackagePanel.data
+            self.rightWorkingPackagePanel.info[14]=self.rightWorkingPackagePanel.data
+            self.leftWorkingPackagePanel.frontViewPanel.SetValue(self.leftWorkingPackagePanel.info)
+            self.leftWorkingPackagePanel.topViewPanel.SetValue(self.leftWorkingPackagePanel.topViewPanel.size,[])
+            selectionNum=self.rightWorkingPackagePanel.frontViewPanel.selectionNum
+            self.rightWorkingPackagePanel.frontViewPanel.SetValue(self.rightWorkingPackagePanel.info)
+            self.rightWorkingPackagePanel.frontViewPanel.selectionNum=selectionNum
+            self.rightWorkingPackagePanel.frontViewPanel.ReCreate()
+            self.rightWorkingPackagePanel.topViewPanel.SetValue(self.rightWorkingPackagePanel.topViewPanel.size,self.rightWorkingPackagePanel.data[selectionNum])
+        else:
+            wx.MessageBox("目标托盘的面积不足，无法完成整层移动操作！","信息提示窗口")
+
+    def OnMiddleLeftAddBTN(self,event):
+        layerLength = 0
+        layerWidth = 0
+        for row in self.rightWorkingPackagePanel.data[self.rightWorkingPackagePanel.frontViewPanel.selectionNum]:#先计算源板子的外面积
+            rowLength = 0
+            rowWidth = 0
+            for col in row:
+                rowLength+=int(col[9])
+                if rowWidth<int(col[10]):
+                    rowWidth=int(col[10])
+            if layerLength<rowLength:
+                layerLength = rowLength
+            layerWidth+=rowWidth
+        if layerWidth<=self.leftWorkingPackagePanel.width and layerLength<=self.leftWorkingPackagePanel.length:#与目标托盘的长宽比较，能放下再放1
+            self.leftWorkingPackagePanel.data[self.leftWorkingPackagePanel.frontViewPanel.selectionNum]=\
+                self.rightWorkingPackagePanel.data.pop(self.rightWorkingPackagePanel.frontViewPanel.selectionNum)
+            self.rightWorkingPackagePanel.info[14]=self.rightWorkingPackagePanel.data
+            self.leftWorkingPackagePanel.info[14]=self.leftWorkingPackagePanel.data
+            self.rightWorkingPackagePanel.frontViewPanel.SetValue(self.rightWorkingPackagePanel.info)
+            self.rightWorkingPackagePanel.topViewPanel.SetValue(self.rightWorkingPackagePanel.topViewPanel.size,[])
+            selectionNum=self.leftWorkingPackagePanel.frontViewPanel.selectionNum
+            self.leftWorkingPackagePanel.frontViewPanel.SetValue(self.leftWorkingPackagePanel.info)
+            self.leftWorkingPackagePanel.frontViewPanel.selectionNum=selectionNum
+            self.leftWorkingPackagePanel.frontViewPanel.ReCreate()
+            self.leftWorkingPackagePanel.topViewPanel.SetValue(self.leftWorkingPackagePanel.topViewPanel.size,self.leftWorkingPackagePanel.data[selectionNum])
+        else:
+            wx.MessageBox("目标托盘的面积不足，无法完成整层移动操作！","信息提示窗口")
 
     def OnSaveBTN(self,event):
+        message = "正在将当前数据存盘，请稍候..."
+        busy = PBI.PyBusyInfo(message, parent=None, title="系统正忙",
+                              icon=images.Smiles.GetBitmap())
+        wx.Yield()
         for record in self.currentPackageData:
             index=int(record[0][2:])#托盘12，去除托盘取12
             boxLength = int(record[1])
@@ -1067,8 +1131,11 @@ class PackageDialog(wx.Dialog):
                     for col in row:
                         if len(col)>0:
                             UpdatePanelPackageStateInPOrderDB(self.log,WHICHDB,record[0],col)
+        for record in self.currentSeperatePanelList:
+            UpdateSeperatePanelBoxNumberAndState(self.log, WHICHDB, orderID=record[1], index=record[0], state=record[-2], boxNum=record[-1])
+        del busy
         if event!=None:
-            wx.MessageBox("数据已保存完毕，请继续进行操作")
+            wx.MessageBox("数据已保存完毕，请继续您的操作","信息提示窗口")
     # def OnOk(self, event):
     #     event.Skip()
     #

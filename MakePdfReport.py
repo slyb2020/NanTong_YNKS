@@ -14,7 +14,7 @@ from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from ID_DEFINE import *
 from BarCodeGenerator import BarCodeGenerator
-from DBOperation import UpdataPanelGluePageInDB,UpdataPanelGlueLabelPageInDB
+from DBOperation import UpdatePanelGluePageInDB,UpdatePanelGlueLabelPageInDB
 
 pdfmetrics.registerFont(TTFont('SimSun', 'Font/SimSun.ttf'))  #注册字体
 
@@ -865,7 +865,7 @@ def MakeGlueNoSheetTemplate(orderID,subOrderID,filename,record=[]):
         # myCanvas.drawRightString(width-50, 670-offset, '胶水单号：%s'%(data[16]))
         # DrawLine(myCanvas,1,*coord(10, 50+offset2, height, mm),*coord(205, 50+offset2, height, mm))
         myCanvas.showPage()#这句话相当于分页，显示页面即完成当前页面，开始新页面
-        UpdataPanelGluePageInDB(None,1,orderID,data[16],page)
+        UpdatePanelGluePageInDB(None, 1, orderID, data[16], page)
     myCanvas.save()
 
 def MakeGlueLabelSheetTemplate(orderID,subOrderID,filename,record=[]):
@@ -885,7 +885,7 @@ def MakeGlueLabelSheetTemplate(orderID,subOrderID,filename,record=[]):
             data[14]=''
         if data[15]=='None':
             data[15]=''
-        UpdataPanelGlueLabelPageInDB(None, 1, orderID, data[16], page)
+        UpdatePanelGlueLabelPageInDB(None, 1, orderID, data[16], page)
         for i in range(int(data[13])):
             DrawLine(myCanvas,1,*coord(0, 2+num*gap, height, mm),*coord(220, 2+num*gap, height, mm))
             myCanvas.drawString(20,798+vOffset-offset*num, text="项目名称(Project): %s"%("Stena W0272"))

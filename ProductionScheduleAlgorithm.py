@@ -1,7 +1,7 @@
 import copy
 import wx
 from DBOperation import GetOrderDetailRecord,GetDeltaWithBluePrintNo,GetConstructionDetailWithDrawingNo,\
-    GetPropertyVerticalCuttingParameter,UpdataPanelGlueNoInDB,UpdataPanelWeightInDB
+    GetPropertyVerticalCuttingParameter,UpdatePanelGlueNoInDB,UpdatePanelWeightInDB
 import numpy as np
 from operator import itemgetter
 
@@ -335,13 +335,13 @@ class ProductionScheduleAlgorithm(object):
             temp = list(data)
             temp[-1]=glueNo
             self.panelList.append(temp)
-            UpdataPanelGlueNoInDB(self.log,1,self.orderID,data[0],glueNo)
+            UpdatePanelGlueNoInDB(self.log, 1, self.orderID, data[0], glueNo)
         for data in self.ceilingOrderData:
             glueNo="%05d-%04d"%(data[1],data[0])
             temp = list(data)
             temp[-1]=glueNo
             self.panelList.append(temp)
-            UpdataPanelGlueNoInDB(self.log,1,self.orderID,data[0],glueNo)
+            UpdatePanelGlueNoInDB(self.log, 1, self.orderID, data[0], glueNo)
 
     def CalculateWeightForOrder(self):#这里计算的是单板重量，并没有乘以Amount
         for i, data in enumerate(self.panelList):
@@ -354,7 +354,7 @@ class ProductionScheduleAlgorithm(object):
                     weight = float(data[10]) * float(data[11]) / 1.0E6 * 6.0
                 else:
                     weight = float(data[10]) * float(data[11]) / 1.0E6 * 6.0 #100的板子应该还有一个新的重量系数
-            UpdataPanelWeightInDB(self.log,1,self.orderID,data[0],weight)
+            UpdatePanelWeightInDB(self.log, 1, self.orderID, data[0], weight)
 
     def DisassembleOrderData(self):
         for data in self.orderDetailData:
