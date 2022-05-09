@@ -754,6 +754,44 @@ def UpdateSpecificPackageBoxInfo(log,whichDB,orderID,index,boxLength,boxWidth,bo
         db.rollback()
     db.close()
 
+def DeleteNewPackageBoxInPackageDBWithBoxName(log,whichDB,orderID,boxName):
+    try:
+        db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
+                             passwd='%s' % dbPassword[whichDB], db='%s' % packageDBName[whichDB], charset='utf8')
+    except:
+        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        if log:
+            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+        return -1, []
+    cursor = db.cursor()
+    sql = """DELETE from `%s` where `货盘编号`='%s' """ % (str(orderID), boxName)
+    try:
+        cursor.execute(sql)
+        db.commit()  # 必须有，没有的话插入语句不会执行
+    except:
+        print("error")
+        db.rollback()
+    db.close()
+
+def DeleteNewPackageBoxInPackageDB(log,whichDB,orderID,index):
+    try:
+        db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
+                             passwd='%s' % dbPassword[whichDB], db='%s' % packageDBName[whichDB], charset='utf8')
+    except:
+        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        if log:
+            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+        return -1, []
+    cursor = db.cursor()
+    sql = """DELETE from `%s` where `Index`=%s """ % (str(orderID), index)
+    try:
+        cursor.execute(sql)
+        db.commit()  # 必须有，没有的话插入语句不会执行
+    except:
+        print("error")
+        db.rollback()
+    db.close()
+
 
 def GetSpecificPackageBoxData(log,whichDB,orderID,index):
     try:
@@ -903,6 +941,46 @@ def InsertNewOrderRecord(log,whichDB,newOrderID,newOrderName,subOrderIDList):
         db.commit()  # 必须有，没有的话插入语句不会执行
     except:
         print("error")
+        db.rollback()
+    db.close()
+
+def UpdateSeperatePanelBoxNumberAndState(log, whichDB, orderID, index, state, boxNum):
+    name="p%s"%str(orderID)
+    try:
+        db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
+                             passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
+    except:
+        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        if log:
+            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+        return -1, []
+    cursor = db.cursor()
+    sql = "UPDATE `%s` SET `状态`='%s', `所属货盘`='%s'  where `Index`=%s" %(name,state,boxNum,index)
+    try:
+        cursor.execute(sql)
+        db.commit()  # 必须有，没有的话插入语句不会执行
+    except:
+        print("error2")
+        db.rollback()
+    db.close()
+
+def ClearSeperatePanelBoxNumberWithIndex(log, whichDB, orderID, index):
+    name="p%s"%str(orderID)
+    try:
+        db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
+                             passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
+    except:
+        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        if log:
+            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+        return -1, []
+    cursor = db.cursor()
+    sql = "UPDATE `%s` SET `所属货盘`=''  where `Index`=%s" %(name, index)
+    try:
+        cursor.execute(sql)
+        db.commit()  # 必须有，没有的话插入语句不会执行
+    except:
+        print("error2")
         db.rollback()
     db.close()
 

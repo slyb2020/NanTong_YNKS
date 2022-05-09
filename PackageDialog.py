@@ -6,7 +6,8 @@ from ID_DEFINE import *
 from DBOperation import GetSubOrderPackageState,UpdateSubOrderPackageState,GetSubOrderPanelsForPackage,\
     CreatePackagePanelSheetForOrder,InsertPanelDetailIntoPackageDB,GetSubOrderPanelsForPackageFromPackageDB,\
     GetCurrentPackageData,CreateNewPackageBoxInBoxDB,GetSpecificPackageBoxData,UpdateSpecificPackageBoxInfo,\
-    GetSubOrderPackageNumber,UpdatePanelPackageStateInPOrderDB,UpdateSeperatePanelBoxNumberAndState
+    GetSubOrderPackageNumber,UpdatePanelPackageStateInPOrderDB,UpdateSeperatePanelBoxNumberAndState,\
+    DeleteNewPackageBoxInPackageDB,DeleteNewPackageBoxInPackageDBWithBoxName,ClearSeperatePanelBoxNumberWithIndex
 import numpy as np
 from operator import itemgetter
 import wx.lib.agw.pygauge as PG
@@ -83,6 +84,7 @@ class BoxDetailViewPanel(wx.Panel):
         self.topViewPanel.currentCol=None
         self.master.currentSeperatePanelList.sort(key=itemgetter(11, 10, 9), reverse=True)
         self.master.SeperatePackagePanelReCreate()
+        self.master.modified=True
         self.topViewPanel.ReCreate()
         self.frontViewPanel.ReCreate()
 
@@ -101,6 +103,7 @@ class BoxDetailViewPanel(wx.Panel):
                 if int(col[10])>=int(self.master.currentSeperatePanelList[self.master.seperateSelectionNum][10]):#如果新增的板宽不大于托盘此行的宽度
                     if (int(self.master.currentSeperatePanelList[self.master.seperateSelectionNum][9]) + rowLength) <= self.length:
                         print("We can drop it here!")
+                        self.master.modified = True
                         self.data[self.frontViewPanel.selectionNum][i].append(
                             self.master.currentSeperatePanelList.pop(self.master.seperateSelectionNum))
                         panelID = self.data[self.frontViewPanel.selectionNum][i][-1][0]
@@ -117,6 +120,7 @@ class BoxDetailViewPanel(wx.Panel):
                         print("Not long enough!")
             if (colWidth+int(self.master.currentSeperatePanelList[self.master.seperateSelectionNum][10]))<=self.width:
                 print("We can drop it in a new row")
+                self.master.modified = True
                 self.data[self.frontViewPanel.selectionNum].append([self.master.currentSeperatePanelList.pop(self.master.seperateSelectionNum)])
                 panelID = self.data[self.frontViewPanel.selectionNum][-1][0][0]
                 for k, record in enumerate(self.master.panelList):
@@ -156,6 +160,8 @@ class BoxDetailViewPanel(wx.Panel):
             if box.state=='选定':
                 self.master.DisableCurrentChange()
                 error=False
+                if self.master.boxSelectionNum==i:
+                    self.master.selectionBoxDismissBTN.Enable(False)
                 if self.direction == wx.LEFT:
                     box.SetBackgroundColour(wx.Colour(234,124,233))
                     self.master.packageList[i].state = "左"
@@ -408,10 +414,11 @@ class FrontViewPanel(wx.Panel):
         self.delEmptyLayerBTN.SetBitmap(bmp)
         hhbox.Add(self.delEmptyLayerBTN,0)
         bmp = wx.Bitmap(bitmapDir + '/lbdecrypted.png')
-        self.dismissThisLayerBTN = wx.Button(self, -1, size=(40, 40), name="整层打撒")
+        self.dismissThisLayerBTN = wx.Button(self, -1, size=(40, 40), name="整层打散")
+        self.dismissThisLayerBTN.Bind(wx.EVT_BUTTON,self.OnDismissThisLayerBTN)
         self.dismissThisLayerBTN.Enable(False)
         self.dismissThisLayerBTN.SetBackgroundColour(wx.Colour(240,240,240))
-        self.dismissThisLayerBTN.SetToolTip("整层打撒")
+        self.dismissThisLayerBTN.SetToolTip("整层打散")
         self.dismissThisLayerBTN.SetBitmap(bmp)
         hhbox.Add(self.dismissThisLayerBTN,0)
         bmp = wx.Bitmap(bitmapDir + '/resize.png')
@@ -441,6 +448,10 @@ class FrontViewPanel(wx.Panel):
         self.panel.SetAutoLayout(1)
         self.panel.SetupScrolling()
         self.Bind(wx.EVT_BUTTON,self.OnButton)
+
+    def OnDismissThisLayerBTN(self,event):
+        self.parent.master.modified=True
+
     def OnSortBoxBTN(self,event):
         if len(self.data)>0:
             layerSquares = []
@@ -462,6 +473,7 @@ class FrontViewPanel(wx.Panel):
                     self.parent.master.FinishPackagePanelReCreate()
                     break
             wx.MessageBox("已完成排序！","信息提示窗口")
+            self.parent.master.modified = True
 
     def OnResizeBoxBTN(self,event):
         if len(self.data)>0:
@@ -500,6 +512,7 @@ class FrontViewPanel(wx.Panel):
                     self.parent.SetValue(self.parent.master.currentPackageData[i])
                     break
             wx.MessageBox("已完成改变托盘尺寸操作！","信息提示窗口")
+            self.parent.master.modified = True
 
     def OnDelEmpyLayerBTN(self, event):
         if len(self.data)>0:
@@ -512,6 +525,7 @@ class FrontViewPanel(wx.Panel):
                 if record[0]==self.name:
                     self.parent.master.currentPackageData[i][14]=self.data
                     self.parent.master.currentPackageData[i][4]=len(self.data)
+            self.parent.master.modified = True
             self.ReCreate()
             self.parent.master.FinishPackagePanelReCreate()
 
@@ -529,6 +543,7 @@ class FrontViewPanel(wx.Panel):
                     if record[0]==self.name:
                         self.parent.master.currentPackageData[i][14]=self.data
                         self.parent.master.currentPackageData[i][4]=len(self.data)
+                self.parent.master.modified=True
                 self.ReCreate()
                 self.parent.master.FinishPackagePanelReCreate()
 
@@ -697,6 +712,8 @@ class MyGauge(PG.PyGauge):
             if box.GetName() == name:
                 if box.state == "":
                     if self.master.leftWorkingPackagePanel.state != "占用" or self.master.rightWorkingPackagePanel.state != "占用":
+                        self.master.selectionBoxDismissBTN.Enable(True)
+                        self.master.boxSelectionNum=i
                         box.SetBackgroundColour(wx.Colour(124, 234, 233))
                         self.master.packageList[i].state = '选定'
                         if self.master.leftWorkingPackagePanel.state != "占用":
@@ -720,6 +737,10 @@ class MyGauge(PG.PyGauge):
                             self.master.boxHeightTXT2.SetValue(str(self.master.packageList[i].info[3]))
                         if self.master.leftWorkingPackagePanel.state == "占用" and self.master.rightWorkingPackagePanel.state != "占用":
                             self.master.rightWorkingPackagePanel.topDownloadBTN.Enable(True)
+                if self.master.leftWorkingPackagePanel.state=='占用' and self.master.leftWorkingPackagePanel.name==self.name:#说明这个盒子是之前被固定在左侧工作区了
+                    self.master.selectionBoxDismissBTN.Enable(False)
+                if self.master.rightWorkingPackagePanel.state=='占用' and self.master.rightWorkingPackagePanel.name==self.name:#说明这个盒子是之前被固定在右侧工作区了
+                    self.master.selectionBoxDismissBTN.Enable(False)
             elif box.state == "选定":
                 self.master.packageList[i].state = ""
                 box.SetBackgroundColour(wx.Colour(240, 240, 240))
@@ -818,7 +839,7 @@ class PackageDialog(wx.Dialog):
         self.panelTotalWeight=0
         self.panelTotalSquare=0
         _, self.boxTotalAmount=GetSubOrderPackageNumber(self.log,WHICHDB,self.orderID,self.suborderID)
-        self.sortTurn=0 #散板排序顺序0：按厚度优先，1:按长度很优先，2：按宽度优先
+        self.sortTurn=2 #散板排序顺序0：按厚度优先，1:按长度很优先，2：按宽度优先
         self.packageList = []
         self.currentPanelList = []
         self.currentPanelTotalAmount = 0
@@ -826,6 +847,9 @@ class PackageDialog(wx.Dialog):
         self.currentSeperatePanellAmount=0
         self.currentBoxTotalAmount=0
         self.seperateSelectionNum=-1
+        self.boxSelectionNum=-1
+        self.modified = False
+
         # self.seperatePanelList=[
         #     [522, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', 2280, 300, 50, 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
         #     [523, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', 2100, 400, 50, 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
@@ -902,6 +926,7 @@ class PackageDialog(wx.Dialog):
 
         bmp = wx.Bitmap(bitmapDir + '/view2.png')
         self.selectionBoxDismissBTN = wx.Button(panel, -1, size=(40, 40), name="删除托盘，即将托盘打散")
+        self.selectionBoxDismissBTN.Enable(False)
         self.selectionBoxDismissBTN.Bind(wx.EVT_BUTTON,self.OnSelectionBoxDismissBTN)
         self.selectionBoxDismissBTN.SetBackgroundColour(wx.Colour(240,240,240))
         self.selectionBoxDismissBTN.SetToolTip("删除托盘，即将托盘打散")
@@ -1024,6 +1049,7 @@ class PackageDialog(wx.Dialog):
         # btn_save.SetBitmap(bitmap2, wx.LEFT)
         # GB.GradientButton(title, -1, bitmap, '追加子订单', size=(-1, 40))
         btn_ok = AB.AquaButton(self,  wx.ID_OK,bitmap3, "  保存并退出（Save & Exit）", size=(300, 60))
+        btn_ok.Bind(wx.EVT_BUTTON,self.OnSaveAndExitBTN)
         btn_ok.SetForegroundColour(wx.BLACK)
         # btn_ok = wx.Button(self, wx.ID_OK, "保存并退出（Save & Exit）", size=(250, 55))
         # btn_ok.SetBitmap(bitmap3, wx.LEFT)
@@ -1047,6 +1073,10 @@ class PackageDialog(wx.Dialog):
         # btn_ok.Bind(wx.EVT_BUTTON, self.OnOk)
         # btn_cancel.Bind(wx.EVT_BUTTON, self.OnCancel)
         # manualInputBTN.Bind(wx.EVT_BUTTON, self.OnCancel)
+    def OnSaveAndExitBTN(self,event):
+        self.OnSaveBTN(None)
+        event.Skip()
+
     def OnMiddleRightAddBTN(self,event):
         layerLength = 0
         layerWidth = 0
@@ -1104,36 +1134,38 @@ class PackageDialog(wx.Dialog):
             wx.MessageBox("目标托盘的面积不足，无法完成整层移动操作！","信息提示窗口")
 
     def OnSaveBTN(self,event):
-        message = "正在将当前数据存盘，请稍候..."
-        busy = PBI.PyBusyInfo(message, parent=None, title="系统正忙",
-                              icon=images.Smiles.GetBitmap())
-        wx.Yield()
-        for record in self.currentPackageData:
-            index=int(record[0][2:])#托盘12，去除托盘取12
-            boxLength = int(record[1])
-            boxWidth = int(record[2])
-            boxHeight = int(record[3])
-            data = record[14]
-            boxLayer = len(data)#这里的层数有可能在程序运行过程中被改了，所以需要重新根据data里的数据进行计算
-            weight = 0#这里的重量、数量以及面积等数据有可能在程序运行过程中被改了，所以需要重新根据data里的数据进行计算
-            amount = 0
-            square = 0
-            for layer in data:
-                for row in layer:
-                    for col in row:
-                        amount+=1
-                        weight+=float(col[17])
-                        square+=(int(col[9])*int(col[10]))
-            square = square/1e6
-            UpdateSpecificPackageBoxInfo(self.log, WHICHDB, self.orderID, index, boxLength, boxWidth, boxHeight, boxLayer, data,weight,amount,square)
-            for layer in data:
-                for row in layer:
-                    for col in row:
-                        if len(col)>0:
-                            UpdatePanelPackageStateInPOrderDB(self.log,WHICHDB,record[0],col)
-        for record in self.currentSeperatePanelList:
-            UpdateSeperatePanelBoxNumberAndState(self.log, WHICHDB, orderID=record[1], index=record[0], state=record[-2], boxNum=record[-1])
-        del busy
+        if self.modified:
+            self.modified = False
+            message = "正在将当前数据存盘，请稍候..."
+            busy = PBI.PyBusyInfo(message, parent=None, title="系统正忙",
+                                  icon=images.Smiles.GetBitmap())
+            wx.Yield()
+            for record in self.currentPackageData:
+                index=int(record[0][2:])#托盘12，去除托盘取12
+                boxLength = int(record[1])
+                boxWidth = int(record[2])
+                boxHeight = int(record[3])
+                data = record[14]
+                boxLayer = len(data)#这里的层数有可能在程序运行过程中被改了，所以需要重新根据data里的数据进行计算
+                weight = 0#这里的重量、数量以及面积等数据有可能在程序运行过程中被改了，所以需要重新根据data里的数据进行计算
+                amount = 0
+                square = 0
+                for layer in data:
+                    for row in layer:
+                        for col in row:
+                            amount+=1
+                            weight+=float(col[17])
+                            square+=(int(col[9])*int(col[10]))
+                square = square/1e6
+                UpdateSpecificPackageBoxInfo(self.log, WHICHDB, self.orderID, index, boxLength, boxWidth, boxHeight, boxLayer, data,weight,amount,square)
+                for layer in data:
+                    for row in layer:
+                        for col in row:
+                            if len(col)>0:
+                                UpdatePanelPackageStateInPOrderDB(self.log,WHICHDB,record[0],col)
+            for record in self.currentSeperatePanelList:
+                UpdateSeperatePanelBoxNumberAndState(self.log, WHICHDB, orderID=record[1], index=record[0], state=record[-2], boxNum=record[-1])
+            del busy
         if event!=None:
             wx.MessageBox("数据已保存完毕，请继续您的操作","信息提示窗口")
     # def OnOk(self, event):
@@ -1144,9 +1176,9 @@ class PackageDialog(wx.Dialog):
     #     event.Skip()
     def OnSelectionBoxDismissBTN(self,event):
         returnCode = wx.ID_YES
-        data = self.currentPackageData[-1]
+        data = self.currentPackageData[self.boxSelectionNum]
         for layer in data[14]:
-            if layer!=[]:#这说明这个托盘里面最少右一行不为空，此时需要弹出对话框进行警告及问询
+            if layer!=[]:#这说明这个托盘里面最少有一行不为空，此时需要弹出对话框进行警告及问询
                 dlg = wx.MessageDialog(self, "当前托盘不为空，是否继续删除托盘？",
                                        '信息提示窗口',
                                        # wx.OK | wx.ICON_INFORMATION
@@ -1154,11 +1186,25 @@ class PackageDialog(wx.Dialog):
                                        )
                 returnCode = dlg.ShowModal()
                 dlg.Destroy()
-                break
-        if returnCode==wx.ID_YES:
-            wx.MessageBox("进行删除操作")
-
-            #     for col in row:
+                if returnCode == wx.ID_YES:
+                    for row in layer:
+                        for col in row:
+                            if col!=[]:
+                                col[-1]=''
+                                self.currentSeperatePanelList.append(col)
+                                print("index=",col)
+                                ClearSeperatePanelBoxNumberWithIndex(self.log, WHICHDB, self.orderID, int(col[0]))
+        DeleteNewPackageBoxInPackageDBWithBoxName(self.log,WHICHDB,self.orderID,data[0])
+        self.currentPackageData.pop(self.boxSelectionNum)
+        self.FinishPackagePanelReCreate()
+        if self.sortTurn==0:
+            self.currentSeperatePanelList.sort(key=itemgetter(9, 10, 11), reverse=True)
+        elif self.sortTurn==1:
+            self.currentSeperatePanelList.sort(key=itemgetter(10, 9, 11), reverse=True)
+        elif self.sortTurn==2:
+            self.currentSeperatePanelList.sort(key=itemgetter(11, 10, 9), reverse=True)
+        self.SeperatePackagePanelReCreate()
+        #########################################################还要清除工作区的显示,另外增加上载的时候就保存数据，减少存盘时间，而存盘也不是把所有的都存，只把工作区里的数据存盘，即做到随改随存，数据保存随时进行。
 
     def OnAddNewBoxBTN(self,event):
         if self.packageState == '未打包':
@@ -1175,7 +1221,6 @@ class PackageDialog(wx.Dialog):
                 _,temp = GetSpecificPackageBoxData(self.log,WHICHDB, self.orderID,reCode)
                 self.currentPackageData.append(temp)
                 self.FinishPackagePanelReCreate()
-
 
     def FinishPackagePanelReCreate(self):
         self.Freeze()
@@ -1206,6 +1251,9 @@ class PackageDialog(wx.Dialog):
                 self.currentSeperatePanelList.append(record)
         self.currentSeperatePanellAmount = len(self.currentSeperatePanelList)
     def OnReSortBTN(self,event):
+        self.sortTurn+=1
+        if self.sortTurn>2:
+            self.sortTurn=0
         if self.sortTurn==0:
             self.currentSeperatePanelList.sort(key=itemgetter(9, 10, 11), reverse=True)
         elif self.sortTurn==1:
@@ -1213,9 +1261,6 @@ class PackageDialog(wx.Dialog):
         elif self.sortTurn==2:
             self.currentSeperatePanelList.sort(key=itemgetter(11, 10, 9), reverse=True)
         self.SeperatePackagePanelReCreate()
-        self.sortTurn+=1
-        if self.sortTurn>2:
-            self.sortTurn=0
 
 
     def OnButton(self,event):
@@ -1494,20 +1539,7 @@ class PackageDialog(wx.Dialog):
             self.roomCOMBO.SetValue(self.roomName)
             self.MakeSeperatePanelList()
             self.SeperatePackagePanelReCreate()
-            # self.ReLoadCurrentPanelData()
-            # self.ReLoadSeperateData()
-            # self.ReLoadPackageData()
 
-
-
-
-
-        #     self.deckName = self.deckCOMBO.GetValue()
-        #     self.zoneName = self.zoneCOMBO.GetValue()
-        #     self.roomName = self.roomCOMBO.GetValue()
-        # self.currentPanelList = []
-        # for panel in self.panelList:
-        #     if panel[3]==self.deckName and
     def ReLoadCurrentPanelData(self):
         self.currentPanelList=[]
 
@@ -1680,8 +1712,6 @@ class PackageDialog(wx.Dialog):
                 dlg.Destroy()
             UpdateSubOrderPackageState(self.log,WHICHDB,self.orderID,self.suborderID,self.packageState)
 
-
-
     def CalculateAndShowCurrentValue(self):
         self.currentPanelTotalAmount = 0
         self.currentPanelTotalWeight = 0
@@ -1699,40 +1729,6 @@ class PackageDialog(wx.Dialog):
         _,self.panelList=GetSubOrderPanelsForPackage(self.log,WHICHDB,self.orderID,self.suborderID)
         for panel in self.panelList:
             print("panel=",panel)
-
-    # def OnLeftTopDownloadBTN(self, event):
-    #     error=True
-    #     for i, box in enumerate(self.packageList):
-    #         if box.state=='选定':
-    #             error=False
-    #             box.SetBackgroundColour(wx.Colour(234,124,233))
-    #             self.leftFrontViewPanel.state="占用"
-    #             self.packageList[i].state="左"
-    #             box.Refresh()
-    #             self.leftTopDownloadBTN.Enable(False)
-    #             self.leftTopUploadBTN.Enable(True)
-    #     if error:
-    #         wx.MessageBox("您还没有选择要移入左侧工作区的托盘！")
-    #     # self.frame.SetBackgroundColour(wx.GREEN)
-    #     # self.frame.Refresh()
-    #     event.Skip()
-    # def OnRightTopDownloadBTN(self, event):
-    #     error=True
-    #     for i, box in enumerate(self.packageList):
-    #         if box.state=='选定':
-    #             error=False
-    #             box.SetBackgroundColour(wx.Colour(189,174,233))
-    #             self.rightFrontViewPanel.state="占用"
-    #             self.packageList[i].state="右"
-    #             box.Refresh()
-    #             self.rightTopDownloadBTN.Enable(False)
-    #             self.rightTopUploadBTN.Enable(True)
-    #             self.DisableCurrentChange()
-    #     if error:
-    #         wx.MessageBox("您还没有选择要移入左侧工作区的托盘！")
-    #     # self.frame.SetBackgroundColour(wx.GREEN)
-    #     # self.frame.Refresh()
-    #     event.Skip()
 
     def DisableCurrentChange(self):
         self.deckCOMBO.Enable(False)
@@ -1852,6 +1848,7 @@ class CreateNewPackageBoxDialog(wx.Dialog):
         self.SetSizer(sizer)
         sizer.Fit(self)
         btn_ok.Bind(wx.EVT_BUTTON,self.OnOkButton)
+        btn_cancel.Bind(wx.EVT_BUTTON,self.OnCancelButton)
 
     def OnOkButton(self,event):
         boxLayer = int(self.boxLayerSPIN.GetValue())
@@ -1863,3 +1860,9 @@ class CreateNewPackageBoxDialog(wx.Dialog):
             data.append([])
         UpdateSpecificPackageBoxInfo(self.parent.log,WHICHDB,self.orderID,self.boxNum,boxLength,boxWidth,boxHeight,boxLayer,data)
         self.EndModal(self.boxNum)
+
+    def OnCancelButton(self,event):
+        print("index=",self.boxNum)
+        DeleteNewPackageBoxInPackageDB(self.parent.log, WHICHDB, self.orderID, self.boxNum)
+        self.EndModal(wx.ID_CANCEL)
+
