@@ -87,6 +87,7 @@ class BoxDetailViewPanel(wx.Panel):
         self.master.modified=True
         self.topViewPanel.ReCreate()
         self.frontViewPanel.ReCreate()
+        self.master.FinishPackagePanelReCreate()
 
     def OnBottomUploadBTN(self,event):
         colWidth=0
@@ -96,28 +97,30 @@ class BoxDetailViewPanel(wx.Panel):
             wx.MessageBox("面板宽度超过托盘宽度！")
         else:
             for i, row in enumerate(self.data[self.frontViewPanel.selectionNum]):
-                rowLength = 0
-                colWidth+=int(row[0][10])
-                for j, col in enumerate(row):
-                    rowLength+=int(col[9])
-                if int(col[10])>=int(self.master.currentSeperatePanelList[self.master.seperateSelectionNum][10]):#如果新增的板宽不大于托盘此行的宽度
-                    if (int(self.master.currentSeperatePanelList[self.master.seperateSelectionNum][9]) + rowLength) <= self.length:
-                        print("We can drop it here!")
-                        self.master.modified = True
-                        self.data[self.frontViewPanel.selectionNum][i].append(
-                            self.master.currentSeperatePanelList.pop(self.master.seperateSelectionNum))
-                        panelID = self.data[self.frontViewPanel.selectionNum][i][-1][0]
-                        for k, record in enumerate(self.master.panelList):
-                            if record[0] == panelID:
-                                self.master.panelList[k][-1]=self.name
-                                break
-                        self.master.seperateSelectionNum = -1
-                        self.master.SeperatePackagePanelReCreate()
-                        self.topViewPanel.ReCreate()
-                        self.frontViewPanel.ReCreate()
-                        return
-                    else:
-                        print("Not long enough!")
+                if row != []:
+                    rowLength = 0
+                    colWidth+=int(row[0][10])
+                    for j, col in enumerate(row):
+                        rowLength+=int(col[9])
+                    if int(col[10])>=int(self.master.currentSeperatePanelList[self.master.seperateSelectionNum][10]):#如果新增的板宽不大于托盘此行的宽度
+                        if (int(self.master.currentSeperatePanelList[self.master.seperateSelectionNum][9]) + rowLength) <= self.length:
+                            print("We can drop it here!")
+                            self.master.modified = True
+                            self.data[self.frontViewPanel.selectionNum][i].append(
+                                self.master.currentSeperatePanelList.pop(self.master.seperateSelectionNum))
+                            panelID = self.data[self.frontViewPanel.selectionNum][i][-1][0]
+                            for k, record in enumerate(self.master.panelList):
+                                if record[0] == panelID:
+                                    self.master.panelList[k][-1]=self.name
+                                    break
+                            self.master.seperateSelectionNum = -1
+                            self.master.SeperatePackagePanelReCreate()
+                            self.topViewPanel.ReCreate()
+                            self.frontViewPanel.ReCreate()
+                            self.master.FinishPackagePanelReCreate()
+                            return
+                        else:
+                            print("Not long enough!")
             if (colWidth+int(self.master.currentSeperatePanelList[self.master.seperateSelectionNum][10]))<=self.width:
                 print("We can drop it in a new row")
                 self.master.modified = True
@@ -128,12 +131,14 @@ class BoxDetailViewPanel(wx.Panel):
                         self.master.panelList[k][-1] = self.name
                         break
                 self.master.seperateSelectionNum=-1
+                self.master.currentSeperatePanellAmountTXT.SetValue(str(len(self.master.currentSeperatePanelList)))
                 self.master.SeperatePackagePanelReCreate()#################################################################################这个函数有问题，执行时间过长
                 self.topViewPanel.ReCreate()
                 self.frontViewPanel.ReCreate()
-                self.master.currentSeperatePanellAmountTXT.SetValue(str(len(self.master.currentSeperatePanelList)))
+                self.master.FinishPackagePanelReCreate()
             else:
                 wx.MessageBox("当前托盘的当前层无法容纳您所选的面板，请选择其它层重试！",'信息提示窗口')
+
     def SetValue(self,info):
         self.info = info
         self.name = info[0]
@@ -200,7 +205,15 @@ class BoxDetailViewPanel(wx.Panel):
         self.master.middleLeftAddBTN.Enable(False)
         self.master.middleRightAddBTN.Enable(False)
         for i, box in enumerate(self.master.packageList):
+            self.name = ""
             if self.direction == wx.LEFT:
+                self.master.selectionBoxIDTXT1.SetValue("")
+                self.master.selectionPanelTotalAmountTXT1.SetValue("")
+                self.master.selectionPanelTotalWeightTXT1.SetValue("")
+                self.master.boxLayerNumTXT1.SetValue("")
+                self.master.boxLengthTXT1.SetValue("")
+                self.master.boxWidthTXT1.SetValue("")
+                self.master.boxHeightTXT1.SetValue("")
                 if self.master.packageList[i].state == "左":
                     self.occupiedBoxName=""
                     self.master.packageList[i].ReCreate()
@@ -208,21 +221,18 @@ class BoxDetailViewPanel(wx.Panel):
                     self.master.packageList[i].state = ""
                     break
             else:
+                self.master.selectionBoxIDTXT2.SetValue("")
+                self.master.selectionPanelTotalAmountTXT2.SetValue("")
+                self.master.selectionPanelTotalWeightTXT2.SetValue("")
+                self.master.boxLayerNumTXT2.SetValue("")
+                self.master.boxLengthTXT2.SetValue("")
+                self.master.boxWidthTXT2.SetValue("")
+                self.master.boxHeightTXT2.SetValue("")
                 if self.master.packageList[i].state == "右":
                     self.occupiedBoxName=""
                     box.SetBackgroundColour(wx.Colour(240,240,240))
                     self.master.packageList[i].state = ""
                     break
-        # for i, record in enumerate(self.master.currentPackageData):
-        #     if record[0]==self.name:
-        #         print("before modify record=",record)
-        #         # print("before modify:totalLayer,totalPanelWeight,totalPanelAmount,totalPanelSquare=",totalLayer,totalPanelWeight,totalPanelAmount,totalPanelSquare)
-        #         # self.master.currentPackageData[i][4]=totalLayer
-        #         # self.master.currentPackageData[i][5]="%.2f"%(totalPanelWeight)
-        #         # self.master.currentPackageData[i][6]=str(totalPanelAmount)
-        #         # self.master.currentPackageData[i][7]="%2.f"%(totalPanelSquare/1e6)
-        #         print("after modify:", record)
-        #         break
         self.state=""
         self.frontViewPanel.addNewLayerBTN.Enable(False)
         self.frontViewPanel.delEmptyLayerBTN.Enable(False)
@@ -497,9 +507,7 @@ class FrontViewPanel(wx.Panel):
                     maxWidth = layerMaxWidth
                 if layerMaxLength>maxLength:
                     maxLength = layerMaxLength
-            print("maxLength,maxWidth=",maxLength,maxWidth)
             for i,record in enumerate(self.parent.master.currentPackageData):
-                print("record[0],nmae=",record[0],self.name)
                 if record[0]==self.name:
                     if int(self.parent.master.currentPackageData[i][1])>maxLength:
                         self.parent.master.currentPackageData[i][1]=maxLength
@@ -625,26 +633,29 @@ class FrontViewPanel(wx.Panel):
                 vbox.Add(hhbox,0,wx.EXPAND)
                 self.occupyButtonList.append(occupyButton)
                 self.freeButtonList.append(freeButton)
+        num=-1
         for i,box in enumerate(self.parent.master.currentPackageData):
             if box[0]==self.parent.name:
                 num = i
                 break
         self.parent.master.currentPackageData[num][3]=boxHeight
         if self.parent.direction==wx.LEFT:
-            self.parent.master.boxLayerNumTXT1.SetValue(str(totalLayer))
-            # self.parent.master.currentPackageData[]
-            self.parent.master.selectionPanelTotalAmountTXT1.SetValue(str(totalPanelAmount))
-            self.parent.master.selectionPanelTotalWeightTXT1.SetValue("%.2f"%totalPanelWeight)
-            self.parent.master.boxLengthTXT1.SetValue(str(self.parent.master.currentPackageData[num][1]))
-            self.parent.master.boxWidthTXT1.SetValue(str(self.parent.master.currentPackageData[num][2]))
-            self.parent.master.boxHeightTXT1.SetValue(str(self.parent.master.currentPackageData[num][3]))
+            if num!=-1:
+                self.parent.master.boxLayerNumTXT1.SetValue(str(totalLayer))
+                # self.parent.master.currentPackageData[]
+                self.parent.master.selectionPanelTotalAmountTXT1.SetValue(str(totalPanelAmount))
+                self.parent.master.selectionPanelTotalWeightTXT1.SetValue("%.2f"%totalPanelWeight)
+                self.parent.master.boxLengthTXT1.SetValue(str(self.parent.master.currentPackageData[num][1]))
+                self.parent.master.boxWidthTXT1.SetValue(str(self.parent.master.currentPackageData[num][2]))
+                self.parent.master.boxHeightTXT1.SetValue(str(self.parent.master.currentPackageData[num][3]))
         else:
-            self.parent.master.boxLayerNumTXT2.SetValue(str(totalLayer))
-            self.parent.master.selectionPanelTotalAmountTXT2.SetValue(str(totalPanelAmount))
-            self.parent.master.selectionPanelTotalWeightTXT2.SetValue("%.2f"%totalPanelWeight)
-            self.parent.master.boxLengthTXT2.SetValue(str(self.parent.master.currentPackageData[num][1]))
-            self.parent.master.boxWidthTXT2.SetValue(str(self.parent.master.currentPackageData[num][2]))
-            self.parent.master.boxHeightTXT2.SetValue(str(self.parent.master.currentPackageData[num][3]))
+            if num!=-1:
+                self.parent.master.boxLayerNumTXT2.SetValue(str(totalLayer))
+                self.parent.master.selectionPanelTotalAmountTXT2.SetValue(str(totalPanelAmount))
+                self.parent.master.selectionPanelTotalWeightTXT2.SetValue("%.2f"%totalPanelWeight)
+                self.parent.master.boxLengthTXT2.SetValue(str(self.parent.master.currentPackageData[num][1]))
+                self.parent.master.boxWidthTXT2.SetValue(str(self.parent.master.currentPackageData[num][2]))
+                self.parent.master.boxHeightTXT2.SetValue(str(self.parent.master.currentPackageData[num][3]))
         # self.parent.master.selectionBoxIDTXT1.SetValule(str(totalLayer))
         if self.parent.state=="占用":
             self.dismissThisLayerBTN.Enable(False if self.selectionNum==-1 else True)
@@ -966,8 +977,10 @@ class PackageDialog(wx.Dialog):
         self.middleRightAddBTN.Bind(wx.EVT_BUTTON,self.OnMiddleRightAddBTN)
         self.middleRightAddBTN.Enable(False)
         self.middleRightBTN = wx.Button(self.middleControlPanel,label=">>",size=(10,20))
+        self.middleRightBTN.Bind(wx.EVT_BUTTON,self.OnMiddleRightBTN)
         self.middleRightBTN.Enable(False)
         self.middleLeftBTN = wx.Button(self.middleControlPanel,label="<<",size=(10,20))
+        self.middleLeftBTN.Bind(wx.EVT_BUTTON,self.OnMiddleLeftBTN)
         self.middleLeftBTN.Enable(False)
         vvbox = wx.BoxSizer(wx.VERTICAL)
         vvbox.Add(self.middleLeftAddBTN,0,wx.EXPAND)
@@ -1054,6 +1067,7 @@ class PackageDialog(wx.Dialog):
         # btn_ok = wx.Button(self, wx.ID_OK, "保存并退出（Save & Exit）", size=(250, 55))
         # btn_ok.SetBitmap(bitmap3, wx.LEFT)
         btn_cancel = AB.AquaButton(self, wx.ID_CANCEL,bitmap4, "  取  消（Exit）", size=(300, 60))
+        btn_cancel.Bind(wx.EVT_BUTTON,self.OnCancel)
         btn_cancel.SetForegroundColour(wx.BLACK)
         # btn_cancel.SetBitmap(bitmap4, wx.LEFT)
         btnsizer.Add(btn_repack, 0)
@@ -1073,6 +1087,141 @@ class PackageDialog(wx.Dialog):
         # btn_ok.Bind(wx.EVT_BUTTON, self.OnOk)
         # btn_cancel.Bind(wx.EVT_BUTTON, self.OnCancel)
         # manualInputBTN.Bind(wx.EVT_BUTTON, self.OnCancel)
+        self.Bind(wx.EVT_CLOSE,self.OnCancel)
+
+    def OnCancel(self,event):
+        if self.modified:
+            dlg = wx.MessageDialog(self,
+                                   "数据已被改动，现在退出将导致之前的改动失效，是否继续退出？",
+                                   '信息问询窗口',
+                                   # wx.OK | wx.ICON_INFORMATION
+                                   wx.YES_NO | wx.NO_DEFAULT | wx.CANCEL | wx.ICON_INFORMATION
+                                   )
+            rCode = dlg.ShowModal()
+            dlg.Destroy()
+            if rCode == wx.ID_YES:
+                event.Skip()
+        else:
+            event.Skip()
+
+    def OnMiddleLeftBTN(self,event):
+        sourceWorkingPackagePanel = self.rightWorkingPackagePanel
+        objectWorkingPackagePanel = self.leftWorkingPackagePanel
+        self.SinglePanelExchange(sourceWorkingPackagePanel,objectWorkingPackagePanel)
+
+    def SinglePanelExchange(self,sourceWorkingPackagePanel,objectWorkingPackagePanel):
+        currentRow=sourceWorkingPackagePanel.topViewPanel.currentRow
+        currentCol=sourceWorkingPackagePanel.topViewPanel.currentCol
+        lengthSource=int(sourceWorkingPackagePanel.topViewPanel.data[currentRow][currentCol][9])
+        widthSource=int(sourceWorkingPackagePanel.topViewPanel.data[currentRow][currentCol][10])
+        if lengthSource>objectWorkingPackagePanel.topViewPanel.size[0] :
+            wx.MessageBox("面板长度超过托盘长度！")
+        elif widthSource>objectWorkingPackagePanel.topViewPanel.size[1]:
+            wx.MessageBox("面板宽度超过托盘宽度！")
+        else:
+            colWidth = 0
+            for i, row in enumerate(objectWorkingPackagePanel.data[objectWorkingPackagePanel.frontViewPanel.selectionNum]):
+                print("layer before=",objectWorkingPackagePanel.data[objectWorkingPackagePanel.frontViewPanel.selectionNum])
+                if row != []:
+                    rowLength = 0
+                    colWidth+=int(row[0][10])
+                    for j, col in enumerate(row):
+                        rowLength+=int(col[9])
+                    if int(row[0][10])>=widthSource:#如果新增的板宽不大于托盘此行的宽度
+                        print("lengthSource,rowLength=",lengthSource,rowLength)
+                        if (lengthSource + rowLength) <= objectWorkingPackagePanel.topViewPanel.size[0]:
+                            print("We can drop it here!")
+                            self.modified = True
+                            objectWorkingPackagePanel.data[objectWorkingPackagePanel.frontViewPanel.selectionNum][i].append(sourceWorkingPackagePanel.data[
+                                                                                                      sourceWorkingPackagePanel.frontViewPanel.selectionNum][
+                                                                                                      currentRow].pop(currentCol))
+                            if sourceWorkingPackagePanel.data[sourceWorkingPackagePanel.frontViewPanel.selectionNum][currentRow] == []:  # 如果这一行弹出刚才的板子后就没板子了，那就把这一行直接删除了
+                                sourceWorkingPackagePanel.data[sourceWorkingPackagePanel.frontViewPanel.selectionNum].pop(currentRow)
+                            objectWorkingPackagePanel.data[objectWorkingPackagePanel.frontViewPanel.selectionNum][i][-1][-1] = objectWorkingPackagePanel.name
+                            print("ddd",objectWorkingPackagePanel.data[objectWorkingPackagePanel.frontViewPanel.selectionNum][i][-1][-1])
+                            self.leftWorkingPackagePanel.topViewPanel.ReCreate()
+                            self.rightWorkingPackagePanel.topViewPanel.ReCreate()
+                            self.leftWorkingPackagePanel.frontViewPanel.ReCreate()
+                            self.rightWorkingPackagePanel.frontViewPanel.ReCreate()
+                            self.FinishPackagePanelReCreate()
+                            return
+                else:
+                    objectWorkingPackagePanel.data[objectWorkingPackagePanel.frontViewPanel.selectionNum].pop(i)
+                    print("row=",objectWorkingPackagePanel.data[objectWorkingPackagePanel.frontViewPanel.selectionNum])
+            if (colWidth+widthSource)<=objectWorkingPackagePanel.topViewPanel.size[1]:
+                print("We can drop it in a new row")
+                self.modified = True
+                objectWorkingPackagePanel.data[objectWorkingPackagePanel.frontViewPanel.selectionNum].append([sourceWorkingPackagePanel.data[sourceWorkingPackagePanel.frontViewPanel.selectionNum][currentRow].pop(currentCol)])
+                if sourceWorkingPackagePanel.data[sourceWorkingPackagePanel.frontViewPanel.selectionNum][currentRow]==[]:#如果这一行弹出刚才的板子后就没板子了，那就把这一行直接删除了
+                    sourceWorkingPackagePanel.data[sourceWorkingPackagePanel.frontViewPanel.selectionNum].pop(currentRow)
+                objectWorkingPackagePanel.data[sourceWorkingPackagePanel.frontViewPanel.selectionNum][-1][-1][-1]=sourceWorkingPackagePanel.name
+                self.leftWorkingPackagePanel.topViewPanel.ReCreate()
+                self.rightWorkingPackagePanel.topViewPanel.ReCreate()
+                self.leftWorkingPackagePanel.frontViewPanel.ReCreate()
+                self.rightWorkingPackagePanel.frontViewPanel.ReCreate()
+                self.FinishPackagePanelReCreate()
+            else:
+                wx.MessageBox("当前托盘的当前层无法容纳您所选的面板，请选择其它层重试！",'信息提示窗口')
+
+    def OnMiddleRightBTN(self,event):
+        sourceWorkingPackagePanel = self.leftWorkingPackagePanel
+        objectWorkingPackagePanel = self.rightWorkingPackagePanel
+        self.SinglePanelExchange(sourceWorkingPackagePanel,objectWorkingPackagePanel)
+        # currentRow=self.leftWorkingPackagePanel.topViewPanel.currentRow
+        # currentCol=self.leftWorkingPackagePanel.topViewPanel.currentCol
+        # lengthSource=int(self.leftWorkingPackagePanel.topViewPanel.data[currentRow][currentCol][9])
+        # widthSource=int(self.leftWorkingPackagePanel.topViewPanel.data[currentRow][currentCol][10])
+        # if lengthSource>self.rightWorkingPackagePanel.topViewPanel.size[0] :
+        #     wx.MessageBox("面板长度超过托盘长度！")
+        # elif widthSource>self.rightWorkingPackagePanel.topViewPanel.size[1]:
+        #     wx.MessageBox("面板宽度超过托盘宽度！")
+        # else:
+        #     colWidth = 0
+        #     for i, row in enumerate(self.rightWorkingPackagePanel.data[self.rightWorkingPackagePanel.frontViewPanel.selectionNum]):
+        #         print("layer before=",self.rightWorkingPackagePanel.data[self.rightWorkingPackagePanel.frontViewPanel.selectionNum])
+        #         if row != []:
+        #             rowLength = 0
+        #             colWidth+=int(row[0][10])
+        #             for j, col in enumerate(row):
+        #                 rowLength+=int(col[9])
+        #             if int(row[0][10])>=widthSource:#如果新增的板宽不大于托盘此行的宽度
+        #                 print("lengthSource,rowLength=",lengthSource,rowLength)
+        #                 if (lengthSource + rowLength) <= self.rightWorkingPackagePanel.topViewPanel.size[0]:
+        #                     print("We can drop it here!")
+        #                     self.modified = True
+        #                     self.rightWorkingPackagePanel.data[self.rightWorkingPackagePanel.frontViewPanel.selectionNum][i].append(self.leftWorkingPackagePanel.data[
+        #                                                                                               self.leftWorkingPackagePanel.frontViewPanel.selectionNum][
+        #                                                                                               currentRow].pop(currentCol))
+        #                     if self.leftWorkingPackagePanel.data[self.leftWorkingPackagePanel.frontViewPanel.selectionNum][
+        #                         currentRow] == []:  # 如果这一行弹出刚才的板子后就没板子了，那就把这一行直接删除了
+        #                         self.leftWorkingPackagePanel.data[
+        #                             self.leftWorkingPackagePanel.frontViewPanel.selectionNum].pop(currentRow)
+        #                     self.rightWorkingPackagePanel.data[self.rightWorkingPackagePanel.frontViewPanel.selectionNum][i][-1][-1] = self.rightWorkingPackagePanel.name
+        #                     print("ddd",self.rightWorkingPackagePanel.data[self.rightWorkingPackagePanel.frontViewPanel.selectionNum][i][-1][-1])
+        #                     self.leftWorkingPackagePanel.topViewPanel.ReCreate()
+        #                     self.rightWorkingPackagePanel.topViewPanel.ReCreate()
+        #                     self.leftWorkingPackagePanel.frontViewPanel.ReCreate()
+        #                     self.rightWorkingPackagePanel.frontViewPanel.ReCreate()
+        #                     self.FinishPackagePanelReCreate()
+        #                     return
+        #         else:
+        #             self.rightWorkingPackagePanel.data[self.rightWorkingPackagePanel.frontViewPanel.selectionNum].pop(i)
+        #             print("row=",self.rightWorkingPackagePanel.data[self.rightWorkingPackagePanel.frontViewPanel.selectionNum])
+        #     if (colWidth+widthSource)<=self.rightWorkingPackagePanel.topViewPanel.size[1]:
+        #         print("We can drop it in a new row")
+        #         self.modified = True
+        #         self.rightWorkingPackagePanel.data[self.rightWorkingPackagePanel.frontViewPanel.selectionNum].append([self.leftWorkingPackagePanel.data[self.leftWorkingPackagePanel.frontViewPanel.selectionNum][currentRow].pop(currentCol)])
+        #         if self.leftWorkingPackagePanel.data[self.leftWorkingPackagePanel.frontViewPanel.selectionNum][currentRow]==[]:#如果这一行弹出刚才的板子后就没板子了，那就把这一行直接删除了
+        #             self.leftWorkingPackagePanel.data[self.leftWorkingPackagePanel.frontViewPanel.selectionNum].pop(currentRow)
+        #         self.rightWorkingPackagePanel.data[self.rightWorkingPackagePanel.frontViewPanel.selectionNum][-1][-1][-1]=self.rightWorkingPackagePanel.name
+        #         self.leftWorkingPackagePanel.topViewPanel.ReCreate()
+        #         self.rightWorkingPackagePanel.topViewPanel.ReCreate()
+        #         self.leftWorkingPackagePanel.frontViewPanel.ReCreate()
+        #         self.rightWorkingPackagePanel.frontViewPanel.ReCreate()
+        #         self.FinishPackagePanelReCreate()
+        #     else:
+        #         wx.MessageBox("当前托盘的当前层无法容纳您所选的面板，请选择其它层重试！",'信息提示窗口')
+
     def OnSaveAndExitBTN(self,event):
         self.OnSaveBTN(None)
         event.Skip()
@@ -1192,7 +1341,6 @@ class PackageDialog(wx.Dialog):
                             if col!=[]:
                                 col[-1]=''
                                 self.currentSeperatePanelList.append(col)
-                                print("index=",col)
                                 ClearSeperatePanelBoxNumberWithIndex(self.log, WHICHDB, self.orderID, int(col[0]))
         DeleteNewPackageBoxInPackageDBWithBoxName(self.log,WHICHDB,self.orderID,data[0])
         self.currentPackageData.pop(self.boxSelectionNum)
@@ -1862,7 +2010,6 @@ class CreateNewPackageBoxDialog(wx.Dialog):
         self.EndModal(self.boxNum)
 
     def OnCancelButton(self,event):
-        print("index=",self.boxNum)
         DeleteNewPackageBoxInPackageDB(self.parent.log, WHICHDB, self.orderID, self.boxNum)
         self.EndModal(wx.ID_CANCEL)
 
