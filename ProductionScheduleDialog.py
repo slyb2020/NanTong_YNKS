@@ -364,6 +364,7 @@ class GlueSheetManagementDailog(wx.Dialog):
         evt.Skip()
         glueNum = self.panelsGrid.data[row][-1]
         _, gluePage = GetGluepageFromGlueNum(self.log,1,self.orderID,glueNum)
+        print("gluePage=",gluePage)
         self.gluePDFViewerPanel.viewer.GoPage(int(gluePage) - 1)
         _, glueLabelPage = GetGlueLabelpageFromGlueNum(self.log,1,self.orderID,glueNum)
         self.glueLabelPDFViewerPanel.viewer.GoPage(int(glueLabelPage) - 1)
