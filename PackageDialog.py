@@ -20,6 +20,17 @@ import images
 dirName = os.path.dirname(os.path.abspath(__file__))
 bitmapDir = os.path.join(dirName, 'bitmaps')
 
+def SubOrderAutoPackage(orderID,suborderID,roomType=True,seperateMode=True):
+    if roomType:
+        if seperateMode:
+            wx.MessageBox("正在对 %s-%03d 子订单中的墙板、天花板以及构件分别按区域分开打包，请稍候。。。"%(str(orderID),int(suborderID)))
+
+        else:
+            wx.MessageBox("开始对 %s-%03d 子订单中的墙板、天花板以及构件一起按区域打包，请稍候。。。"%(str(orderID),int(suborderID)))
+    else:
+        wx.MessageBox("正在对 %s-%03d 子订单按区域进行打包，请稍候。。。"%(str(orderID),int(suborderID)))
+
+
 class BoxDetailViewPanel(wx.Panel):
     def __init__(self, parent, master,info=[],direction=wx.LEFT,size=wx.DefaultSize):
         wx.Panel.__init__(self, parent, size=size)
@@ -193,7 +204,7 @@ class BoxDetailViewPanel(wx.Panel):
             self.frontViewPanel.addNewLayerBTN.Enable(True)
             self.frontViewPanel.delEmptyLayerBTN.Enable(True)
             self.frontViewPanel.dismissThisLayerBTN.Enable(False)
-            self.frontViewPanel.resizeBoxBTN.Enable(True)
+            self.frontViewPanel.minimizeBoxBTN.Enable(True)
             self.frontViewPanel.sortBoxBTN.Enable(True)
         self.frontViewPanel.ReCreate()
         self.topViewPanel.ReCreate()
@@ -237,7 +248,7 @@ class BoxDetailViewPanel(wx.Panel):
         self.frontViewPanel.addNewLayerBTN.Enable(False)
         self.frontViewPanel.delEmptyLayerBTN.Enable(False)
         self.frontViewPanel.dismissThisLayerBTN.Enable(False)
-        self.frontViewPanel.resizeBoxBTN.Enable(False)
+        self.frontViewPanel.minimizeBoxBTN.Enable(False)
         self.frontViewPanel.sortBoxBTN.Enable(False)
         box.Refresh()#########################################################finishPanel似乎没及时更新
         self.topUploadBTN.Enable(False)
@@ -415,14 +426,6 @@ class FrontViewPanel(wx.Panel):
         self.addNewLayerBTN.SetToolTip("增加一个新的层")
         self.addNewLayerBTN.SetBitmap(bmp)
         hhbox.Add(self.addNewLayerBTN,0)
-        bmp = wx.Bitmap(bitmapDir + '/new_folder.png')
-        self.delEmptyLayerBTN = wx.Button(self, -1, size=(40, 40), name="删除空的层")
-        self.delEmptyLayerBTN.Bind(wx.EVT_BUTTON, self.OnDelEmpyLayerBTN)
-        self.delEmptyLayerBTN.Enable(False)
-        self.delEmptyLayerBTN.SetBackgroundColour(wx.Colour(240,240,240))
-        self.delEmptyLayerBTN.SetToolTip("删除空的层")
-        self.delEmptyLayerBTN.SetBitmap(bmp)
-        hhbox.Add(self.delEmptyLayerBTN,0)
         bmp = wx.Bitmap(bitmapDir + '/lbdecrypted.png')
         self.dismissThisLayerBTN = wx.Button(self, -1, size=(40, 40), name="整层打散")
         self.dismissThisLayerBTN.Bind(wx.EVT_BUTTON,self.OnDismissThisLayerBTN)
@@ -431,14 +434,22 @@ class FrontViewPanel(wx.Panel):
         self.dismissThisLayerBTN.SetToolTip("整层打散")
         self.dismissThisLayerBTN.SetBitmap(bmp)
         hhbox.Add(self.dismissThisLayerBTN,0)
+        bmp = wx.Bitmap(bitmapDir + '/new_folder.png')
+        self.delEmptyLayerBTN = wx.Button(self, -1, size=(40, 40), name="删除空的层")
+        self.delEmptyLayerBTN.Bind(wx.EVT_BUTTON, self.OnDelEmpyLayerBTN)
+        self.delEmptyLayerBTN.Enable(False)
+        self.delEmptyLayerBTN.SetBackgroundColour(wx.Colour(240,240,240))
+        self.delEmptyLayerBTN.SetToolTip("删除空的层")
+        self.delEmptyLayerBTN.SetBitmap(bmp)
+        hhbox.Add(self.delEmptyLayerBTN,0)
         bmp = wx.Bitmap(bitmapDir + '/resize.png')
-        self.resizeBoxBTN = wx.Button(self, -1, size=(40, 40), name="改变托盘尺寸")
-        self.resizeBoxBTN.Bind(wx.EVT_BUTTON,self.OnResizeBoxBTN)
-        self.resizeBoxBTN.Enable(False)
-        self.resizeBoxBTN.SetBackgroundColour(wx.Colour(240,240,240))
-        self.resizeBoxBTN.SetToolTip("改变托盘尺寸")
-        self.resizeBoxBTN.SetBitmap(bmp)
-        hhbox.Add(self.resizeBoxBTN,0)
+        self.minimizeBoxBTN = wx.Button(self, -1, size=(40, 40), name="最小化托盘尺寸")
+        self.minimizeBoxBTN.Bind(wx.EVT_BUTTON, self.OnResizeBoxBTN)
+        self.minimizeBoxBTN.Enable(False)
+        self.minimizeBoxBTN.SetBackgroundColour(wx.Colour(240, 240, 240))
+        self.minimizeBoxBTN.SetToolTip("最小化托盘尺寸")
+        self.minimizeBoxBTN.SetBitmap(bmp)
+        hhbox.Add(self.minimizeBoxBTN, 0)
         bmp = wx.Bitmap(bitmapDir + '/sort2.png')
         self.sortBoxBTN = wx.Button(self, -1, size=(40, 40), name="托盘重新排序")
         self.sortBoxBTN.Bind(wx.EVT_BUTTON,self.OnSortBoxBTN)
@@ -881,7 +892,7 @@ class PackageDialog(wx.Dialog):
         #     [539, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', 155, 300, 50, 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
         #     [540, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', 395, 300, 50, 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
         # ]
-        dbName = "p%s"%self.orderID
+        dbName = "p%s-%03d"%(self.orderID,int(self.suborderID))
         from DBOperation import GetTableListFromDB
         _,dbNameList = GetTableListFromDB(self.log,WHICHDB)
         if dbName not in dbNameList:
@@ -889,16 +900,18 @@ class PackageDialog(wx.Dialog):
             _, self.panelList = GetSubOrderPanelsForPackage(self.log, WHICHDB, self.orderID)#读取订单中所有子订单数据，这个数据有些记录代表好几块面板
             self.data=[]
             for record in self.panelList:
-                for i in range(int(record[9])):
-                         # `订单号`,`子订单号`   ,`甲板`,    `区域`  ,`房间`,       `图纸`    ,`产品类型`, `面板代码`  ,`高度` ,   `宽度`,      `厚度`,    `X面颜色`,   `Y面颜色`, `Z面颜色`,   `V面颜色`,  `胶水单编号`,      `重量`    ,`胶水单注释`,`状态`,`所属货盘`
-                #      [93,  64731,   '1',       '3',      '9',   'Corridor', 'C.C72.0001', 'C72',   'D40RLA',1,'1240',    '400',      '50',    'RAL9010',    'G',     'None',     'None',    '64731-0093',    '2.98',      '']
-                    temp=[record[1],record[2],record[3],record[4],record[5]    ,record[6],record[7],record[8],record[10],record[11],record[12],record[13],record[14],record[15],   record[16], record[17], record[18],   record[19],  '',   '']
+                if int(record[2])==int(self.suborderID):
+                    for i in range(int(record[9])):
+                             # `订单号`,`子订单号`   ,`甲板`,    `区域`  ,`房间`,       `图纸`    ,`产品类型`, `面板代码`  ,`高度` ,   `宽度`,      `厚度`,    `X面颜色`,   `Y面颜色`, `Z面颜色`,   `V面颜色`,  `胶水单编号`,      `重量`    ,`胶水单注释`,`状态`,`所属货盘`
+                    #      [93,  64731,   '1',       '3',      '9',   'Corridor', 'C.C72.0001', 'C72',   'D40RLA',1,'1240',    '400',      '50',    'RAL9010',    'G',     'None',     'None',    '64731-0093',    '2.98',      '']
+                        temp=[record[1],record[2],record[3],record[4],record[5]    ,record[6],record[7],record[8],record[10],record[11],record[12],record[13],record[14],record[15],   record[16], record[17], record[18],   record[19],  '',   '']
                     self.data.append(temp)
             InsertPanelDetailIntoPackageDB(self.log,WHICHDB,dbName,self.data)
-        _, self.packageState = GetSubOrderPackageState(self.log,WHICHDB,dbName,self.suborderID)
+        _, self.packageState = GetSubOrderPackageState(self.log,WHICHDB,dbName,self.suborderID)#这个是从order表单中读取第一条子订单数据的state，不是从“porder”表单中读取
         if self.packageState not in ["按房间打包","按区域打包"]:
             self.packageState = "未打包"
         _, self.panelList = GetSubOrderPanelsForPackageFromPackageDB(self.log,WHICHDB,self.orderID,self.suborderID)#读取打包数据库中的面板，这个数据每条记录对应1块面板，不会有重复
+        print("here panelList=",self.panelList)
         self.panelTotalAmount = len(self.panelList)
         self.panelList.sort(key=itemgetter(11,10,9), reverse=True)#先将墙板按厚度，宽度，长度排序
         #角墙板怎么打包？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？
@@ -1018,13 +1031,13 @@ class PackageDialog(wx.Dialog):
         vvbox = wx.BoxSizer(wx.VERTICAL)
         bmp = wx.Bitmap(bitmapDir + '/package-add.png')
         self.SeperateRePackageBTN = wx.Button(self.bottomPackagePanel,size=(50,50))
-        self.SeperateRePackageBTN.SetToolTip("散板自动打包")
+        self.SeperateRePackageBTN.SetToolTip("当前散板自动打包")
         self.SeperateRePackageBTN.SetBitmap(bmp)
         vvbox.Add(self.SeperateRePackageBTN,0)
         bmp = wx.Bitmap(bitmapDir + '/e6.png')
         self.reSortBTN = wx.Button(self.bottomPackagePanel, -1, size=(50, 50), name="上移一层")
         self.reSortBTN.Bind(wx.EVT_BUTTON,self.OnReSortBTN)
-        self.reSortBTN.SetToolTip("散板重新排序")
+        self.reSortBTN.SetToolTip("当前散板重新排序")
         self.reSortBTN.SetBitmap(bmp)
         vvbox.Add(self.reSortBTN,0)
         bmp = wx.Bitmap(bitmapDir + '/e4.png')
@@ -1398,6 +1411,7 @@ class PackageDialog(wx.Dialog):
             if record [21]=="":
                 self.currentSeperatePanelList.append(record)
         self.currentSeperatePanellAmount = len(self.currentSeperatePanelList)
+
     def OnReSortBTN(self,event):
         self.sortTurn+=1
         if self.sortTurn>2:
@@ -1531,12 +1545,12 @@ class PackageDialog(wx.Dialog):
 
         bitmap = wx.Bitmap(bitmapDir + "/box.jpg", wx.BITMAP_TYPE_JPEG)
         # startAutoPackageBTN.SetFont()
-        startAutoPackageBTN = wx.Button(self.topPanel,label="运行自动打包")
+        packageEntireOptimizeBTN = wx.Button(self.topPanel,label="方案整体优化")
         # startAutoPackageBTN.SetAuthNeeded()
-        startAutoPackageBTN.SetBitmap(bitmap, wx.RIGHT)
+        packageEntireOptimizeBTN.SetBitmap(bitmap, wx.RIGHT)
         # startAutoPackageBTN.SetBitmapMargins(10,10)
 
-        hbox.Add(startAutoPackageBTN,1,wx.EXPAND|wx.ALL,10)
+        hbox.Add(packageEntireOptimizeBTN,1,wx.EXPAND|wx.ALL,10)
         self.topPanel.SetSizer(hbox)
 
     def ReCreateTopMiddlePanel(self):
@@ -1545,6 +1559,7 @@ class PackageDialog(wx.Dialog):
         vvbox =wx.BoxSizer(wx.VERTICAL)
         hhbox = wx.BoxSizer()
         hhbox.Add(wx.StaticText(self.topMiddlePanel, label='甲板'), 0, wx.TOP, 5)
+        print("panelList=",self.panelList)
         temp=np.array(self.panelList)[:,3]
         choiceList = list(set(temp))
         choiceList.sort()
@@ -1581,6 +1596,7 @@ class PackageDialog(wx.Dialog):
         choiceList.sort()
         self.roomName=choiceList[0]
         self.roomCOMBO = wx.ComboBox(self.topMiddlePanel, value=choiceList[0], size=(110, 25),choices=choiceList, style=wx.TE_READONLY)
+        self.roomCOMBO.Bind(wx.EVT_COMBOBOX,self.OnRoomCOMBOChanged)
         self.roomCOMBO.SetBackgroundColour(wx.WHITE)
         hhbox.Add(self.roomCOMBO, 0)
         if self.packageState=="按区域打包":
@@ -1643,6 +1659,7 @@ class PackageDialog(wx.Dialog):
                     self.currentPanelList.append(record)
             self.MakeSeperatePanelList()
             self.SeperatePackagePanelReCreate()
+            self.currentSeperatePanellAmountTXT.SetValue(str(self.currentSeperatePanellAmount))
 
     def OnZoneCOMBOChanged(self,event):
         if self.zoneName != self.zoneCOMBO.GetValue():#说明区域真的变了
@@ -1829,7 +1846,18 @@ class PackageDialog(wx.Dialog):
                                        )
                 if dlg.ShowModal()==wx.ID_YES:
                     self.packageState=self.packageStateCOMBO.GetValue()
-                    self.ReCreateTopMiddlePanel()
+                    if self.packageState=="按房间打包":
+                        dlg2=wx.MessageDialog(self,"是否将墙板，天花板和构件分别打包？","信息问询窗口",
+                        # wx.OK | wx.ICON_INFORMATION
+                        wx.YES_NO | wx.NO_DEFAULT | wx.ICON_INFORMATION
+                        )
+                        if dlg2.ShowModal() == wx.ID_YES:
+                            packageAlgorithm = PackageAlgorithm(self.log,self.orderID,self.suborderID,roomType=True,seperateMode=True)
+                            # SubOrderAutoPackage(self.orderID,self.suborderID,roomType=True,seperateMode=True)
+                        else:
+                            pass
+                            dlg2.Destroy()
+                            self.ReCreateTopMiddlePanel()
                 else:
                     self.packageState="未打包"
                     self.packageStateCOMBO.SetValue("未打包")
@@ -1841,6 +1869,7 @@ class PackageDialog(wx.Dialog):
                                        wx.YES_NO | wx.NO_DEFAULT | wx.CANCEL | wx.ICON_INFORMATION
                                        )
                 if dlg.ShowModal()==wx.ID_YES:
+
                     self.packageState="未打包"
                     self.ReCreateTopMiddlePanel()
                 else:
@@ -2012,4 +2041,66 @@ class CreateNewPackageBoxDialog(wx.Dialog):
     def OnCancelButton(self,event):
         DeleteNewPackageBoxInPackageDB(self.parent.log, WHICHDB, self.orderID, self.boxNum)
         self.EndModal(wx.ID_CANCEL)
+
+class PackageAlgorithm(object):
+    def __init__(self,log,orderID,suborderID,roomType=True,seperateMode=True):
+        super(PackageAlgorithm,self).__init__()
+        # if roomType:
+        #     if seperateMode:
+        #         wx.MessageBox("正在对 %s-%03d 子订单中的墙板、天花板以及构件分别按区域分开打包，请稍候。。。"%(str(orderID),int(suborderID)))
+        #
+        #     else:
+        #         wx.MessageBox("开始对 %s-%03d 子订单中的墙板、天花板以及构件一起按区域打包，请稍候。。。"%(str(orderID),int(suborderID)))
+        # else:
+        #     wx.MessageBox("正在对 %s-%03d 子订单按区域进行打包，请稍候。。。"%(str(orderID),int(suborderID)))
+        self.log = log
+        self.orderID = orderID
+        self.suborderID = suborderID
+        self.roomType = roomType
+        self.seperateMode = seperateMode
+        self.allList=[]
+        self.wallPanelList=[]
+        self.ceilingPanelList=[]
+        self.constructionList=[]
+        _, self.allList = GetSubOrderPanelsForPackageFromPackageDB(self.log,WHICHDB,self.orderID,self.suborderID)#读取打包数据库中的面板，这个数据每条记录对应1块面板，不会有重复
+        if len(self.allList)>0:
+            if seperateMode:
+                for i, item in enumerate(self.allList):
+                    print("item=",item)
+                    if item[7].isdigit():
+                        self.constructionList.append(item)
+                    elif item[7][0]=="C":
+                        self.ceilingPanelList.append(item)
+                    else:
+                        self.wallPanelList.append(item)
+            else:
+                self.wallPanelList=self.allList
+        self.CalculateDeckZoneRoomChoices()
+
+    def CalculateDeckZoneRoomChoices(self):
+        self.deckChoices=list(np.array(self.allList)[:,3])
+        self.deckChoices=list(set(self.deckChoices))
+        self.zoneChoices=[]
+        for i,deck in enumerate(self.deckChoices):
+            temp = []
+            for item in self.allList:
+                if item[3]==deck:
+                    temp.append(item[4])
+            temp = list(set(temp))
+            self.zoneChoices.append([deck,temp])
+        self.roomChoices=[]
+        for deck,zoneChoices in self.zoneChoices:
+            for zone in zoneChoices:
+                temp=[]
+                for item in self.allList:
+                    if item[3]==deck and item[4]==zone:
+                        temp.append(item[5])
+                temp=list(set(temp))
+                self.roomChoices.append([deck,zone,temp])
+        print("deckChoices=",self.deckChoices)
+        print("zoneChoices=",self.zoneChoices)
+        print("roomChoices=",self.roomChoices)
+
+
+
 

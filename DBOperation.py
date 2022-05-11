@@ -897,7 +897,7 @@ def GetSubOrderPanelsForPackageFromPackageDB(log,whichDB,orderID,suborderID=None
             log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
         return -1, []
     cursor = db.cursor()
-    dbName = "p%s"%orderID
+    dbName = "p%s-%03d"%(orderID,int(suborderID))
     if suborderID == None:
 
         sql = """SELECT `Index`,`订单号`, `子订单号`, `甲板`, `区域`, `房间`, `图纸`, `产品类型`, `面板代码`,  `高度`,`宽度`, `厚度`, `X面颜色`, `Y面颜色`, `Z面颜色`, `V面颜色`, `备注`, `重量`, `胶水单编号`, `胶水单注释`, `状态`, `所属货盘` from `%s` """ % (str(dbName))
@@ -1025,7 +1025,7 @@ def UpdateSubOrderPackageState(log,whichDB,orderID,subOrderId,state):
     db.close()
 
 def UpdatePanelPackageStateInPOrderDB(log,whichDB,boxName,data):
-    dbName = "p%s"%str(data[1])
+    dbName = "p%s-%3d"%str(data[1],int(data[2]))
     try:
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')

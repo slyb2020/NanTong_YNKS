@@ -805,7 +805,8 @@ class MainPanel(wx.Panel):
         if len(dbNameList)>0:
             nameList=[]
             for name in dbNameList:
-                nameList.append(int(name))
+                if name.isdigit():
+                    nameList.append(int(name))
             self.newOrderID = max(nameList) + 1
         else:
             self.newOrderID = 1
