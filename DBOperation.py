@@ -11,9 +11,9 @@ def GetEnterpriseInfo(log, whichDB):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % dbName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % dbName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % dbName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     sql = """SELECT `企业名称` from `企业基本信息表` """
@@ -28,9 +28,9 @@ def GetAllPasswords(log, whichDB):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % dbName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % dbName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % dbName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     sql = """SELECT `密码` from `info_staff` """
@@ -49,9 +49,9 @@ def GetStaffInfoWithPassword(log, whichDB, psw):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % dbName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % dbName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % dbName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     sql = """SELECT `处`,`科`,`工位名`,`姓名`,`员工编号`,`工作状态` from `info_staff` WHERE `密码`='%s'"""%(psw)
@@ -65,9 +65,9 @@ def GetAllOrderList(log, whichDB):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % dbName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % dbName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % dbName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     sql = """SELECT `订单编号`,`订单名称`,`总价`,`产品数量`,`订单交货日期`,`下单时间`,`下单员ID`,`状态`,`子订单编号`,`子订单状态` from `订单信息` """
@@ -81,9 +81,9 @@ def GetOrderByOrderID(log, whichDB, orderID):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % dbName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % dbName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % dbName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     sql = """SELECT `订单编号`,`订单名称`,`总价`,`产品数量`,`订单交货日期`,`下单时间`,`下单员ID`,`状态`,`子订单编号`,`子订单状态`  from `订单信息` where `订单编号` = %s"""%int(orderID)
@@ -97,9 +97,9 @@ def UpdateOrderInfo(log, whichDB,data):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % dbName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % dbName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % dbName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     sql = "UPDATE 订单信息 SET `订单名称`='%s',`总价`='%s',`产品数量`='%s',`状态`='%s' WHERE `订单编号` = '%s'" \
@@ -120,9 +120,9 @@ def UpdateConstructionInDB(log, whichDB,data):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % dbName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % dbName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % dbName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()  #`图纸号`,`宽度`,`厚度`,`重量`,`图纸状态`,`图纸文件名`,`图纸大类`
     sql = "UPDATE 构件图纸信息表 SET `宽度`='%s',`长度`='%s',`厚度`='%s',`重量`='%s',`图纸状态`='%s',`图纸文件名`='%s',`图纸大类`='%s' WHERE `图纸号` = '%s'" \
@@ -143,9 +143,9 @@ def GetAllBoardList(log, whichDB,whichBoard,state='在用'):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % dbName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % dbName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % dbName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     if state=='全部':
@@ -164,9 +164,9 @@ def GetRGBWithRalID(log,whichDB,RalID):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % dbName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % dbName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % dbName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     sql = """SELECT `R`,`G`,`B`,`颜色名`,`颜色别名` from `ral标准色卡` where `RAL代码`='%s'"""%RalID
@@ -180,9 +180,9 @@ def GetAllColor(log,whichDB):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % dbName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % dbName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % dbName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     sql = """SELECT `RAL代码`,`R`,`G`,`B`,`颜色名`,`颜色别名` from `ral标准色卡` """
@@ -196,9 +196,9 @@ def GetDeltaWithBluePrintNo(log,whichDB,bluePrintNo):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % dbName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % dbName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % dbName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     sql = """SELECT `面板增量`,`中板增量`,`背板增量` from `图纸信息` where `图纸号`='%s'"""%bluePrintNo
@@ -212,9 +212,9 @@ def GetAllCeilingList(log,whichDB, type,state='在用'):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % dbName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % dbName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % dbName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     if state == '全部':
@@ -237,9 +237,9 @@ def GetAllBluPrintList(log,whichDB, type,state='在用'):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % dbName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % dbName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % dbName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     if state == '全部':
@@ -262,9 +262,9 @@ def GetAllConstructionList(log,whichDB, type,state='在用'):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % dbName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % dbName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % dbName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     if state == '全部':
@@ -281,9 +281,9 @@ def GetConstructionDetailWithDrawingNo(log,whichDB,drawingNo):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % dbName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % dbName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % dbName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     sql = """SELECT `图纸号`,`宽度`,`长度`,`厚度`,`重量`,`图纸状态`,`图纸文件名`,`图纸大类` from `构件图纸信息表` where `图纸号`='%s'""" % drawingNo
@@ -297,9 +297,9 @@ def SaveBluePrintInDB(log,whichDB,data):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % dbName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % dbName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % dbName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     sql = "INSERT INTO 图纸信息(`图纸号`,`面板增量`,`中板增量`,`背板增量`,`剪板505`,`成型405`,`成型409`,`成型406`,`折弯652`,`热压100`," \
@@ -327,9 +327,9 @@ def SaveCeilingInDB(log,whichDB,data):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % dbName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % dbName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % dbName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     sql = "INSERT INTO 图纸信息(`图纸号`,`面板增量`,`中板增量`,`背板增量`,`剪板505`,`成型405`,`成型409`,`成型406`,`折弯652`,`热压100`," \
@@ -357,9 +357,9 @@ def SaveConstructionInDB(log,whichDB,data):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % dbName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % dbName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % dbName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     sql = "INSERT INTO 构件图纸信息表 (`图纸号`,`宽度`,`长度`,`厚度`,`重量`,`图纸状态`,`图纸文件名`,`图纸大类`)" \
@@ -378,9 +378,9 @@ def UpdateBluePrintInDB(log,whichDB,data):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % dbName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % dbName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % dbName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     sql = "UPDATE 图纸信息 SET `面板增量`='%s',`中板增量`='%s',`背板增量`='%s',`剪板505`='%s',`成型405`='%s'," \
@@ -404,9 +404,9 @@ def UpdateCeilingInDB(log,whichDB,data):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % dbName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % dbName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % dbName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     sql = "UPDATE 图纸信息 SET `面板增量`='%s',`中板增量`='%s',`背板增量`='%s',`剪板505`='%s',`成型405`='%s'," \
@@ -432,9 +432,9 @@ def UpdateOrderStateInDB(log,whichDB,orderID,subOrderState):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % dbName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % dbName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % dbName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     sql = "UPDATE 订单信息 SET `子订单状态`='%s' WHERE `订单编号` = %s" % (subOrderState,int(orderID))
@@ -455,9 +455,9 @@ def UpdatePropertyInDB(log,whichDB,propertyDic):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % dbName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % dbName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % dbName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     sql = "UPDATE 系统参数 SET `启动纵切最小板材数`='%s', `任务单每页行数`='%s' " %(propertyDic["启动纵切最小板材数"],propertyDic["任务单每页行数"])
@@ -478,9 +478,9 @@ def GetPropertyVerticalCuttingParameter(log,whichDB):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % dbName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % dbName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % dbName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     sql = """SELECT `启动纵切最小板材数` from `系统参数` """
@@ -494,9 +494,9 @@ def GetPropertySchedulePageRowNumber(log,whichDB):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % dbName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % dbName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % dbName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     sql = """SELECT `任务单每页行数` from `系统参数` """
@@ -510,9 +510,9 @@ def GetSubOrderPackageState(log,whichDB,orderID,suborderID):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % orderDBName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % orderDBName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     sql = """SELECT `状态` from `%s` where `子订单号`= '%s' """%(str(orderID),suborderID)
@@ -530,9 +530,9 @@ def GetTableListFromDB(log,whichDB):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % orderDBName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % orderDBName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     sql = "select table_name from information_schema.tables where table_schema='%s'"%orderDBName[whichDB]
@@ -549,9 +549,9 @@ def GetPackageListFromDB(log,whichDB):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % packageDBName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % packageDBName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % packageDBName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     sql = "select table_name from information_schema.tables where table_schema='%s'"%packageDBName[whichDB]
@@ -571,9 +571,9 @@ def CreateNewOrderSheet(log,whichDB,newOrderID):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % orderDBName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % orderDBName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     sql = """CREATE TABLE `%d` (
@@ -624,9 +624,9 @@ def CreatePackagePanelSheetForOrder(log,whichDB,newOrderID):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % orderDBName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % orderDBName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     sql = """CREATE TABLE `%s` (
@@ -672,9 +672,9 @@ def CreatePackageSheetForOrder(log,whichDB,newOrderID):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % packageDBName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % packageDBName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % packageDBName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     sql = """CREATE TABLE `%s` (
@@ -715,9 +715,9 @@ def GetSubOrderPanelsForPackage(log,whichDB,orderID,suborderID=None):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % orderName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % orderName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     if suborderID == None:
@@ -738,9 +738,9 @@ def UpdateSpecificPackageBoxInfo(log,whichDB,orderID,index,boxLength,boxWidth,bo
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % packageDBName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % packageDBName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % packageDBName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     square="%.2f"%(square)
@@ -759,9 +759,9 @@ def DeleteNewPackageBoxInPackageDBWithBoxName(log,whichDB,orderID,boxName):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % packageDBName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % packageDBName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % packageDBName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     sql = """DELETE from `%s` where `货盘编号`='%s' """ % (str(orderID), boxName)
@@ -778,9 +778,9 @@ def DeleteNewPackageBoxInPackageDB(log,whichDB,orderID,index):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % packageDBName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % packageDBName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % packageDBName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     sql = """DELETE from `%s` where `Index`=%s """ % (str(orderID), index)
@@ -798,9 +798,9 @@ def GetSpecificPackageBoxData(log,whichDB,orderID,index):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % packageDBName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % packageDBName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % packageDBName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     sql = """SELECT `货盘编号`, `货盘长`, `货盘宽`, `货盘高`, `货盘层数`, `货盘总重`, `货盘总面板数`, `货盘总面积`,  
@@ -819,9 +819,9 @@ def GetSubOrderPackageNumber(log,whichDB,orderID,suborderID):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % packageDBName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % packageDBName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % packageDBName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     sql = """SELECT `货盘编号` from `%s` where `货盘所属子订单`='%s' """ % (str(orderID), str(suborderID))
@@ -836,9 +836,9 @@ def GetSubOrderPackageData(log,whichDB,orderID,suborderID):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % packageDBName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % packageDBName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % packageDBName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     sql = """SELECT `货盘编号`, `货盘长`, `货盘宽`, `货盘高`, `货盘层数`, `货盘总重`, `货盘总面板数`, `货盘总面积`,  
@@ -861,9 +861,9 @@ def GetCurrentPackageData(log,whichDB,orderID,suborderID,deck,zone,room=None):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % packageDBName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % packageDBName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % packageDBName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     if room==None:
@@ -892,9 +892,9 @@ def GetSubOrderPanelsForPackageFromPackageDB(log,whichDB,orderID,suborderID=None
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % orderDBName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % orderDBName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     dbName = "p%s-%03d"%(orderID,int(suborderID))
@@ -922,9 +922,9 @@ def InsertNewOrderRecord(log,whichDB,newOrderID,newOrderName,subOrderIDList):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % dbName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % dbName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % dbName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     subOrderIdStr=str(int(subOrderIDList[0]))
@@ -950,9 +950,9 @@ def UpdateSeperatePanelBoxNumberAndState(log, whichDB, orderID, index, state, bo
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % orderDBName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % orderDBName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     sql = "UPDATE `%s` SET `状态`='%s', `所属货盘`='%s'  where `Index`=%s" %(name,state,boxNum,index)
@@ -970,9 +970,9 @@ def ClearSeperatePanelBoxNumberWithIndex(log, whichDB, orderID, index):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % orderDBName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % orderDBName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     sql = "UPDATE `%s` SET `所属货盘`=''  where `Index`=%s" %(name, index)
@@ -990,9 +990,9 @@ def UpdateSeperatePanelBoxNumberAndState(log, whichDB, orderID, index, state, bo
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % orderDBName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % orderDBName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     sql = "UPDATE `%s` SET `状态`='%s', `所属货盘`='%s'  where `Index`=%s" %(name,state,boxNum,index)
@@ -1005,14 +1005,14 @@ def UpdateSeperatePanelBoxNumberAndState(log, whichDB, orderID, index, state, bo
     db.close()
 
 def UpdateSubOrderPackageState(log,whichDB,orderID,subOrderId,state):
-    name="p%s"%str(orderID)
+    name="p%s-%03d"%(str(orderID),int(subOrderId))
     try:
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!"%orderDBName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % orderDBName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     sql = "UPDATE `%s` SET `状态`='%s'  where `子订单号`='%s'" %(name,state,subOrderId)
@@ -1020,7 +1020,7 @@ def UpdateSubOrderPackageState(log,whichDB,orderID,subOrderId,state):
         cursor.execute(sql)
         db.commit()  # 必须有，没有的话插入语句不会执行
     except:
-        print("error1")
+        print("执行更新p%s-3d中子订单打包状态时未成功！"%(str(orderID),int(subOrderId)))
         db.rollback()
     db.close()
 
@@ -1030,9 +1030,9 @@ def UpdatePanelPackageStateInPOrderDB(log,whichDB,boxName,data):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % orderDBName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % orderDBName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     if len(data)>0:
@@ -1051,9 +1051,9 @@ def UpdateOrderRecord(log,whichDB,OrderID,subOrderIdStr,subOrderStateStr):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % dbName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % dbName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % dbName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     # sql = "INSERT INTO 订单信息(`订单编号`,`面板增量`,`中板增量`,`背板增量`,`剪板505`,`成型405`,`成型409`,`成型406`,`折弯652`," \
@@ -1074,9 +1074,9 @@ def UpdatePanelGlueNoInDB(log, whichDB, orderID, index, glueNo):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % orderDBName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % orderDBName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     sql = "UPDATE `%s` SET `胶水单编号`='%s'  where `Index`=%s" %(orderID,glueNo,int(index))
@@ -1093,9 +1093,9 @@ def UpdatePanelWeightInDB(log, whichDB, orderID, index, weight):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % orderDBName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % orderDBName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     sql = "UPDATE `%s` SET `重量`='%.2f'  where `Index`=%s" %(orderID,weight,int(index))
@@ -1112,9 +1112,9 @@ def UpdatePanelGluePageInDB(log, whichDB, orderID, glueNo, gluePage):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % orderDBName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % orderDBName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     sql = "UPDATE `%s` SET `胶水单注释`='%s'  where `胶水单编号`='%s'" %(orderID,gluePage,glueNo)
@@ -1131,9 +1131,9 @@ def UpdatePanelGlueLabelPageInDB(log, whichDB, orderID, glueNo, gluePage):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % orderDBName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % orderDBName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     sql = "UPDATE `%s` SET `备注`='%s'  where `胶水单编号`='%s'" %(orderID,gluePage,glueNo)
@@ -1150,9 +1150,9 @@ def GetOrderDetailRecord(log, whichDB, orderDetailID,suborderNum=None):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % orderDBName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % orderDBName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     if suborderNum == None:
@@ -1170,9 +1170,9 @@ def GetOrderPanelRecord(log, whichDB, orderDetailID,suborderNum=None):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % orderDBName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % orderDBName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     if suborderNum == None:
@@ -1194,9 +1194,9 @@ def GetGluepageFromGlueNum(log, whichDB, orderID,glueNum):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % orderDBName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % orderDBName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     sql = """SELECT `胶水单注释` from `%s` where `胶水单编号`= '%s' """%(str(orderID),glueNum)
@@ -1211,9 +1211,9 @@ def GetGlueLabelpageFromGlueNum(log, whichDB, orderID,glueNum):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % orderDBName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % orderDBName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     sql = """SELECT `备注` from `%s` where `胶水单编号`= '%s' """%(str(orderID),glueNum)
@@ -1228,9 +1228,9 @@ def InsertOrderDetailRecord(log,whichDB,OrderID):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % orderDBName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % orderDBName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     # sql = "INSERT INTO 订单信息(`订单编号`,`面板增量`,`中板增量`,`背板增量`,`剪板505`,`成型405`,`成型409`,`成型406`,`折弯652`," \
@@ -1250,9 +1250,9 @@ def InsertBatchOrderDataIntoDB(log, whichDB, orderTabelName, orderDataList):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % orderDBName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % orderDBName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     for data in orderDataList:
@@ -1345,9 +1345,9 @@ def InsertPanelDetailIntoPackageDB(log, whichDB, orderTabelName, orderDataList):
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
     except:
-        wx.MessageBox("无法连接智能生产管理系统数据库!", "错误信息")
+        wx.MessageBox("无法连接%s!" % orderDBName[whichDB], "错误信息")
         if log:
-            log.WriteText("无法连接智能生产管理系统数据库", colour=wx.RED)
+            log.WriteText("无法连接%s!" % orderDBName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
     print("here:indb",orderDataList[0])

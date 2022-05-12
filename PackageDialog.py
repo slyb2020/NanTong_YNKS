@@ -905,13 +905,12 @@ class PackageDialog(wx.Dialog):
                              # `订单号`,`子订单号`   ,`甲板`,    `区域`  ,`房间`,       `图纸`    ,`产品类型`, `面板代码`  ,`高度` ,   `宽度`,      `厚度`,    `X面颜色`,   `Y面颜色`, `Z面颜色`,   `V面颜色`,  `胶水单编号`,      `重量`    ,`胶水单注释`,`状态`,`所属货盘`
                     #      [93,  64731,   '1',       '3',      '9',   'Corridor', 'C.C72.0001', 'C72',   'D40RLA',1,'1240',    '400',      '50',    'RAL9010',    'G',     'None',     'None',    '64731-0093',    '2.98',      '']
                         temp=[record[1],record[2],record[3],record[4],record[5]    ,record[6],record[7],record[8],record[10],record[11],record[12],record[13],record[14],record[15],   record[16], record[17], record[18],   record[19],  '',   '']
-                    self.data.append(temp)
+                        self.data.append(temp)
             InsertPanelDetailIntoPackageDB(self.log,WHICHDB,dbName,self.data)
         _, self.packageState = GetSubOrderPackageState(self.log,WHICHDB,dbName,self.suborderID)#这个是从order表单中读取第一条子订单数据的state，不是从“porder”表单中读取
         if self.packageState not in ["按房间打包","按区域打包"]:
             self.packageState = "未打包"
         _, self.panelList = GetSubOrderPanelsForPackageFromPackageDB(self.log,WHICHDB,self.orderID,self.suborderID)#读取打包数据库中的面板，这个数据每条记录对应1块面板，不会有重复
-        print("here panelList=",self.panelList)
         self.panelTotalAmount = len(self.panelList)
         self.panelList.sort(key=itemgetter(11,10,9), reverse=True)#先将墙板按厚度，宽度，长度排序
         #角墙板怎么打包？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？
@@ -1134,14 +1133,12 @@ class PackageDialog(wx.Dialog):
         else:
             colWidth = 0
             for i, row in enumerate(objectWorkingPackagePanel.data[objectWorkingPackagePanel.frontViewPanel.selectionNum]):
-                print("layer before=",objectWorkingPackagePanel.data[objectWorkingPackagePanel.frontViewPanel.selectionNum])
                 if row != []:
                     rowLength = 0
                     colWidth+=int(row[0][10])
                     for j, col in enumerate(row):
                         rowLength+=int(col[9])
                     if int(row[0][10])>=widthSource:#如果新增的板宽不大于托盘此行的宽度
-                        print("lengthSource,rowLength=",lengthSource,rowLength)
                         if (lengthSource + rowLength) <= objectWorkingPackagePanel.topViewPanel.size[0]:
                             print("We can drop it here!")
                             self.modified = True
@@ -1151,7 +1148,6 @@ class PackageDialog(wx.Dialog):
                             if sourceWorkingPackagePanel.data[sourceWorkingPackagePanel.frontViewPanel.selectionNum][currentRow] == []:  # 如果这一行弹出刚才的板子后就没板子了，那就把这一行直接删除了
                                 sourceWorkingPackagePanel.data[sourceWorkingPackagePanel.frontViewPanel.selectionNum].pop(currentRow)
                             objectWorkingPackagePanel.data[objectWorkingPackagePanel.frontViewPanel.selectionNum][i][-1][-1] = objectWorkingPackagePanel.name
-                            print("ddd",objectWorkingPackagePanel.data[objectWorkingPackagePanel.frontViewPanel.selectionNum][i][-1][-1])
                             self.leftWorkingPackagePanel.topViewPanel.ReCreate()
                             self.rightWorkingPackagePanel.topViewPanel.ReCreate()
                             self.leftWorkingPackagePanel.frontViewPanel.ReCreate()
@@ -1160,7 +1156,6 @@ class PackageDialog(wx.Dialog):
                             return
                 else:
                     objectWorkingPackagePanel.data[objectWorkingPackagePanel.frontViewPanel.selectionNum].pop(i)
-                    print("row=",objectWorkingPackagePanel.data[objectWorkingPackagePanel.frontViewPanel.selectionNum])
             if (colWidth+widthSource)<=objectWorkingPackagePanel.topViewPanel.size[1]:
                 print("We can drop it in a new row")
                 self.modified = True
@@ -1559,7 +1554,6 @@ class PackageDialog(wx.Dialog):
         vvbox =wx.BoxSizer(wx.VERTICAL)
         hhbox = wx.BoxSizer()
         hhbox.Add(wx.StaticText(self.topMiddlePanel, label='甲板'), 0, wx.TOP, 5)
-        print("panelList=",self.panelList)
         temp=np.array(self.panelList)[:,3]
         choiceList = list(set(temp))
         choiceList.sort()
@@ -1902,11 +1896,6 @@ class PackageDialog(wx.Dialog):
         self.currentPanelTotalSquareTXT.SetValue("%.2f"%(self.currentPanelTotalSquare/1.0E6))
         self.currentBoxTotalAmountTXT.SetValue('0')
 
-    def CalculateSubOrderPackage(self):
-        _,self.panelList=GetSubOrderPanelsForPackage(self.log,WHICHDB,self.orderID,self.suborderID)
-        for panel in self.panelList:
-            print("panel=",panel)
-
     def DisableCurrentChange(self):
         self.deckCOMBO.Enable(False)
         self.zoneCOMBO.Enable(False)
@@ -2066,7 +2055,6 @@ class PackageAlgorithm(object):
         if len(self.allList)>0:
             if seperateMode:
                 for i, item in enumerate(self.allList):
-                    print("item=",item)
                     if item[7].isdigit():
                         self.constructionList.append(item)
                     elif item[7][0]=="C":
