@@ -9,6 +9,7 @@
 @desc:
 """
 import os
+import wx
 
 #需要设置的参数：
 # 1.工单存放文件夹
@@ -29,7 +30,9 @@ orderDBName = ['订单数据库','订单数据库_调试']
 packageDBName = ['货盘数据库','货盘数据库']
 orderDetailLabelList=['Index','订单号','子订单','甲板','区域','房间','图纸','面板代码','X面颜色','Y面颜色','高度','宽度','厚度','数量','Z面颜色','V面颜色','胶水单号']
 orderDetailColSizeList = [30,40,50,35,35,50,70,80,60,60,40,40,40,40,50,50,70,70]
-import wx
+WALL = 0
+CEILING = 1
+CONSTRUCTION = 2
 
 MENU_CHECK_IN = wx.NewIdRef()
 MENU_CHECK_OUT = wx.NewIdRef()

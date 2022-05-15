@@ -7,7 +7,8 @@ from DBOperation import GetSubOrderPackageState,UpdateSubOrderPackageState,GetSu
     CreatePackagePanelSheetForOrder,InsertPanelDetailIntoPackageDB,GetSubOrderPanelsForPackageFromPackageDB,\
     GetCurrentPackageData,CreateNewPackageBoxInBoxDB,GetSpecificPackageBoxData,UpdateSpecificPackageBoxInfo,\
     GetSubOrderPackageNumber,UpdatePanelPackageStateInPOrderDB,UpdateSeperatePanelBoxNumberAndState,\
-    DeleteNewPackageBoxInPackageDB,DeleteNewPackageBoxInPackageDBWithBoxName,ClearSeperatePanelBoxNumberWithIndex
+    DeleteNewPackageBoxInPackageDB,DeleteNewPackageBoxInPackageDBWithBoxName,ClearSeperatePanelBoxNumberWithIndex,\
+    GetOrderNameByOrderID,GetPropertyLShapeWallTypeList
 import numpy as np
 from operator import itemgetter
 import wx.lib.agw.pygauge as PG
@@ -1471,7 +1472,8 @@ class PackageDialog(wx.Dialog):
         hhbox.Add((10,-1))
         hhbox.Add(wx.StaticText(self.topPanel, label='订单名称'), 0, wx.TOP, 5)
         self.orderNameTXT = wx.TextCtrl(self.topPanel, size=(90, 25), style=wx.TE_READONLY)
-        self.orderNameTXT.SetValue("需处理")
+        _,self.orderName=GetOrderNameByOrderID(self.log,WHICHDB,self.orderID)
+        self.orderNameTXT.SetValue(self.orderName)
         self.orderNameTXT.SetBackgroundColour(wx.WHITE)
         hhbox.Add(self.orderNameTXT, 0, wx.LEFT | wx.RIGHT, 1)
 
@@ -2052,18 +2054,184 @@ class PackageAlgorithm(object):
         self.ceilingPanelList=[]
         self.constructionList=[]
         _, self.allList = GetSubOrderPanelsForPackageFromPackageDB(self.log,WHICHDB,self.orderID,self.suborderID)#读取打包数据库中的面板，这个数据每条记录对应1块面板，不会有重复
-        if len(self.allList)>0:
-            if seperateMode:
-                for i, item in enumerate(self.allList):
-                    if item[7].isdigit():
-                        self.constructionList.append(item)
-                    elif item[7][0]=="C":
-                        self.ceilingPanelList.append(item)
-                    else:
-                        self.wallPanelList.append(item)
-            else:
-                self.wallPanelList=self.allList
         self.CalculateDeckZoneRoomChoices()
+        if len(self.allList)>0:
+            if roomType:#如果时按房间打包
+                for deck, zone,roomList in self.roomChoices:
+                    self.waitingPackageBoards=[]
+                    for roomName in roomList:#找到这个房间的所有零件
+                        for item in self.allList:
+                            if item[3]==deck and item[4]==zone and item[5]==roomName:
+                                self.waitingPackageBoards.append(item)
+                        self.SeperateWaitingPackageBoard()
+                        self.SeperateLShapeWaitingPackageBoard()
+                        self.AutoPackageStraightBoard(type=WALL)
+                        self.AutoPackageLShapeBoard()
+            else:#如果是按区域打包
+                for deck, zoneList in self.zoneChoices:
+                    self.waitingPackageBoards = []
+                    for zoneName in zoneList:  # 找到这个区域的所有零件
+                        for item in self.allList:
+                            if item[3] == dec and item[4] == zoneName:
+                                self.waitingPackageBoards.append(item)
+                        self.SeperateWaitingPackageBoard()
+                        self.SeperateStraightBoardByThickness()
+                        self.SeperateLShapeWaitingPackageBoard()
+                        self.AutoPackageStraightBoard(WALL)
+                        self.AutoPackageLShapeBoard()
+                        if self.seperateMode:
+                            self.AutoPackageStraightBoard(CEILING)
+                            self.AutoPackageStraightBoard(CONSTRUCTION)
+
+    def AutoPackageStraightBoard(self,type=WALL):
+        boxWidth=600
+        boxHeight=1800
+        if type == WALL:
+            print(self.straightWallPanelList[0])
+            # self.straightWallPanelList.sort(key=itemgetter(11, 10, 9), reverse=True)
+            self.SeperateStraightBoardByThickness()
+            self.commonThickness = len(self.straightWallPanelList25)#先找到板子最多的那种厚度
+            if self.commonThickness<len(self.straightWallPanelList50):
+                self.commonThickness=len(self.straightWallPanelList50)
+            if self.commonThickness<len(self.straightWallPanelList100):
+                self.commonThickness=len(self.straightWallPanelList100)
+            if self.commonThickness==len(self.straightWallPanelList25):#如果25mm厚的板子最多
+                boxLength = self.FindBestBoxLength(self.straightWallPanelList25)
+                print("25")
+            elif self.commonThickness==len(self.straightWallPanelList50):
+                boxLength = self.FindBestBoxLength(self.straightWallPanelList50)
+                print("50")
+            else:
+                boxLength = self.FindBestBoxLength(self.straightWallPanelList100)
+                print("100")
+            row100List = self.PatternRow(boxLength, self.straightWallPanelList100)
+            row50List = self.PatternRow(boxLength, self.straightWallPanelList50)
+            row25List = self.PatternRow(boxLength, self.straightWallPanelList25)
+            print("row100=",row100List)
+            print("row50=",len(row50List),row50List)
+            print("row25=",len(row25List),row25List)
+            layer100List = self.PatternLayer(boxWidth,row100List)
+            layer50List = self.PatternLayer(boxWidth,row50List)
+            layer25List = self.PatternLayer(boxWidth,row25List)
+            print("layer100=",len(layer100List),layer100List)
+            print("layer50=",len(layer50List),layer50List)
+            print("layer25=",len(layer25List),layer25List)
+            data=layer100List
+            data.extend(layer50List)
+            data.extend(layer25List)
+            boxList = self.PatternBox(boxHeight,data)
+            print("number=",len(boxList))
+            for box in boxList:
+                print("box=",box)
+
+    def PatternBox(self,boxHeight,data):
+        boxList=[]
+        if len(data)>0:
+            box=[]
+            totalHeight=0
+            for layer in data:
+                if totalHeight+layer[0]<=boxHeight:
+                    box.append(layer[1])
+                    totalHeight+=layer[0]
+                else:
+                    boxList.append(box)
+                    box=[]
+                    box.append(layer[1])
+                    totalHeight=layer[0]
+            boxList.append(box)
+        return boxList
+
+
+
+    def PatternLayer(self,boxWidth,data):
+        layerList=[]
+        if len(data)>0:
+            if boxWidth < data[0][0]:
+                boxWidth = data[0][0]
+            layer = []
+            totalWidth=0
+            leftAmount = len(data)
+            while leftAmount>0:
+                for i, row in enumerate(data):
+                    if row[-1]=="":
+                        if (totalWidth + int(row[0])) <= boxWidth:
+                            leftAmount-=1
+                            layer.append(row[1])
+                            totalWidth+=int(row[0])
+                            data[i][-1]=True
+                layerList.append([layer[0][0][11],layer,''])
+                layer=[]
+                totalWidth=0
+        return layerList
+
+
+    def PatternRow(self, boxLength, data):
+        rowList = []
+        if len(data)>0:
+            data.sort(key=itemgetter(10,11),reverse=True)
+            row = []
+            totalLength = 0
+            leftAmount = len(data)
+            while leftAmount>0:
+                for i, board in enumerate(data):
+                    if board[-1]=="":
+                        if (totalLength + int(board[9]))<=boxLength:
+                            leftAmount -= 1
+                            row.append(board)
+                            totalLength+=int(board[9])
+                            data[i][-1]=True
+                rowList.append([row[0][10],row,""])
+                row=[]
+                totalLength=0
+
+        return rowList
+
+
+
+    def FindBestBoxLength(self,data):
+        return 2600
+
+
+    def SeperateStraightBoardByThickness(self):
+        self.straightWallPanelList25=[]
+        self.straightWallPanelList50=[]
+        self.straightWallPanelList100=[]
+        for board in self.straightWallPanelList:
+            if board[11]==25:
+                self.straightWallPanelList25.append(board)
+            elif board[11]==50:
+                self.straightWallPanelList50.append(board)
+            else:
+                self.straightWallPanelList100.append(board)
+
+    def AutoPackageLShapeBoard(self):
+        print("Running AutoPackageLShapeBoard")
+
+
+    def SeperateLShapeWaitingPackageBoard(self):
+        self.lShapeWallPanelList=[]
+        self.straightWallPanelList=[]
+        _,LShapeWallTypeList=GetPropertyLShapeWallTypeList(self.log,WHICHDB)
+        for item in self.wallPanelList:
+            if item[7] in LShapeWallTypeList:
+                self.lShapeWallPanelList.append(item)
+            else:
+                self.straightWallPanelList.append(item)
+
+    def SeperateWaitingPackageBoard(self):
+        self.constructionList = []
+        self.ceilingPanelList = []
+        self.wallPanelList = []
+        if self.seperateMode:
+            for item in self.waitingPackageBoards:
+                if item[7].isdigit():
+                    self.constructionList.append(item)
+                elif item[7][0] == "C":
+                    self.ceilingPanelList.append(item)
+                else:
+                    self.wallPanelList.append(item)
+        else:
+            self.wallPanelList = waitingPackageBoards
 
     def CalculateDeckZoneRoomChoices(self):
         self.deckChoices=list(np.array(self.allList)[:,3])

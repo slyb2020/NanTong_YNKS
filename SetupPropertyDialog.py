@@ -736,6 +736,7 @@ class PropertyPanel(wx.Panel):
         _,pageRowNum=GetPropertySchedulePageRowNumber(self.log,1)
         pg.Append( wxpg.IntProperty("任务单每页行数",value=pageRowNum) )
         pg.SetPropertyEditor("任务单每页行数","SpinCtrl")
+        pg.Append( DirsProperty("墙角板型号列表",value=['2SG','2SD','2SE','2SH']) )
 
         pg.Append( wxpg.PropertyCategory("3 - Advanced Properties") )
         pg.Append( wxpg.LongStringProperty("LongString",
