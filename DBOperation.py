@@ -725,8 +725,8 @@ def CreatePackageSheetForOrder(log,whichDB,newOrderID):
             `货盘所属甲板` VARCHAR(50) NOT NULL DEFAULT '0' COLLATE 'utf8_general_ci',
             `货盘所属区域` VARCHAR(50) NOT NULL DEFAULT '0' COLLATE 'utf8_general_ci',
             `货盘所属房间` VARCHAR(50) NOT NULL DEFAULT '0' COLLATE 'utf8_general_ci',
-            `货盘打包方式` ENUM('区域','房间') NOT NULL COLLATE 'utf8_general_ci',
-            `货盘状态` VARCHAR(50) NOT NULL DEFAULT '0' COLLATE 'utf8_general_ci',
+	        `货盘打包方式` VARCHAR(50) NOT NULL DEFAULT '' COLLATE 'utf8_general_ci',
+            `货盘类别` VARCHAR(50) NOT NULL DEFAULT '0' COLLATE 'utf8_general_ci',
             `货盘数据` TEXT NOT NULL COLLATE 'utf8_general_ci',
             `备注` VARCHAR(50) NOT NULL DEFAULT '0' COLLATE 'utf8_general_ci',
             PRIMARY KEY (`Index`) USING BTREE
@@ -766,6 +766,52 @@ def GetSubOrderPanelsForPackage(log,whichDB,orderID,suborderID=None):
             result.append(list(i))
     db.close()
     return 0, result
+
+def InsertPackageBoxInfo(log,whichDB,orderID,suborderID,boxInfo):
+    try:
+        db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
+                             passwd='%s' % dbPassword[whichDB], db='%s' % packageDBName[whichDB], charset='utf8')
+    except:
+        wx.MessageBox("无法连接%s!" % packageDBName[whichDB], "错误信息")
+        if log:
+            log.WriteText("无法连接%s!" % packageDBName[whichDB], colour=wx.RED)
+        return -1, []
+    cursor = db.cursor()
+    # sql ="""UPDATE `%s` SET `货盘长`=%s, `货盘宽`=%s, `货盘高`=%s, `货盘层数`=%s ,`货盘数据`='%s', `货盘总重`='%s', `货盘总面板数`='%s', `货盘总面积`='%s'  where `Index`=%s""" \
+    #       %(str(orderID),boxLength,boxWidth,boxHeight,boxLayer,json.dumps(data),str(weight),str(amount),square,index)
+    for data in boxInfo:
+        print("data=",data[10],data)
+        sql = "INSERT INTO `%s` (`货盘编号`,`货盘长`,`货盘宽`,`货盘高`,  `货盘层数`,`货盘总重`,`货盘总面板数`,  `货盘总面积`,    `货盘所属子订单`,`货盘所属甲板`,`货盘所属区域`,`货盘所属房间`,`货盘打包方式`,`货盘类别`)" \
+                         "VALUES ('%s'      ,%s,       %s ,    %s,      %s ,     '%s',      '%s',           '%s',          '%s',        '%s',          '%s',      '%s',        '%s',      '%s')"\
+              % ( str(orderID),  '待定中',   data[0],data[1],data[2],data[3],str(data[4]),str(data[5]),str(data[6]),str(suborderID),   data[7],        data[8],  data[9],     data[10],  data[11])
+        # sql = "INSERT INTO `%s` (`货盘编号`,`货盘长`,`货盘宽`,`货盘高`,  `货盘层数`,`货盘总重`,`货盘总面板数`,  `货盘总面积`,    `货盘所属子订单`,`货盘所属甲板`,`货盘所属区域`,`货盘所属房间`,`货盘打包方式`,`货盘类别`)" \
+        #                  "VALUES ('%s'    %s,       %s ,    %s,      %s ,     '%s',      '%s',           '%s',          '%s',        '%s',          '%s',      '%s',        '%s',      '%s')"\
+        #       % ( str(orderID),  '待定中',data[0],  data[1],data[2],data[3],str(data[4]),str(data[5]),str(data[6]),str(suborderID),   data[7],        data[8],  data[9],     data[10],  data[11])
+        try:
+            cursor.execute(sql)
+            db.commit()  # 必须有，没有的话插入语句不会执行
+        except:
+            print("error Insert")
+            db.rollback()
+
+        sql = """SELECT `Index` from `%s` where `货盘编号`='%s'""" % (str(orderID), '待定中')
+        cursor.execute(sql)
+        index = cursor.fetchone()[0]  # 获得索引值
+        Data=data[-1]
+        for i,layer in enumerate(Data):
+            for j,row in enumerate(layer):
+                for k,col in enumerate(row):
+                    Data[i][j][k][-3]="托盘%s"%str(index)
+                    Data[i][j][k][-1]=""
+
+        sql = "UPDATE `%s` SET `货盘编号`='托盘%s', `货盘数据`='%s' where `Index`=%s " %(str(orderID),str(index),json.dumps(Data),index)
+        try:
+            cursor.execute(sql)
+            db.commit()  # 必须有，没有的话插入语句不会执行
+        except:
+            print("error1")
+            db.rollback()
+    db.close()
 
 def UpdateSpecificPackageBoxInfo(log,whichDB,orderID,index,boxLength,boxWidth,boxHeight,boxLayer,data,weight=0,amount=0,square=0):
     try:
@@ -838,7 +884,7 @@ def GetSpecificPackageBoxData(log,whichDB,orderID,index):
         return -1, []
     cursor = db.cursor()
     sql = """SELECT `货盘编号`, `货盘长`, `货盘宽`, `货盘高`, `货盘层数`, `货盘总重`, `货盘总面板数`, `货盘总面积`,  
-    `货盘所属子订单`,`货盘所属甲板`, `货盘所属区域`, `货盘所属房间`, `货盘打包方式`, `货盘状态`, `货盘数据` from `%s` 
+    `货盘所属子订单`,`货盘所属甲板`, `货盘所属区域`, `货盘所属房间`, `货盘打包方式`, `货盘类别`, `货盘数据` from `%s` 
     where `Index`=%s """ \
           % (str(orderID), index)
     cursor.execute(sql)
@@ -876,7 +922,7 @@ def GetSubOrderPackageData(log,whichDB,orderID,suborderID):
         return -1, []
     cursor = db.cursor()
     sql = """SELECT `货盘编号`, `货盘长`, `货盘宽`, `货盘高`, `货盘层数`, `货盘总重`, `货盘总面板数`, `货盘总面积`,  
-    `货盘所属子订单`,`货盘所属甲板`, `货盘所属区域`, `货盘所属房间`, `货盘打包方式`, `货盘状态`, `货盘数据` from `%s` 
+    `货盘所属子订单`,`货盘所属甲板`, `货盘所属区域`, `货盘所属房间`, `货盘打包方式`, `货盘类别`, `货盘数据` from `%s` 
     where `货盘所属子订单`='%s' """ \
           % (str(orderID), str(suborderID))
     cursor.execute(sql)
@@ -900,14 +946,15 @@ def GetCurrentPackageData(log,whichDB,orderID,suborderID,deck,zone,room=None):
             log.WriteText("无法连接%s!" % packageDBName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
+    print("room=",room)
     if room==None:
         sql = """SELECT `货盘编号`, `货盘长`, `货盘宽`, `货盘高`, `货盘层数`, `货盘总重`, `货盘总面板数`, `货盘总面积`,  
-        `货盘所属子订单`,`货盘所属甲板`, `货盘所属区域`, `货盘所属房间`, `货盘打包方式`, `货盘状态`, `货盘数据` from `%s` 
+        `货盘所属子订单`,`货盘所属甲板`, `货盘所属区域`, `货盘所属房间`, `货盘打包方式`, `货盘类别`, `货盘数据` from `%s` 
         where `货盘所属子订单`='%s' and `货盘所属甲板`='%s' and `货盘所属区域`='%s' """ \
               % (str(orderID), str(suborderID), str(deck), str(zone))
     else:
         sql = """SELECT `货盘编号`, `货盘长`, `货盘宽`, `货盘高`, `货盘层数`, `货盘总重`, `货盘总面板数`, `货盘总面积`,  
-        `货盘所属子订单`,`货盘所属甲板`, `货盘所属区域`, `货盘所属房间`, `货盘打包方式`, `货盘状态`, `货盘数据` from `%s` 
+        `货盘所属子订单`,`货盘所属甲板`, `货盘所属区域`, `货盘所属房间`, `货盘打包方式`, `货盘类别`, `货盘数据` from `%s` 
         where `货盘所属子订单`='%s' and `货盘所属甲板`='%s' and `货盘所属区域`='%s' and `货盘所属房间`='%s' """ \
               % (str(orderID), str(suborderID), str(deck), str(zone), str(room))
     cursor.execute(sql)
@@ -978,8 +1025,8 @@ def InsertNewOrderRecord(log,whichDB,newOrderID,newOrderName,subOrderIDList):
         db.rollback()
     db.close()
 
-def UpdateSeperatePanelBoxNumberAndState(log, whichDB, orderID, index, state, boxNum):
-    name="p%s"%str(orderID)
+def UpdateSeperatePanelBoxNumberAndState(log, whichDB, orderID,suborderID, index, state, boxNum):
+    name="p%s-%03d"%(str(orderID),int(suborderID))
     try:
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
@@ -998,8 +1045,8 @@ def UpdateSeperatePanelBoxNumberAndState(log, whichDB, orderID, index, state, bo
         db.rollback()
     db.close()
 
-def ClearSeperatePanelBoxNumberWithIndex(log, whichDB, orderID, index):
-    name="p%s"%str(orderID)
+def ClearSeperatePanelBoxNumberWithIndex(log, whichDB, orderID, suborderID, index):
+    name="p%s-%03d"%(str(orderID),int(suborderID))
     try:
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
@@ -1018,26 +1065,26 @@ def ClearSeperatePanelBoxNumberWithIndex(log, whichDB, orderID, index):
         db.rollback()
     db.close()
 
-def UpdateSeperatePanelBoxNumberAndState(log, whichDB, orderID, index, state, boxNum):
-    name="p%s"%str(orderID)
-    try:
-        db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
-                             passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
-    except:
-        wx.MessageBox("无法连接%s!" % orderDBName[whichDB], "错误信息")
-        if log:
-            log.WriteText("无法连接%s!" % orderDBName[whichDB], colour=wx.RED)
-        return -1, []
-    cursor = db.cursor()
-    sql = "UPDATE `%s` SET `状态`='%s', `所属货盘`='%s'  where `Index`=%s" %(name,state,boxNum,index)
-    try:
-        cursor.execute(sql)
-        db.commit()  # 必须有，没有的话插入语句不会执行
-    except:
-        print("error2")
-        db.rollback()
-    db.close()
-
+# def UpdateSeperatePanelBoxNumberAndState(log, whichDB, orderID, index, state, boxNum):
+#     name="p%s"%str(orderID)
+#     try:
+#         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
+#                              passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
+#     except:
+#         wx.MessageBox("无法连接%s!" % orderDBName[whichDB], "错误信息")
+#         if log:
+#             log.WriteText("无法连接%s!" % orderDBName[whichDB], colour=wx.RED)
+#         return -1, []
+#     cursor = db.cursor()
+#     sql = "UPDATE `%s` SET `状态`='%s', `所属货盘`='%s'  where `Index`=%s" %(name,state,boxNum,index)
+#     try:
+#         cursor.execute(sql)
+#         db.commit()  # 必须有，没有的话插入语句不会执行
+#     except:
+#         print("error2")
+#         db.rollback()
+#     db.close()
+#
 def UpdateSubOrderPackageState(log,whichDB,orderID,subOrderId,state):
     name="p%s-%03d"%(str(orderID),int(subOrderId))
     try:

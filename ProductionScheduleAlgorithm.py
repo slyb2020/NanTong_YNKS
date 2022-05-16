@@ -346,14 +346,14 @@ class ProductionScheduleAlgorithm(object):
     def CalculateWeightForOrder(self):#这里计算的是单板重量，并没有乘以Amount
         for i, data in enumerate(self.panelList):
             if data[6][2:5]=='C55':
-                weight = float(data[10])*float(data[11])/1.0E6*4.2
+                weight = float(data[10])*float(data[11])/1.0E6*12.0
             else:
                 if int(data[12])==25:
-                    weight = float(data[10]) * float(data[11]) / 1.0E6 * 4.2
+                    weight = float(data[10]) * float(data[11]) / 1.0E6 * 12.0
                 elif int(data[12])==50:
-                    weight = float(data[10]) * float(data[11]) / 1.0E6 * 6.0
+                    weight = float(data[10]) * float(data[11]) / 1.0E6 * 17
                 else:
-                    weight = float(data[10]) * float(data[11]) / 1.0E6 * 6.0 #100的板子应该还有一个新的重量系数
+                    weight = float(data[10]) * float(data[11]) / 1.0E6 * 20.0 #100的板子应该还有一个新的重量系数,暂时取20.0
             UpdatePanelWeightInDB(self.log, 1, self.orderID, data[0], weight)
 
     def DisassembleOrderData(self):
