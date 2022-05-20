@@ -2075,14 +2075,25 @@ class PackageAlgorithm(object):
             if roomType:#如果时按房间打包
                 for deck, zone,roomList in self.roomChoices:
                     self.waitingPackageBoards=[]
+                    print("There are %s rooms waiting for package!"%len(roomList))
                     for roomName in roomList:#找到这个房间的所有零件
+                        print("roomName=",roomName)
                         for item in self.allList:
                             if item[3]==deck and item[4]==zone and item[5]==roomName:
                                 self.waitingPackageBoards.append(item)
-                        self.SeperateWaitingPackageBoard()#将墙板，天花板，构件分开
-                        self.SeperateLShapeWaitingPackageBoard()
-                        self.AutoPackageStraightBoard(type=WALL)
-                        self.AutoPackageLShapeBoard()
+                        if roomName=="CREW MESS":
+                            print("self.waitingPackageBoards=",self.waitingPackageBoards)
+                        else:
+                            if self.seperateMode:
+                                self.SeperateWaitingPackageBoard()#将墙板，天花板，构件分开
+                                self.SeperateLShapeWaitingPackageBoard()
+                                self.AutoPackageStraightBoard(type=WALL)
+                                self.AutoPackageStraightBoard(CEILING)
+                                self.AutoPackageLShapeBoard()
+                            else:
+                                self.SeperateLShapeWaitingPackageBoard()
+                                self.AutoPackageStraightBoard(type=WALL)
+                                self.AutoPackageLShapeBoard()
             else:#如果是按区域打包
                 for deck, zoneList in self.zoneChoices:
                     self.waitingPackageBoards = []
@@ -2095,15 +2106,21 @@ class PackageAlgorithm(object):
                         self.AutoPackageStraightBoard(WALL)
                         self.AutoPackageLShapeBoard()
                         if self.seperateMode:
+                            self.SeperateWaitingPackageBoard()#将墙板，天花板，构件分开
+                            self.SeperateLShapeWaitingPackageBoard()
+                            self.AutoPackageStraightBoard(type=WALL)
                             self.AutoPackageStraightBoard(CEILING)
-                            self.AutoPackageStraightBoard(CONSTRUCTION)
+                            self.AutoPackageLShapeBoard()
+                        else:
+                            self.SeperateLShapeWaitingPackageBoard()
+                            self.AutoPackageStraightBoard(type=WALL)
+                            self.AutoPackageLShapeBoard()
 
 
     def AutoPackageStraightBoard(self,type=WALL):
         boxWidth=600
         maxHeight=1800
         if type == WALL:
-            print(len(self.straightWallPanelList),self.straightWallPanelList[0])
             # self.straightWallPanelList.sort(key=itemgetter(11, 10, 9), reverse=True)
             self.SeperateStraightBoardByThickness()
             self.commonThickness = len(self.straightWallPanelList25)#先找到板子最多的那种厚度
@@ -2120,25 +2137,16 @@ class PackageAlgorithm(object):
             row100List = self.PatternRow(boxLength, self.straightWallPanelList100)
             row50List = self.PatternRow(boxLength, self.straightWallPanelList50)
             row25List = self.PatternRow(boxLength, self.straightWallPanelList25)
-            # print("row100=",row100List)
-            # print("row50=",len(row50List),row50List)
-            # print("row25=",len(row25List),row25List)
-            for item in row25List:
-                print("row25",item)
 
             layer100List = self.PatternLayer(boxWidth,row100List,thickness=100)
             layer50List = self.PatternLayer(boxWidth,row50List,thickness=50)
             layer25List = self.PatternLayer(boxWidth,row25List,thickness=25)
-            # print("layer100=",len(layer100List),layer100List)
-            # print("layer50=",len(layer50List),layer50List)
-            # print("layer25=",len(layer25List),layer25List)
-            for layer in layer25List:
-                print("layer25=",layer)
+
             data=layer100List
             data.extend(layer50List)
             data.extend(layer25List)
             boxList = self.PatternBox(maxHeight,data)
-            print("number=",len(boxList))
+
             totalAmount=0
             totalWeight=0
             totalSquare=0
@@ -2146,24 +2154,51 @@ class PackageAlgorithm(object):
                 totalWeight+=box[4]
                 totalAmount+=box[5]
                 totalSquare+=box[6]
-                print("box=",box)
-            print("weight,amount,square=",totalWeight,totalAmount,totalSquare)
             InsertPackageBoxInfo(self.log, WHICHDB,self.orderID,self.suborderID, boxList)
             for box in boxList:
                 for layer in box[-1]:
                     for row in layer:
                         for col in row:
                             UpdateSeperatePanelBoxNumberAndState(self.log, WHICHDB, self.orderID, self.suborderID, col[0], col[-2], col[-3])
+        elif type == CEILING:
+            self.SeperateStraightCeilingByThickness()
+            self.commonThickness = len(self.ceilingPanelList25)#先找到板子最多的那种厚度
+            if self.commonThickness<len(self.ceilingPanelList50):
+                self.commonThickness=len(self.ceilingPanelList50)
+            if self.commonThickness<len(self.ceilingPanelList100):
+                self.commonThickness=len(self.ceilingPanelList100)
+            if self.commonThickness==len(self.ceilingPanelList25):#如果25mm厚的板子最多
+                boxLength = self.FindBestBoxLength(self.ceilingPanelList25)
+            elif self.commonThickness==len(self.ceilingPanelList50):
+                boxLength = self.FindBestBoxLength(self.ceilingPanelList50)
+            else:
+                boxLength = self.FindBestBoxLength(self.ceilingPanelList100)
+            row100List = self.PatternRow(boxLength, self.ceilingPanelList100)
+            row50List = self.PatternRow(boxLength, self.ceilingPanelList50)
+            row25List = self.PatternRow(boxLength, self.ceilingPanelList25)
 
-        #     boxWeight=0
-            #     boxlayerNum = len(box)
-            #     boxSquare=0
-            #     boxPanelAmount=0
-            #     boxHeight=0
-            #     for j,layer in enumerate(box):
-            #         boxHeight+=layer[0][0][11]
-            #         for k, row in enumerate(layer):
-            #             for l,col in enumerate(row):
+            layer100List = self.PatternLayer(boxWidth,row100List,thickness=100)
+            layer50List = self.PatternLayer(boxWidth,row50List,thickness=50)
+            layer25List = self.PatternLayer(boxWidth,row25List,thickness=25)
+
+            data=layer100List
+            data.extend(layer50List)
+            data.extend(layer25List)
+            boxList = self.PatternBox(maxHeight,data)
+
+            totalAmount=0
+            totalWeight=0
+            totalSquare=0
+            for i,box in enumerate(boxList):
+                totalWeight+=box[4]
+                totalAmount+=box[5]
+                totalSquare+=box[6]
+            InsertPackageBoxInfo(self.log, WHICHDB,self.orderID,self.suborderID, boxList)
+            for box in boxList:
+                for layer in box[-1]:
+                    for row in layer:
+                        for col in row:
+                            UpdateSeperatePanelBoxNumberAndState(self.log, WHICHDB, self.orderID, self.suborderID, col[0], col[-2], col[-3])
 
 
     def PatternBox(self,maxHeight,data):
@@ -2217,7 +2252,6 @@ class PackageAlgorithm(object):
         if len(data)>0:
             if boxWidth < data[0][0]:
                 boxWidth = data[0][0]
-                print("here=", boxWidth)
             layer = []
             totalWidth=0
             leftAmount = len(data)
@@ -2277,8 +2311,13 @@ class PackageAlgorithm(object):
                             weight+=float(board[17])
                             amount+=1
                             square+=(board[9]*board[10])
-                print("row=",row)
-                rowList.append([row[0][10],totalLength,weight,amount,square,row,""])#1是本行宽度，2是本行长度，3是本行重。。。
+                if row==[]:
+                    print("Finding error board...")
+                    for board in data:
+                        if not board[-1]:
+                            print("error board is:",board)
+                else:
+                    rowList.append([row[0][10],totalLength,weight,amount,square,row,""])#1是本行宽度，2是本行长度，3是本行重。。。
                 row=[]
                 totalLength=0
                 amount=0
@@ -2291,7 +2330,7 @@ class PackageAlgorithm(object):
 
 
     def FindBestBoxLength(self,data):
-        return 2600
+        return 3000
 
 
     def SeperateStraightBoardByThickness(self):
@@ -2305,6 +2344,18 @@ class PackageAlgorithm(object):
                 self.straightWallPanelList50.append(board)
             else:
                 self.straightWallPanelList100.append(board)
+
+    def SeperateStraightCeilingByThickness(self):
+        self.ceilingPanelList25=[]
+        self.ceilingPanelList50=[]
+        self.ceilingPanelList100=[]
+        for board in self.ceilingPanelList:
+            if board[11]==25:
+                self.ceilingPanelList25.append(board)
+            elif board[11]==50:
+                self.ceilingPanelList50.append(board)
+            else:
+                self.ceilingPanelList100.append(board)
 
     def AutoPackageLShapeBoard(self):
         print("Running AutoPackageLShapeBoard")
@@ -2355,9 +2406,6 @@ class PackageAlgorithm(object):
                         temp.append(item[5])
                 temp=list(set(temp))
                 self.roomChoices.append([deck,zone,temp])
-        print("deckChoices=",self.deckChoices)
-        print("zoneChoices=",self.zoneChoices)
-        print("roomChoices=",self.roomChoices)
 
 
 
