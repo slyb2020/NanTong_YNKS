@@ -8,7 +8,8 @@ from DBOperation import GetSubOrderPackageState,UpdateSubOrderPackageState,GetSu
     GetCurrentPackageData,CreateNewPackageBoxInBoxDB,GetSpecificPackageBoxData,UpdateSpecificPackageBoxInfo,\
     GetSubOrderPackageNumber,UpdatePanelPackageStateInPOrderDB,UpdateSeperatePanelBoxNumberAndState,\
     DeleteNewPackageBoxInPackageDB,DeleteNewPackageBoxInPackageDBWithBoxName,ClearSeperatePanelBoxNumberWithIndex,\
-    GetOrderNameByOrderID,GetPropertyLShapeWallTypeList,InsertPackageBoxInfo
+    GetOrderNameByOrderID,GetPropertyLShapeWallTypeList,InsertPackageBoxInfo,GetSuborderAllPackageList,\
+    DeleteSuborderPackageDB,UpdateSubOrderPackageStateAndClearPackageNumber
 import numpy as np
 from operator import itemgetter
 import wx.lib.agw.pygauge as PG
@@ -84,9 +85,9 @@ class BoxDetailViewPanel(wx.Panel):
         self.master.currentSeperatePanelList.append(self.data[self.frontViewPanel.selectionNum][self.topViewPanel.currentRow].pop(self.topViewPanel.currentCol))#从box弹出，加到散板list
         self.master.currentSeperatePanelList[-1][-1]= ""#把弹出这块板的货盘号清空
         panelID = self.master.currentSeperatePanelList[-1][0]#得到弹出这块板的ID
-        for k, record in enumerate(self.master.panelList):
+        for k, record in enumerate(self.master.panelTotalList):
             if record[0] == panelID:
-                self.master.panelList[k][-1] = "" #在全部板子列表中找到这块板子，把货盘号也清空
+                self.master.panelTotalList[k][-1] = "" #在全部板子列表中找到这块板子，把货盘号也清空
                 break
 
         for i,record in enumerate(self.data[self.frontViewPanel.selectionNum]):#如果弹出的这块板子是这行中唯一的一块板子，那么把这一行清空
@@ -95,7 +96,7 @@ class BoxDetailViewPanel(wx.Panel):
         self.topViewPanel.currentRow=None
         self.topViewPanel.currentCol=None
         self.master.currentSeperatePanelList.sort(key=itemgetter(11, 10, 9), reverse=True)
-        self.master.SeperatePackagePanelReCreate()
+        self.master.SeperatePanelReCreate()
         self.master.modified=True
         self.topViewPanel.ReCreate()
         self.frontViewPanel.ReCreate()
@@ -121,12 +122,12 @@ class BoxDetailViewPanel(wx.Panel):
                             self.data[self.frontViewPanel.selectionNum][i].append(
                                 self.master.currentSeperatePanelList.pop(self.master.seperateSelectionNum))
                             panelID = self.data[self.frontViewPanel.selectionNum][i][-1][0]
-                            for k, record in enumerate(self.master.panelList):
+                            for k, record in enumerate(self.master.panelTotalList):
                                 if record[0] == panelID:
-                                    self.master.panelList[k][-1]=self.name
+                                    self.master.panelTotalList[k][-1]=self.name
                                     break
                             self.master.seperateSelectionNum = -1
-                            self.master.SeperatePackagePanelReCreate()
+                            self.master.SeperatePanelReCreate()
                             self.topViewPanel.ReCreate()
                             self.frontViewPanel.ReCreate()
                             self.master.FinishPackagePanelReCreate()
@@ -138,36 +139,58 @@ class BoxDetailViewPanel(wx.Panel):
                 self.master.modified = True
                 self.data[self.frontViewPanel.selectionNum].append([self.master.currentSeperatePanelList.pop(self.master.seperateSelectionNum)])
                 panelID = self.data[self.frontViewPanel.selectionNum][-1][0][0]
-                for k, record in enumerate(self.master.panelList):
+                for k, record in enumerate(self.master.panelTotalList):
                     if record[0] == panelID:
-                        self.master.panelList[k][-1] = self.name
+                        self.master.panelTotalList[k][-1] = self.name
                         break
                 self.master.seperateSelectionNum=-1
                 self.master.currentSeperatePanellAmountTXT.SetValue(str(len(self.master.currentSeperatePanelList)))
-                self.master.SeperatePackagePanelReCreate()#################################################################################这个函数有问题，执行时间过长
+                self.master.SeperatePanelReCreate()#################################################################################这个函数有问题，执行时间过长
                 self.topViewPanel.ReCreate()
                 self.frontViewPanel.ReCreate()
                 self.master.FinishPackagePanelReCreate()
             else:
                 wx.MessageBox("当前托盘的当前层无法容纳您所选的面板，请选择其它层重试！",'信息提示窗口')
 
+    def Clear(self):
+        info = []
+        self.SetValue(info)
+
     def SetValue(self,info):
-        self.info = info
-        self.name = info[0]
-        self.length = info[1]
-        self.width = info[2]
-        self.height = info[3]
-        self.layer = info[4]
-        self.weight = info[5]
-        self.amount = info[6]
-        self.square = info[7]
-        self.suborder = info[8]
-        self.deck = info[9]
-        self.zone = info[10]
-        self.room= info[11]
-        self.mode = info[12]
-        self.boxState = info[13]
-        self.data = info[14]
+        if info!=[]:
+            self.info = info
+            self.name = info[0]
+            self.length = info[1]
+            self.width = info[2]
+            self.height = info[3]
+            self.layer = info[4]
+            self.weight = info[5]
+            self.amount = info[6]
+            self.square = info[7]
+            self.suborder = info[8]
+            self.deck = info[9]
+            self.zone = info[10]
+            self.room= info[11]
+            self.mode = info[12]
+            self.boxState = info[13]
+            self.data = info[14]
+        else:
+            self.info = []
+            self.name = ""
+            self.length = 0
+            self.width = 0
+            self.height = 0
+            self.layer = 0
+            self.weight = 0
+            self.amount = 0
+            self.square = 0
+            self.suborder = ""
+            self.deck = ""
+            self.zone = ""
+            self.room= ""
+            self.mode = ""
+            self.boxState = ''
+            self.data = []
         self.frontViewPanel.SetValue(info)
         self.topViewPanel.SetValue((0,0),[])
 
@@ -858,13 +881,16 @@ class PackageDialog(wx.Dialog):
         self.suborderID = subOrderID
         self.log = log
         self.parent = parent
+        self.packageState = "未打包"
+        self.boxTotalAmount = 0
+        # _, self.boxTotalAmount=GetSubOrderPackageNumber(self.log,WHICHDB,self.orderID,self.suborderID)
+        self.sortTurn=2 #散板排序顺序0：按厚度优先，1:按长度很优先，2：按宽度优先
+        self.packageList = []
+        self.panelTotalList = [] #子订单所有面板列表
         self.panelTotalAmount=0
         self.panelTotalWeight=0
         self.panelTotalSquare=0
-        _, self.boxTotalAmount=GetSubOrderPackageNumber(self.log,WHICHDB,self.orderID,self.suborderID)
-        self.sortTurn=2 #散板排序顺序0：按厚度优先，1:按长度很优先，2：按宽度优先
-        self.packageList = []
-        self.currentPanelList = []
+        self.currentPanelList = [] #子订单当前面板列表
         self.currentPanelTotalAmount = 0
         self.currentSeperatePanelList = []
         self.currentSeperatePanellAmount=0
@@ -872,66 +898,19 @@ class PackageDialog(wx.Dialog):
         self.seperateSelectionNum=-1
         self.boxSelectionNum=-1
         self.modified = False
+        self.suborderPanelsDBNameP = "p%s-%03d"%(self.orderID,int(self.suborderID))
 
-        # self.seperatePanelList=[
-        #     [522, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', 2280, 300, 50, 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
-        #     [523, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', 2100, 400, 50, 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
-        #     [525, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', 1980, 350, 50, 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
-        #     [526, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', 1980, 300, 50, 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
-        #     [527, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', 1500, 550, 50, 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
-        #     [528, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', 1500, 600, 50, 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
-        #     [529, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', 2280, 400, 50, 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
-        #     [530, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', 1480, 300, 50, 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
-        #     [531, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', 1300, 300, 50, 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
-        #     [532, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', 1280, 300, 50, 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
-        #     [533, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', 1180, 400, 50, 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
-        #     [534, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', 1080, 300, 50, 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
-        #     [535, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', 780, 500, 50, 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
-        #     [536, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', 680, 700, 50, 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
-        #     [537, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', 680, 600, 50, 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
-        #     [538, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', 680, 370, 50, 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
-        #     [539, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', 155, 300, 50, 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
-        #     [540, 64731, '1', '3', '9', 'Corridor', 'C.C72.0001', 'C72', 'D30HDA', 395, 300, 50, 'RAL9010', 'G', 'None', 'None', '64731-0084', '', '4.10', '64731-0084', '', ''],
-        # ]
-        dbName = "p%s-%03d"%(self.orderID,int(self.suborderID))
-        from DBOperation import GetTableListFromDB
-        _,dbNameList = GetTableListFromDB(self.log,WHICHDB)
-        if dbName not in dbNameList:
-            CreatePackagePanelSheetForOrder(log,WHICHDB,dbName)
-            _, self.panelList = GetSubOrderPanelsForPackage(self.log, WHICHDB, self.orderID)#读取订单中所有子订单数据，这个数据有些记录代表好几块面板
-            self.data=[]
-            for record in self.panelList:
-                if int(record[2])==int(self.suborderID):
-                    for i in range(int(record[9])):
-                             # `订单号`,`子订单号`   ,`甲板`,    `区域`  ,`房间`,       `图纸`    ,`产品类型`, `面板代码`  ,`高度` ,   `宽度`,      `厚度`,    `X面颜色`,   `Y面颜色`, `Z面颜色`,   `V面颜色`,  `胶水单编号`,      `重量`    ,`胶水单注释`,`状态`,`所属货盘`
-                    #      [93,  64731,   '1',       '3',      '9',   'Corridor', 'C.C72.0001', 'C72',   'D40RLA',1,'1240',    '400',      '50',    'RAL9010',    'G',     'None',     'None',    '64731-0093',    '2.98',      '']
-                        temp=[record[1],record[2],record[3],record[4],record[5]    ,record[6],record[7],record[8],record[10],record[11],record[12],record[13],record[14],record[15],   record[16], record[17], record[18],   record[19],  '',   '']
-                        self.data.append(temp)
-            InsertPanelDetailIntoPackageDB(self.log,WHICHDB,dbName,self.data)
-        _, self.packageState = GetSubOrderPackageState(self.log,WHICHDB,dbName,self.suborderID)#这个是从order表单中读取第一条子订单数据的state，不是从“porder”表单中读取
-        if self.packageState not in ["按房间打包","按区域打包"]:
-            self.packageState = "未打包"
-        _, self.panelList = GetSubOrderPanelsForPackageFromPackageDB(self.log,WHICHDB,self.orderID,self.suborderID)#读取打包数据库中的面板，这个数据每条记录对应1块面板，不会有重复
-        self.panelTotalAmount = len(self.panelList)
-        self.panelList.sort(key=itemgetter(11,10,9), reverse=True)#先将墙板按厚度，宽度，长度排序
-        #角墙板怎么打包？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？
-        for record in self.panelList:
-            self.currentPanelList.append(record)
-            # [1, 64731, '1', '3', '9', 'Corridor', 'A.2SA.0900', '2SA', 'A5KBWBG', '2160', '550', '50', 'YC74H', 'YQ73D',
-            #  'None', 'None', '64731-0001',  '7.13', '64731-0001', '', '']
-            try:
-                self.panelTotalWeight+=float(record[17])
-            except:
-                pass
-            self.panelTotalSquare+= (float(record[9])*float(record[10]))
-        self.MakeSeperatePanelList()
-        self.panelTotalSquare = self.panelTotalSquare/1.E6
+        self.CreatePOrderSuborderRecordDB()#如果”p64370-001"这个子订单面板打包表单还没建立的话就建立起来，已经建立了就不做任何操作
+        self.GetTotalPanelList()#从”p64370-001"这个子订单面板打包表单中读取全部面板信息，并统计总数，总重，总面积等，同时将全部面板都加入到当前面板列表中
+        self.MakeSeperatePanelList()#根据当前面板列表生成当前散板列表
+        #至此数据准备完毕
+
         self.SetExtraStyle(wx.DIALOG_EX_METAL)
         self.Create(parent, -1, "产品打包操作对话框", pos, size, style)
         sizer = wx.BoxSizer(wx.VERTICAL)
         self.panel = wx.Panel(self, -1, size=(1800, 900))
         self.topPanel = wx.Panel(self.panel,size=(100,100))
-        self.ReCreateTopPanel()
+        self.CreateTopPanel()
         vbox=wx.BoxSizer(wx.VERTICAL)
         vbox.Add(self.topPanel,0,wx.EXPAND)
         vbox.Add(wx.StaticLine(self.panel,size=(10,2),style=wx.HORIZONTAL),0,wx.EXPAND)
@@ -948,14 +927,23 @@ class PackageDialog(wx.Dialog):
         self.addNewBoxBTN.SetBitmap(bmp)
         vvbox.Add(self.addNewBoxBTN,0)
 
-        bmp = wx.Bitmap(bitmapDir + '/view2.png')
-        self.selectionBoxDismissBTN = wx.Button(panel, -1, size=(40, 40), name="删除托盘，即将托盘打散")
+        bmp = wx.Bitmap(bitmapDir + '/cut.png')
+        self.selectionBoxDismissBTN = wx.Button(panel, -1, size=(40, 40), name="删除选定托盘，即将托盘打散")
         self.selectionBoxDismissBTN.Enable(False)
         self.selectionBoxDismissBTN.Bind(wx.EVT_BUTTON,self.OnSelectionBoxDismissBTN)
         self.selectionBoxDismissBTN.SetBackgroundColour(wx.Colour(240,240,240))
-        self.selectionBoxDismissBTN.SetToolTip("删除托盘，即将托盘打散")
+        self.selectionBoxDismissBTN.SetToolTip("删除选定托盘，即将托盘打散")
         self.selectionBoxDismissBTN.SetBitmap(bmp)
         vvbox.Add(self.selectionBoxDismissBTN,0)
+
+        bmp = wx.Bitmap(bitmapDir + '/view2.png')
+        self.deleteEmptyBTN = wx.Button(panel, -1, size=(40, 40), name="删除多余托盘，即删除所有空的托盘")
+        self.deleteEmptyBTN.Enable(False)
+        # self.deleteEmptyBTN.Bind(wx.EVT_BUTTON,self.OnSelectionBoxDismissBTN)
+        self.deleteEmptyBTN.SetBackgroundColour(wx.Colour(240,240,240))
+        self.deleteEmptyBTN.SetToolTip("删除多余托盘，即删除所有空的托盘")
+        self.deleteEmptyBTN.SetBitmap(bmp)
+        vvbox.Add(self.deleteEmptyBTN,0)
 
         bmp = wx.Bitmap(bitmapDir + '/all.png')
         btn = wx.Button(panel, -1, size=(40, 40), name="显示子订单的全部托盘及散板")
@@ -1002,31 +990,6 @@ class PackageDialog(wx.Dialog):
         vvbox.Add(self.middleRightAddBTN,0,wx.EXPAND)
         self.middleControlPanel.SetSizer(vvbox)
 
-        self.currentPackageData=[]
-        # hbox=wx.BoxSizer()
-        # _,self.currentPackageData = GetCurrentPackageData(self.log,WHICHDB,self.orderID,self.suborderID,self.deckName,self.zoneName,self.roomName)
-        self.packageList=[]
-        hbox = wx.BoxSizer()
-        if self.packageState!="":
-            if self.packageState == "按房间打包":
-                _,self.currentPackageData = GetCurrentPackageData(self.log,WHICHDB,self.orderID,self.suborderID,self.deckName,self.zoneName,self.roomName)
-            elif self.packageState == "按区域打包":
-                _,self.currentPackageData = GetCurrentPackageData(self.log, WHICHDB, self.orderID, self.suborderID, self.deckName,
-                                                         self.zoneName, self.roomName)
-        else:
-            self.currentPackageData=[]
-        self.FinishPackagePanelReCreate()
-        # self.packageList=[]
-        # for i in range(20):
-        #     temp = ["托盘%s"%i,2280,600,600,11,'345','100','2000','1','3','9','Corridor','房间','','']
-        #     package = PackagePanel(self.finishPackagePanel,self,info=temp)
-        #     self.packageList.append(package)
-        #     self.packageList.append(package)
-        #     hbox.Add(package)
-        # self.finishPackagePanel.SetSizer(hbox)
-        # self.finishPackagePanel.SetAutoLayout(1)
-        # self.finishPackagePanel.SetupScrolling()
-
         hbox=wx.BoxSizer()
         vvbox = wx.BoxSizer(wx.VERTICAL)
         bmp = wx.Bitmap(bitmapDir + '/package-add.png')
@@ -1050,7 +1013,11 @@ class PackageDialog(wx.Dialog):
         self.seperatePackagePanel = scrolled.ScrolledPanel(self.bottomPackagePanel)
         hbox.Add(self.seperatePackagePanel,1,wx.EXPAND)
         self.bottomPackagePanel.SetSizer(hbox)
-        self.SeperatePackagePanelReCreate()
+
+        self.RefreshTopPanel()
+        self.MakeCurrentPackageData()
+        self.FinishPackagePanelReCreate()
+        self.SeperatePanelReCreate()
 
         # self.panel.SetBackgroundColour(wx.Colour(234,219,212))
         self.panel.SetSizer(vbox)
@@ -1097,10 +1064,60 @@ class PackageDialog(wx.Dialog):
         self.SetSizer(sizer)
         sizer.Fit(self)
         self.Bind(wx.EVT_BUTTON,self.OnButton)
-        # btn_ok.Bind(wx.EVT_BUTTON, self.OnOk)
-        # btn_cancel.Bind(wx.EVT_BUTTON, self.OnCancel)
-        # manualInputBTN.Bind(wx.EVT_BUTTON, self.OnCancel)
         self.Bind(wx.EVT_CLOSE,self.OnCancel)
+
+    def GetSuborderAllPackageList(self):
+        _,self.suborderAllPackageList=GetSuborderAllPackageList(self.log,WHICHDB,self.orderID,self.suborderID)
+
+    def MakeCurrentPackageData(self):#读取子订单所有托盘数据self.suborderAllPackageList，再生成当前托盘数据self.currentPackageData
+        self.GetSuborderAllPackageList()
+        self.currentPackageData=[]
+        # hbox=wx.BoxSizer()
+        # _,self.currentPackageData = GetCurrentPackageData(self.log,WHICHDB,self.orderID,self.suborderID,self.deckName,self.zoneName,self.roomName)
+        self.packageList=[]
+        hbox = wx.BoxSizer()
+        if self.packageState!="":
+            if self.packageState == "按房间打包":
+                _,self.currentPackageData = GetCurrentPackageData(self.log,WHICHDB,self.orderID,self.suborderID,self.deckName,self.zoneName,self.roomName)
+            elif self.packageState == "按区域打包":
+                _,self.currentPackageData = GetCurrentPackageData(self.log, WHICHDB, self.orderID, self.suborderID, self.deckName,
+                                                         self.zoneName, self.roomName)
+        else:
+            self.currentPackageData=[]
+
+
+    def CreatePOrderSuborderRecordDB(self):#这个方法用来为子订单在订单数据库中建立“p64370-001"表单，存放子订单包含的所有墙板，天花板即构件，这个表单里每条记录只对应一块板，Index为唯一标识
+        from DBOperation import GetTableListFromDB
+        _,dbNameList = GetTableListFromDB(self.log,WHICHDB)
+        if self.suborderPanelsDBNameP not in dbNameList:
+            CreatePackagePanelSheetForOrder(self.log,WHICHDB,self.suborderPanelsDBNameP)
+            _, self.panelTotalList = GetSubOrderPanelsForPackage(self.log, WHICHDB, self.orderID)#读取订单中所有子订单数据，这个数据有些记录代表好几块面板
+            self.data=[]
+            for record in self.panelTotalList:
+                if int(record[2])==int(self.suborderID):
+                    for i in range(int(record[9])):
+                             # `订单号`,`子订单号`   ,`甲板`,    `区域`  ,`房间`,       `图纸`    ,`产品类型`, `面板代码`  ,`高度` ,   `宽度`,      `厚度`,    `X面颜色`,   `Y面颜色`, `Z面颜色`,   `V面颜色`,  `胶水单编号`,      `重量`    ,`胶水单注释`,`状态`,`所属货盘`
+                    #      [93,  64731,   '1',       '3',      '9',   'Corridor', 'C.C72.0001', 'C72',   'D40RLA',1,'1240',    '400',      '50',    'RAL9010',    'G',     'None',     'None',    '64731-0093',    '2.98',      '']
+                        temp=[record[1],record[2],record[3],record[4],record[5]    ,record[6],record[7],record[8],record[10],record[11],record[12],record[13],record[14],record[15],   record[16], record[17], record[18],   record[19],  '',   '']
+                        self.data.append(temp)#self.data里存放的是订单包含的所有面板
+            InsertPanelDetailIntoPackageDB(self.log,WHICHDB,self.suborderPanelsDBNameP,self.data)
+
+    def GetTotalPanelList(self):
+        _, self.panelTotalList = GetSubOrderPanelsForPackageFromPackageDB(self.log, WHICHDB, self.orderID, self.suborderID)#读取”p64370-001"这个子订单面板打包表单中的所有数据，这个数据每条记录对应1块面板，不会有重复
+        self.panelTotalAmount = len(self.panelTotalList)
+        self.panelTotalList.sort(key=itemgetter(11, 10, 9), reverse=True)#先将墙板按厚度，宽度，长度排序
+        #角墙板怎么打包？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？
+        for record in self.panelTotalList:
+            self.currentPanelList.append(record)
+            # [1, 64731, '1', '3', '9', 'Corridor', 'A.2SA.0900', '2SA', 'A5KBWBG', '2160', '550', '50', 'YC74H', 'YQ73D',
+            #  'None', 'None', '64731-0001',  '7.13', '64731-0001', '', '']
+            try:
+                self.panelTotalWeight+=float(record[17])
+            except:
+                pass
+            self.panelTotalSquare+= (float(record[9])*float(record[10]))
+        self.panelTotalSquare = self.panelTotalSquare/1.E6
+
 
     def OnCancel(self,event):
         if self.modified:
@@ -1176,60 +1193,6 @@ class PackageDialog(wx.Dialog):
         sourceWorkingPackagePanel = self.leftWorkingPackagePanel
         objectWorkingPackagePanel = self.rightWorkingPackagePanel
         self.SinglePanelExchange(sourceWorkingPackagePanel,objectWorkingPackagePanel)
-        # currentRow=self.leftWorkingPackagePanel.topViewPanel.currentRow
-        # currentCol=self.leftWorkingPackagePanel.topViewPanel.currentCol
-        # lengthSource=int(self.leftWorkingPackagePanel.topViewPanel.data[currentRow][currentCol][9])
-        # widthSource=int(self.leftWorkingPackagePanel.topViewPanel.data[currentRow][currentCol][10])
-        # if lengthSource>self.rightWorkingPackagePanel.topViewPanel.size[0] :
-        #     wx.MessageBox("面板长度超过托盘长度！")
-        # elif widthSource>self.rightWorkingPackagePanel.topViewPanel.size[1]:
-        #     wx.MessageBox("面板宽度超过托盘宽度！")
-        # else:
-        #     colWidth = 0
-        #     for i, row in enumerate(self.rightWorkingPackagePanel.data[self.rightWorkingPackagePanel.frontViewPanel.selectionNum]):
-        #         print("layer before=",self.rightWorkingPackagePanel.data[self.rightWorkingPackagePanel.frontViewPanel.selectionNum])
-        #         if row != []:
-        #             rowLength = 0
-        #             colWidth+=int(row[0][10])
-        #             for j, col in enumerate(row):
-        #                 rowLength+=int(col[9])
-        #             if int(row[0][10])>=widthSource:#如果新增的板宽不大于托盘此行的宽度
-        #                 print("lengthSource,rowLength=",lengthSource,rowLength)
-        #                 if (lengthSource + rowLength) <= self.rightWorkingPackagePanel.topViewPanel.size[0]:
-        #                     print("We can drop it here!")
-        #                     self.modified = True
-        #                     self.rightWorkingPackagePanel.data[self.rightWorkingPackagePanel.frontViewPanel.selectionNum][i].append(self.leftWorkingPackagePanel.data[
-        #                                                                                               self.leftWorkingPackagePanel.frontViewPanel.selectionNum][
-        #                                                                                               currentRow].pop(currentCol))
-        #                     if self.leftWorkingPackagePanel.data[self.leftWorkingPackagePanel.frontViewPanel.selectionNum][
-        #                         currentRow] == []:  # 如果这一行弹出刚才的板子后就没板子了，那就把这一行直接删除了
-        #                         self.leftWorkingPackagePanel.data[
-        #                             self.leftWorkingPackagePanel.frontViewPanel.selectionNum].pop(currentRow)
-        #                     self.rightWorkingPackagePanel.data[self.rightWorkingPackagePanel.frontViewPanel.selectionNum][i][-1][-1] = self.rightWorkingPackagePanel.name
-        #                     print("ddd",self.rightWorkingPackagePanel.data[self.rightWorkingPackagePanel.frontViewPanel.selectionNum][i][-1][-1])
-        #                     self.leftWorkingPackagePanel.topViewPanel.ReCreate()
-        #                     self.rightWorkingPackagePanel.topViewPanel.ReCreate()
-        #                     self.leftWorkingPackagePanel.frontViewPanel.ReCreate()
-        #                     self.rightWorkingPackagePanel.frontViewPanel.ReCreate()
-        #                     self.FinishPackagePanelReCreate()
-        #                     return
-        #         else:
-        #             self.rightWorkingPackagePanel.data[self.rightWorkingPackagePanel.frontViewPanel.selectionNum].pop(i)
-        #             print("row=",self.rightWorkingPackagePanel.data[self.rightWorkingPackagePanel.frontViewPanel.selectionNum])
-        #     if (colWidth+widthSource)<=self.rightWorkingPackagePanel.topViewPanel.size[1]:
-        #         print("We can drop it in a new row")
-        #         self.modified = True
-        #         self.rightWorkingPackagePanel.data[self.rightWorkingPackagePanel.frontViewPanel.selectionNum].append([self.leftWorkingPackagePanel.data[self.leftWorkingPackagePanel.frontViewPanel.selectionNum][currentRow].pop(currentCol)])
-        #         if self.leftWorkingPackagePanel.data[self.leftWorkingPackagePanel.frontViewPanel.selectionNum][currentRow]==[]:#如果这一行弹出刚才的板子后就没板子了，那就把这一行直接删除了
-        #             self.leftWorkingPackagePanel.data[self.leftWorkingPackagePanel.frontViewPanel.selectionNum].pop(currentRow)
-        #         self.rightWorkingPackagePanel.data[self.rightWorkingPackagePanel.frontViewPanel.selectionNum][-1][-1][-1]=self.rightWorkingPackagePanel.name
-        #         self.leftWorkingPackagePanel.topViewPanel.ReCreate()
-        #         self.rightWorkingPackagePanel.topViewPanel.ReCreate()
-        #         self.leftWorkingPackagePanel.frontViewPanel.ReCreate()
-        #         self.rightWorkingPackagePanel.frontViewPanel.ReCreate()
-        #         self.FinishPackagePanelReCreate()
-        #     else:
-        #         wx.MessageBox("当前托盘的当前层无法容纳您所选的面板，请选择其它层重试！",'信息提示窗口')
 
     def OnSaveAndExitBTN(self,event):
         self.OnSaveBTN(None)
@@ -1335,32 +1298,49 @@ class PackageDialog(wx.Dialog):
     def OnSelectionBoxDismissBTN(self,event):
         returnCode = wx.ID_YES
         data = self.currentPackageData[self.boxSelectionNum]
+        isBusy = False
+        empty=True
         for layer in data[14]:
             if layer!=[]:#这说明这个托盘里面最少有一行不为空，此时需要弹出对话框进行警告及问询
-                dlg = wx.MessageDialog(self, "当前托盘不为空，是否继续删除托盘？",
-                                       '信息提示窗口',
-                                       # wx.OK | wx.ICON_INFORMATION
-                                       wx.YES_NO | wx.NO_DEFAULT | wx.ICON_INFORMATION
-                                       )
-                returnCode = dlg.ShowModal()
-                dlg.Destroy()
-                if returnCode == wx.ID_YES:
+                empty = False
+                break
+        if not empty:
+            dlg = wx.MessageDialog(self, "当前托盘不为空，是否继续删除托盘？",
+                                   '信息提示窗口',
+                                   # wx.OK | wx.ICON_INFORMATION
+                                   wx.YES_NO | wx.NO_DEFAULT | wx.ICON_INFORMATION
+                                   )
+            returnCode = dlg.ShowModal()
+            dlg.Destroy()
+            if returnCode == wx.ID_YES:
+                busy = PBI.PyBusyInfo("正在执行打散包装操作，请稍候。。。", parent=None, title="系统忙提示",
+                                      icon=images.Smiles.GetBitmap())
+                wx.Yield()
+                for layer in data[14]:
                     for row in layer:
                         for col in row:
                             if col!=[]:
                                 col[-1]=''
                                 self.currentSeperatePanelList.append(col)
                                 ClearSeperatePanelBoxNumberWithIndex(self.log, WHICHDB, self.orderID, self.suborderID, int(col[0]))
-        DeleteNewPackageBoxInPackageDBWithBoxName(self.log,WHICHDB,self.orderID,data[0])
-        self.currentPackageData.pop(self.boxSelectionNum)
-        self.FinishPackagePanelReCreate()
-        if self.sortTurn==0:
-            self.currentSeperatePanelList.sort(key=itemgetter(9, 10, 11), reverse=True)
-        elif self.sortTurn==1:
-            self.currentSeperatePanelList.sort(key=itemgetter(10, 9, 11), reverse=True)
-        elif self.sortTurn==2:
-            self.currentSeperatePanelList.sort(key=itemgetter(11, 10, 9), reverse=True)
-        self.SeperatePackagePanelReCreate()
+                empty=True
+                isBusy=True
+        if empty:
+            DeleteNewPackageBoxInPackageDBWithBoxName(self.log,WHICHDB,self.orderID,data[0])
+            self.currentPackageData.pop(self.boxSelectionNum)
+            self.FinishPackagePanelReCreate()
+            if self.sortTurn==0:
+                self.currentSeperatePanelList.sort(key=itemgetter(9, 10, 11), reverse=True)
+            elif self.sortTurn==1:
+                self.currentSeperatePanelList.sort(key=itemgetter(10, 9, 11), reverse=True)
+            elif self.sortTurn==2:
+                self.currentSeperatePanelList.sort(key=itemgetter(11, 10, 9), reverse=True)
+            self.SeperatePanelReCreate()
+            self.RefreshTopPanelCurrentSection()
+            if isBusy:
+                del busy
+            self.leftWorkingPackagePanel.Clear()
+
         #########################################################还要清除工作区的显示,另外增加上载的时候就保存数据，减少存盘时间，而存盘也不是把所有的都存，只把工作区里的数据存盘，即做到随改随存，数据保存随时进行。
 
     def OnAddNewBoxBTN(self,event):
@@ -1378,6 +1358,7 @@ class PackageDialog(wx.Dialog):
                 _,temp = GetSpecificPackageBoxData(self.log,WHICHDB, self.orderID,reCode)
                 self.currentPackageData.append(temp)
                 self.FinishPackagePanelReCreate()
+                self.RefreshTopPanelTotalSection()
 
     def FinishPackagePanelReCreate(self):
         self.Freeze()
@@ -1418,7 +1399,7 @@ class PackageDialog(wx.Dialog):
             self.currentSeperatePanelList.sort(key=itemgetter(10, 9, 11), reverse=True)
         elif self.sortTurn==2:
             self.currentSeperatePanelList.sort(key=itemgetter(11, 10, 9), reverse=True)
-        self.SeperatePackagePanelReCreate()
+        self.SeperatePanelReCreate()
 
 
     def OnButton(self,event):
@@ -1441,7 +1422,8 @@ class PackageDialog(wx.Dialog):
         event.Skip()
         self.leftWorkingPackagePanel.bottomUploadBTN.Enable((self.leftWorkingPackagePanel.state == '占用' and self.leftWorkingPackagePanel.frontViewPanel.selectionNum != -1))
         self.rightWorkingPackagePanel.bottomUploadBTN.Enable((self.rightWorkingPackagePanel.state == '占用' and self.rightWorkingPackagePanel.frontViewPanel.selectionNum != -1))
-    def SeperatePackagePanelReCreate(self):
+
+    def SeperatePanelReCreate(self):
         self.seperatePackagePanel.DestroyChildren()
         hbox=wx.BoxSizer()
         self.separatePanelCtrlList=[]
@@ -1457,7 +1439,20 @@ class PackageDialog(wx.Dialog):
         self.seperatePackagePanel.SetupScrolling()
         # print("hereE")
 
-    def ReCreateTopPanel(self):
+    def RefreshTopPanel(self):
+        self.RefreshTopPanelTotalSection()
+        self.RefreshTopPanelCurrentSection()
+
+    def RefreshTopPanelTotalSection(self):
+        self.panelTotalAmountTXT.SetValue(str(self.panelTotalAmount))
+        self.panelTotalSquareTXT.SetValue("%.2f"%self.panelTotalSquare)
+        self.GetSuborderTotalPackageAmount()
+
+    def GetSuborderTotalPackageAmount(self):
+        _, self.boxTotalAmount=GetSubOrderPackageNumber(self.log,WHICHDB,self.orderID,self.suborderID)
+        self.boxTotalAmountTXT.SetValue(str(self.boxTotalAmount))
+
+    def CreateTopPanel(self):
         self.topPanel.DestroyChildren()
         hbox = wx.BoxSizer()
         vvbox = wx.BoxSizer(wx.VERTICAL)
@@ -1465,7 +1460,7 @@ class PackageDialog(wx.Dialog):
         hhbox = wx.BoxSizer()
         hhbox.Add(wx.StaticText(self.topPanel, label='订单号'), 0, wx.TOP, 5)
         self.orderIDTXT = wx.TextCtrl(self.topPanel, size=(70, 25), style=wx.TE_READONLY)
-        self.orderIDTXT.SetValue('%05d-%03d' % (int(self.orderID),int(self.suborderID)))
+        self.orderIDTXT.SetValue('%s-%03d' % (self.orderID,int(self.suborderID)))
         # self.orderIDTXT.SetBackgroundColour(wx.GREEN)
         hhbox.Add(self.orderIDTXT, 0, wx.LEFT | wx.RIGHT, 1)
 
@@ -1479,6 +1474,9 @@ class PackageDialog(wx.Dialog):
 
         hhbox.Add((10,-1))
         hhbox.Add(wx.StaticText(self.topPanel, label='打包状态'), 0, wx.TOP, 5)
+        _, self.packageState = GetSubOrderPackageState(self.log,WHICHDB,self.suborderPanelsDBNameP,self.suborderID)#这个是从order表单中读取第一条子订单数据的state，不是从“porder”表单中读取
+        if self.packageState not in ["按房间打包","按区域打包"]:
+            self.packageState = "未打包"
         self.packageStateCOMBO = wx.ComboBox(self.topPanel, size=(100, 25), choices=["未打包","按区域打包","按房间打包"],style=wx.TE_READONLY)
         self.packageStateCOMBO.SetValue(self.packageState)
         self.packageStateCOMBO.Bind(wx.EVT_COMBOBOX,self.OnPackageStateCOMBOChanged)
@@ -1550,13 +1548,40 @@ class PackageDialog(wx.Dialog):
         hbox.Add(packageEntireOptimizeBTN,1,wx.EXPAND|wx.ALL,10)
         self.topPanel.SetSizer(hbox)
 
+    def MakeCurrentPenelList(self):#根据self.panelTotalList生成当前面板列表
+        self.currentPanelList=[]
+        for item in self.panelTotalList:
+            if self.packageState == "按房间打包":
+                if item[3]==self.deckName and item[4]==self.zoneName and item[5]==self.roomName:
+                    self.currentPanelList.append(item)
+            else:
+                if item[3]==self.deckName and item[4]==self.zoneName:
+                    self.currentPanelList.append(item)
+        self.currentPanelTotalAmount=len(self.currentPanelList)
+        self.currentPanelTotalAmountTXT.SetValue(str(self.currentPanelTotalAmount))
+
+    def MakeCurrentSeperatePanelList(self):#根据self.currentPanelList的值生成self.currentSeperatePanelList,并更新散板面板
+        self.currentSeperatePanelList=[]
+        for item in self.currentPanelList:
+            if item[-1]=='':
+                self.currentSeperatePanelList.append(item)
+        self.currentSeperatePanellAmount=len(self.currentSeperatePanelList)
+        self.currentSeperatePanellAmountTXT.SetValue(str(self.currentSeperatePanellAmount))
+        self.SeperatePanelReCreate()
+
+    def RefreshTopPanelCurrentSection(self):
+        self.GetTotalPanelList()
+        self.MakeCurrentPenelList()
+        self.MakeCurrentSeperatePanelList()
+
+
     def ReCreateTopMiddlePanel(self):
         self.topMiddlePanel.DestroyChildren()
         hbox = wx.BoxSizer()
         vvbox =wx.BoxSizer(wx.VERTICAL)
         hhbox = wx.BoxSizer()
         hhbox.Add(wx.StaticText(self.topMiddlePanel, label='甲板'), 0, wx.TOP, 5)
-        temp=np.array(self.panelList)[:,3]
+        temp= np.array(self.panelTotalList)[:, 3]
         choiceList = list(set(temp))
         choiceList.sort()
         self.deckName = choiceList[0]
@@ -1569,7 +1594,7 @@ class PackageDialog(wx.Dialog):
         hhbox.Add(wx.StaticText(self.topMiddlePanel, label='区域'), 0, wx.TOP, 5)
         deck = self.deckCOMBO.GetValue()
         temp = []
-        for record in self.panelList:
+        for record in self.panelTotalList:
             if str(record[3])==deck:
                 temp.append(str(record[4]))
         choiceList = list(set(temp))
@@ -1585,7 +1610,7 @@ class PackageDialog(wx.Dialog):
         deck = self.deckCOMBO.GetValue()
         zone = self.zoneCOMBO.GetValue()
         temp=[]
-        for record in self.panelList:
+        for record in self.panelTotalList:
             if str(record[4])==zone and str(record[3])==deck:
                 temp.append(str(record[5]))
         choiceList = list(set(temp))
@@ -1650,11 +1675,11 @@ class PackageDialog(wx.Dialog):
             self.zoneName = self.zoneCOMBO.GetValue()
             self.roomName = self.roomCOMBO.GetValue()
             self.currentPanelList = []
-            for record in self.panelList:
+            for record in self.panelTotalList:
                 if record[4]==self.zoneName and record[3]==self.deckName and record[5]==self.roomName:
                     self.currentPanelList.append(record)
             self.MakeSeperatePanelList()
-            self.SeperatePackagePanelReCreate()
+            self.SeperatePanelReCreate()
             self.currentSeperatePanellAmountTXT.SetValue(str(self.currentSeperatePanellAmount))
 
     def OnZoneCOMBOChanged(self,event):
@@ -1663,7 +1688,7 @@ class PackageDialog(wx.Dialog):
             self.zoneName = self.zoneCOMBO.GetValue()
             tempRoom = []
             self.currentPanelList = []
-            for record in self.panelList:
+            for record in self.panelTotalList:
                 if record[4]==self.zoneName and record[3]==self.deckName:
                     self.currentPanelList.append(record)
                     tempRoom.append(record[5])
@@ -1673,17 +1698,17 @@ class PackageDialog(wx.Dialog):
             self.roomCOMBO.SetItems(roomList)
             self.roomCOMBO.SetValue(self.roomName)
             self.MakeSeperatePanelList()
-            self.SeperatePackagePanelReCreate()
+            self.SeperatePanelReCreate()
 
     def OnDeckCOMBOChanged(self,event):
         if self.deckName != self.deckCOMBO.GetValue():
-            #现存盘，再变换
+            #先存盘，再变换
             self.OnSaveBTN(None)
             self.deckName = self.deckCOMBO.GetValue()
             tempZone = []
             tempRoom = []
             self.currentPanelList = []
-            for record in self.panelList:
+            for record in self.panelTotalList:
                 if record[3]==self.deckName:
                     tempZone.append(record[4])
                     tempRoom.append(record[5])
@@ -1699,7 +1724,7 @@ class PackageDialog(wx.Dialog):
             self.roomCOMBO.SetItems(roomList)
             self.roomCOMBO.SetValue(self.roomName)
             self.MakeSeperatePanelList()
-            self.SeperatePackagePanelReCreate()
+            self.SeperatePanelReCreate()
 
     def ReLoadCurrentPanelData(self):
         self.currentPanelList=[]
@@ -1881,9 +1906,10 @@ class PackageDialog(wx.Dialog):
                                        wx.YES_NO | wx.NO_DEFAULT | wx.CANCEL | wx.ICON_INFORMATION
                                        )
                 if dlg.ShowModal()==wx.ID_YES:
-
+                    DeleteSuborderPackageDB(self.log,WHICHDB,self.orderID,self.suborderID)
+                    UpdateSubOrderPackageStateAndClearPackageNumber(self.log,WHICHDB,self.orderID,self.suborderID,state="未打包",packageNum="")
                     self.packageState="未打包"
-                    self.ReCreateTopMiddlePanel()
+                    # self.ReCreateTopMiddlePanel()
                 else:
                     self.packageStateCOMBO.SetValue(self.packageState)
                 dlg.Destroy()
@@ -1900,6 +1926,13 @@ class PackageDialog(wx.Dialog):
                     self.packageStateCOMBO.SetValue(self.packageState)
                 dlg.Destroy()
             UpdateSubOrderPackageState(self.log,WHICHDB,self.orderID,self.suborderID,self.packageState)
+            self.GetTotalPanelList()#读取子订单全部面板
+            self.MakeCurrentPenelList()#根据self.panelTotalList生成当前面板列表self.currentPanelList
+            self.MakeCurrentSeperatePanelList()#根据self.currentPanelList的值生成self.currentSeperatePanelList,并更新散板面板
+            self.MakeCurrentPackageData()#读取子订单所有托盘数据self.suborderAllPackageList，再生成当前托盘数据self.currentPackageData
+            self.RefreshTopPanel()
+            self.FinishPackagePanelReCreate()
+
 
     def CalculateAndShowCurrentValue(self):
         self.currentPanelTotalAmount = 0

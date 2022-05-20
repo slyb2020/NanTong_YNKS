@@ -780,7 +780,6 @@ def InsertPackageBoxInfo(log,whichDB,orderID,suborderID,boxInfo):
     # sql ="""UPDATE `%s` SET `货盘长`=%s, `货盘宽`=%s, `货盘高`=%s, `货盘层数`=%s ,`货盘数据`='%s', `货盘总重`='%s', `货盘总面板数`='%s', `货盘总面积`='%s'  where `Index`=%s""" \
     #       %(str(orderID),boxLength,boxWidth,boxHeight,boxLayer,json.dumps(data),str(weight),str(amount),square,index)
     for data in boxInfo:
-        print("data=",data[10],data)
         sql = "INSERT INTO `%s` (`货盘编号`,`货盘长`,`货盘宽`,`货盘高`,  `货盘层数`,`货盘总重`,`货盘总面板数`,  `货盘总面积`,    `货盘所属子订单`,`货盘所属甲板`,`货盘所属区域`,`货盘所属房间`,`货盘打包方式`,`货盘类别`)" \
                          "VALUES ('%s'      ,%s,       %s ,    %s,      %s ,     '%s',      '%s',           '%s',          '%s',        '%s',          '%s',      '%s',        '%s',      '%s')"\
               % ( str(orderID),  '待定中',   data[0],data[1],data[2],data[3],str(data[4]),str(data[5]),str(data[6]),str(suborderID),   data[7],        data[8],  data[9],     data[10],  data[11])
@@ -833,6 +832,27 @@ def UpdateSpecificPackageBoxInfo(log,whichDB,orderID,index,boxLength,boxWidth,bo
         print("error1")
         db.rollback()
     db.close()
+
+def DeleteSuborderPackageDB(log,whichDB,orderID,suborderID):
+    try:
+        db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
+                             passwd='%s' % dbPassword[whichDB], db='%s' % packageDBName[whichDB], charset='utf8')
+    except:
+        wx.MessageBox("无法连接%s!" % packageDBName[whichDB], "错误信息")
+        if log:
+            log.WriteText("无法连接%s!" % packageDBName[whichDB], colour=wx.RED)
+        return -1, []
+    cursor = db.cursor()
+
+    sql = """DELETE from `%s` where `货盘所属子订单`='%s' """ % (str(orderID), str(suborderID))
+    try:
+        cursor.execute(sql)
+        db.commit()  # 必须有，没有的话插入语句不会执行
+    except:
+        print("error")
+        db.rollback()
+    db.close()
+
 
 def DeleteNewPackageBoxInPackageDBWithBoxName(log,whichDB,orderID,boxName):
     try:
@@ -912,6 +932,30 @@ def GetSubOrderPackageNumber(log,whichDB,orderID,suborderID):
     return 0, result
 
 def GetSubOrderPackageData(log,whichDB,orderID,suborderID):
+    try:
+        db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
+                             passwd='%s' % dbPassword[whichDB], db='%s' % packageDBName[whichDB], charset='utf8')
+    except:
+        wx.MessageBox("无法连接%s!" % packageDBName[whichDB], "错误信息")
+        if log:
+            log.WriteText("无法连接%s!" % packageDBName[whichDB], colour=wx.RED)
+        return -1, []
+    cursor = db.cursor()
+    sql = """SELECT `货盘编号`, `货盘长`, `货盘宽`, `货盘高`, `货盘层数`, `货盘总重`, `货盘总面板数`, `货盘总面积`,  
+    `货盘所属子订单`,`货盘所属甲板`, `货盘所属区域`, `货盘所属房间`, `货盘打包方式`, `货盘类别`, `货盘数据` from `%s` 
+    where `货盘所属子订单`='%s' """ \
+          % (str(orderID), str(suborderID))
+    cursor.execute(sql)
+    temp = cursor.fetchall()  # 获得压条信息
+    result =[]
+    for record in temp:
+        record = list(record)
+        record[-1] = json.loads(record[-1])
+        result.append(list(record))
+    db.close()
+    return 0, result
+
+def GetSuborderAllPackageList(log,whichDB,orderID,suborderID):
     try:
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % packageDBName[whichDB], charset='utf8')
@@ -1087,6 +1131,7 @@ def ClearSeperatePanelBoxNumberWithIndex(log, whichDB, orderID, suborderID, inde
 #
 def UpdateSubOrderPackageState(log,whichDB,orderID,subOrderId,state):
     name="p%s-%03d"%(str(orderID),int(subOrderId))
+    print("state=",state)
     try:
         db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
                              passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
@@ -1096,7 +1141,28 @@ def UpdateSubOrderPackageState(log,whichDB,orderID,subOrderId,state):
             log.WriteText("无法连接%s!" % orderDBName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
-    sql = "UPDATE `%s` SET `状态`='%s'  where `子订单号`='%s'" %(name,state,subOrderId)
+    sql = "UPDATE `%s` SET `状态`='%s'  where `子订单号`='%s'" %(name,state,str(subOrderId))
+    try:
+        cursor.execute(sql)
+        db.commit()  # 必须有，没有的话插入语句不会执行
+    except:
+        print("执行更新p%s-3d中子订单打包状态时未成功！"%(str(orderID),int(subOrderId)))
+        db.rollback()
+    db.close()
+
+def UpdateSubOrderPackageStateAndClearPackageNumber(log,whichDB,orderID,subOrderId,state,packageNum):
+    name="p%s-%03d"%(str(orderID),int(subOrderId))
+    print("state=",state)
+    try:
+        db = MySQLdb.connect(host="%s" % dbHostName[whichDB], user='%s' % dbUserName[whichDB],
+                             passwd='%s' % dbPassword[whichDB], db='%s' % orderDBName[whichDB], charset='utf8')
+    except:
+        wx.MessageBox("无法连接%s!"%orderDBName[whichDB], "错误信息")
+        if log:
+            log.WriteText("无法连接%s!" % orderDBName[whichDB], colour=wx.RED)
+        return -1, []
+    cursor = db.cursor()
+    sql = "UPDATE `%s` SET `状态`='%s',`所属货盘`='%s' where `子订单号`='%s'" %(name,state,packageNum,str(subOrderId))
     try:
         cursor.execute(sql)
         db.commit()  # 必须有，没有的话插入语句不会执行
@@ -1431,7 +1497,6 @@ def InsertPanelDetailIntoPackageDB(log, whichDB, orderTabelName, orderDataList):
             log.WriteText("无法连接%s!" % orderDBName[whichDB], colour=wx.RED)
         return -1, []
     cursor = db.cursor()
-    print("here:indb",orderDataList[0])
                               # [64731,      '1',          '3', '9','Corridor','C.C72.0005', 'C72', 'H40RDA',  '400', '1280',  '50',  'RAL9010',    'G',   'None', 'None',     '',     '3.07', '64731-0102',  '',       '',      '']
     for data in orderDataList:
         sql="""INSERT INTO `%s`(`订单号`,  `子订单号`      ,`甲板`,`区域`  ,`房间`,   `图纸`    ,`产品类型`,`面板代码`  ,`高度` ,`宽度`, `厚度`,  `X面颜色`, `Y面颜色`,`Z面颜色`,  `V面颜色`, `胶水单编号`, `重量`   ,`胶水单注释`,`状态`,`所属货盘`)

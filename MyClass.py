@@ -705,13 +705,8 @@ class MainPanel(wx.Panel):
         suborderNumber = name[-1]
         dbName = "%s"%self.currentOrderID
         _,dbNameList = GetPackageListFromDB(self.log,WHICHDB)
-        print("dbNameList",dbNameList)
         if dbName not in dbNameList:
-            print("No here")
             CreatePackageSheetForOrder(self.log, WHICHDB, dbName)
-        else:
-            print("Exist")
-        print("data=",self.work_zone_Panel.orderManagmentPanel.data)
         dlg = PackageDialog(self, self.log, self.work_zone_Panel.orderManagmentPanel.data,suborderNumber)
         dlg.CenterOnScreen()
         if dlg.ShowModal() == wx.ID_OK:
